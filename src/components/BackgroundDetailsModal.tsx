@@ -83,7 +83,7 @@ export function BackgroundDetailsModal({ open, onOpenChange, steps, onStepComple
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="title">Title</Label>
                     <Select>
@@ -98,6 +98,23 @@ export function BackgroundDetailsModal({ open, onOpenChange, steps, onStepComple
                         <SelectItem value="dr">Dr</SelectItem>
                       </SelectContent>
                     </Select>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="firstName">First Name</Label>
+                    <Input placeholder="Enter first name" />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="lastName">Last Name</Label>
+                    <Input placeholder="Enter last name" />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="dob">Date of Birth</Label>
+                    <Input type="date" />
                   </div>
                   
                   <div className="space-y-2">
@@ -118,6 +135,18 @@ export function BackgroundDetailsModal({ open, onOpenChange, steps, onStepComple
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
+                    <Label htmlFor="dependents">Number of Dependents</Label>
+                    <Input type="number" placeholder="0" min="0" />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="dependentAges">Ages of Dependents (if any)</Label>
+                    <Input placeholder="e.g., 5, 8, 12" />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
                     <Label htmlFor="niNumber">National Insurance Number</Label>
                     <Input placeholder="AB 12 34 56 C" />
                   </div>
@@ -132,6 +161,44 @@ export function BackgroundDetailsModal({ open, onOpenChange, steps, onStepComple
                         <SelectItem value="GB">United Kingdom</SelectItem>
                         <SelectItem value="IE">Ireland</SelectItem>
                         <SelectItem value="US">United States</SelectItem>
+                        <SelectItem value="FR">France</SelectItem>
+                        <SelectItem value="DE">Germany</SelectItem>
+                        <SelectItem value="other">Other</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="residentCountry">Country of Residence</Label>
+                    <Select>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select country" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="GB">United Kingdom</SelectItem>
+                        <SelectItem value="IE">Ireland</SelectItem>
+                        <SelectItem value="US">United States</SelectItem>
+                        <SelectItem value="FR">France</SelectItem>
+                        <SelectItem value="DE">Germany</SelectItem>
+                        <SelectItem value="other">Other</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="visaType">Visa Type (if applicable)</Label>
+                    <Select>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select visa type" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="n/a">Not Applicable</SelectItem>
+                        <SelectItem value="tier1">Tier 1</SelectItem>
+                        <SelectItem value="tier2">Tier 2</SelectItem>
+                        <SelectItem value="student">Student Visa</SelectItem>
+                        <SelectItem value="spouse">Spouse Visa</SelectItem>
                         <SelectItem value="other">Other</SelectItem>
                       </SelectContent>
                     </Select>
@@ -193,6 +260,24 @@ export function BackgroundDetailsModal({ open, onOpenChange, steps, onStepComple
                 </div>
 
                 <div className="space-y-4">
+                  <h4 className="font-medium">Previous Addresses (3 Year History)</h4>
+                  <div className="text-sm text-muted-foreground mb-3">
+                    Please provide details of all addresses where you have lived in the last 3 years
+                  </div>
+                  
+                  <div className="space-y-4">
+                    <Button variant="outline" className="w-full border-dashed">
+                      + Add Previous Address
+                    </Button>
+                    
+                    {/* This will be dynamic based on date moved in */}
+                    <div className="text-xs text-muted-foreground">
+                      * Previous addresses will be requested automatically if current address is less than 3 years
+                    </div>
+                  </div>
+                </div>
+
+                <div className="space-y-4">
                   <h4 className="font-medium">Proof of Address</h4>
                   <Button variant="outline" className="w-full h-20 border-dashed">
                     <div className="text-center">
@@ -225,52 +310,124 @@ export function BackgroundDetailsModal({ open, onOpenChange, steps, onStepComple
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-6">
-                <div className="space-y-4">
-                  <h4 className="font-medium">Employment Status</h4>
-                  <Select>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select employment status" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="employed">Employed</SelectItem>
-                      <SelectItem value="self-employed">Self Employed</SelectItem>
-                      <SelectItem value="retired">Retired</SelectItem>
-                      <SelectItem value="other">Other</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
+                <Tabs defaultValue="assets" className="space-y-4">
+                  <TabsList className="grid grid-cols-4 bg-secondary">
+                    <TabsTrigger value="assets">Assets</TabsTrigger>
+                    <TabsTrigger value="liabilities">Liabilities</TabsTrigger>
+                    <TabsTrigger value="income">Income</TabsTrigger>
+                    <TabsTrigger value="expenditure">Expenditure</TabsTrigger>
+                  </TabsList>
 
-                <div className="space-y-4">
-                  <h4 className="font-medium">Income Details</h4>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label>Monthly Net Income</Label>
-                      <Input type="number" placeholder="0" />
+                  <TabsContent value="assets" className="space-y-4">
+                    <h4 className="font-medium">Assets</h4>
+                    <div className="space-y-4">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label>Bank Accounts (Total Savings)</Label>
+                          <Input type="number" placeholder="0" />
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Property Value (if owned)</Label>
+                          <Input type="number" placeholder="0" />
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label>Investment Portfolio</Label>
+                          <Input type="number" placeholder="0" />
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Other Assets</Label>
+                          <Input type="number" placeholder="0" />
+                        </div>
+                      </div>
                     </div>
-                    <div className="space-y-2">
-                      <Label>Additional Income</Label>
-                      <Input type="number" placeholder="0" />
-                    </div>
-                  </div>
-                </div>
+                  </TabsContent>
 
-                <div className="space-y-4">
-                  <h4 className="font-medium">Monthly Expenditure</h4>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div className="space-y-2">
-                      <Label>Mortgage/Rent</Label>
-                      <Input type="number" placeholder="0" />
+                  <TabsContent value="liabilities" className="space-y-4">
+                    <h4 className="font-medium">Liabilities</h4>
+                    <div className="space-y-4">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label>Outstanding Mortgage</Label>
+                          <Input type="number" placeholder="0" />
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Credit Card Debt</Label>
+                          <Input type="number" placeholder="0" />
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label>Personal Loans</Label>
+                          <Input type="number" placeholder="0" />
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Other Debts</Label>
+                          <Input type="number" placeholder="0" />
+                        </div>
+                      </div>
                     </div>
-                    <div className="space-y-2">
-                      <Label>Credit Commitments</Label>
-                      <Input type="number" placeholder="0" />
+                  </TabsContent>
+
+                  <TabsContent value="income" className="space-y-4">
+                    <h4 className="font-medium">Income Sources</h4>
+                    <div className="space-y-4">
+                      <div className="space-y-2">
+                        <Label>Employment Type</Label>
+                        <Select>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select employment type" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="employed">Employed</SelectItem>
+                            <SelectItem value="self-employed">Self Employed</SelectItem>
+                            <SelectItem value="pension">Pension</SelectItem>
+                            <SelectItem value="rental">Rental Income</SelectItem>
+                            <SelectItem value="benefits">Benefits</SelectItem>
+                            <SelectItem value="other">Other</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label>Monthly Net Income</Label>
+                          <Input type="number" placeholder="0" />
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Annual Gross Income</Label>
+                          <Input type="number" placeholder="0" />
+                        </div>
+                      </div>
                     </div>
-                    <div className="space-y-2">
-                      <Label>Living Expenses</Label>
-                      <Input type="number" placeholder="0" />
+                  </TabsContent>
+
+                  <TabsContent value="expenditure" className="space-y-4">
+                    <h4 className="font-medium">Monthly Expenditure</h4>
+                    <div className="space-y-4">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label>Mortgage/Rent</Label>
+                          <Input type="number" placeholder="0" />
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Credit Commitments</Label>
+                          <Input type="number" placeholder="0" />
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label>Living Expenses</Label>
+                          <Input type="number" placeholder="0" />
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Other Expenses</Label>
+                          <Input type="number" placeholder="0" />
+                        </div>
+                      </div>
                     </div>
-                  </div>
-                </div>
+                  </TabsContent>
+                </Tabs>
 
                 <Button 
                   onClick={() => handleStepComplete('financial')}
@@ -292,9 +449,9 @@ export function BackgroundDetailsModal({ open, onOpenChange, steps, onStepComple
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="space-y-4">
+                <div className="space-y-6">
                   <div className="space-y-3">
-                    <Label>Have you missed any payments in the last 6 months?</Label>
+                    <Label className="text-base font-medium">Been declared bankrupt or insolvent?</Label>
                     <Select>
                       <SelectTrigger>
                         <SelectValue placeholder="Please select" />
@@ -307,7 +464,46 @@ export function BackgroundDetailsModal({ open, onOpenChange, steps, onStepComple
                   </div>
 
                   <div className="space-y-3">
-                    <Label>Do you have any CCJs, defaults, or bankruptcies?</Label>
+                    <Label className="text-base font-medium">Ever had any County Court Judgments (CCJs) against you?</Label>
+                    <Select>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Please select" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="no">No</SelectItem>
+                        <SelectItem value="yes">Yes</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-3">
+                    <Label className="text-base font-medium">Ever entered into an Individual Voluntary Arrangement (IVA) or Debt Management Plan (DMP)?</Label>
+                    <Select>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Please select" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="no">No</SelectItem>
+                        <SelectItem value="yes">Yes</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-3">
+                    <Label className="text-base font-medium">Been late with any credit repayments during the last 6 years?</Label>
+                    <Select>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Please select" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="no">No</SelectItem>
+                        <SelectItem value="yes">Yes</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-3">
+                    <Label className="text-base font-medium">Any outstanding defaults on any credit agreements?</Label>
                     <Select>
                       <SelectTrigger>
                         <SelectValue placeholder="Please select" />

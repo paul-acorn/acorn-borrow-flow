@@ -4,6 +4,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { BackgroundDetailsModal } from "@/components/BackgroundDetailsModal";
 import { DealCreationModal } from "@/components/DealCreationModal";
+import { LoanDetailsModal } from "@/components/LoanDetailsModal";
+import { PropertyDetailsModal } from "@/components/PropertyDetailsModal";
+import { DocumentUploadModal } from "@/components/DocumentUploadModal";
+import { MessagingModal } from "@/components/MessagingModal";
 import { 
   User, 
   MapPin, 
@@ -18,7 +22,11 @@ import {
   Truck,
   Calculator,
   PiggyBank,
-  LogOut
+  LogOut,
+  MessageCircle,
+  Upload,
+  Settings,
+  FileText
 } from "lucide-react";
 
 interface Deal {
@@ -43,6 +51,11 @@ const loanTypeIcons = {
 export function Dashboard() {
   const [showBackgroundModal, setShowBackgroundModal] = useState(false);
   const [showDealModal, setShowDealModal] = useState(false);
+  const [showLoanDetailsModal, setShowLoanDetailsModal] = useState(false);
+  const [showPropertyDetailsModal, setShowPropertyDetailsModal] = useState(false);
+  const [showDocumentUploadModal, setShowDocumentUploadModal] = useState(false);
+  const [showMessagingModal, setShowMessagingModal] = useState(false);
+  const [selectedDeal, setSelectedDeal] = useState<Deal | null>(null);
   const [backgroundSteps, setBackgroundSteps] = useState({
     personal: false,
     address: false,
@@ -70,6 +83,31 @@ export function Dashboard() {
     };
     setDeals([...deals, newDeal]);
     setShowDealModal(false);
+  };
+
+  const openDealModal = (deal: Deal, modalType: string) => {
+    setSelectedDeal(deal);
+    switch (modalType) {
+      case 'loan':
+        setShowLoanDetailsModal(true);
+        break;
+      case 'property':
+        setShowPropertyDetailsModal(true);
+        break;
+      case 'documents':
+        setShowDocumentUploadModal(true);
+        break;
+      case 'messages':
+        setShowMessagingModal(true);
+        break;
+      default:
+        break;
+    }
+  };
+
+  const handleModalSave = (data: any) => {
+    console.log('Modal data saved:', data);
+    // Here you would typically save the data to your backend
   };
 
   const formatCurrency = (amount: number) => {
@@ -187,7 +225,7 @@ export function Dashboard() {
               {deals.map((deal) => {
                 const IconComponent = loanTypeIcons[deal.type];
                 return (
-                  <Card key={deal.id} className="hover:shadow-lg transition-shadow cursor-pointer">
+                  <Card key={deal.id} className="hover:shadow-lg transition-shadow">
                     <CardContent className="p-6">
                       <div className="flex items-start justify-between mb-4">
                         <div className="flex items-center space-x-3">
@@ -209,13 +247,56 @@ export function Dashboard() {
                         </Badge>
                       </div>
                       
-                      <div className="text-2xl font-bold text-navy mb-2">
+                      <div className="text-2xl font-bold text-navy mb-4">
                         {formatCurrency(deal.amount)}
                       </div>
                       
-                      <div className="flex justify-between items-center text-sm">
+                      <div className="flex justify-between items-center text-sm mb-4">
                         <span className="text-muted-foreground">Status</span>
                         <span className="capitalize font-medium">{deal.status}</span>
+                      </div>
+
+                      {/* Action Buttons */}
+                      <div className="grid grid-cols-2 gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => openDealModal(deal, 'loan')}
+                          className="text-xs"
+                        >
+                          <Settings className="w-3 h-3 mr-1" />
+                          Loan Details
+                        </Button>
+                        
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => openDealModal(deal, 'property')}
+                          className="text-xs"
+                        >
+                          <Home className="w-3 h-3 mr-1" />
+                          Property
+                        </Button>
+
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => openDealModal(deal, 'documents')}
+                          className="text-xs"
+                        >
+                          <Upload className="w-3 h-3 mr-1" />
+                          Documents
+                        </Button>
+
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => openDealModal(deal, 'messages')}
+                          className="text-xs"
+                        >
+                          <MessageCircle className="w-3 h-3 mr-1" />
+                          Messages
+                        </Button>
                       </div>
                     </CardContent>
                   </Card>
@@ -241,6 +322,39 @@ export function Dashboard() {
         onOpenChange={setShowDealModal}
         onSubmit={handleCreateDeal}
       />
+
+      {selectedDeal && (
+        <>
+          <LoanDetailsModal
+            open={showLoanDetailsModal}
+            onOpenChange={setShowLoanDetailsModal}
+            dealType={selectedDeal.type}
+            dealName={selectedDeal.name}
+            onSave={handleModalSave}
+          />
+
+          <PropertyDetailsModal
+            open={showPropertyDetailsModal}
+            onOpenChange={setShowPropertyDetailsModal}
+            dealName={selectedDeal.name}
+            onSave={handleModalSave}
+          />
+
+          <DocumentUploadModal
+            open={showDocumentUploadModal}
+            onOpenChange={setShowDocumentUploadModal}
+            dealName={selectedDeal.name}
+            onSave={handleModalSave}
+          />
+
+          <MessagingModal
+            open={showMessagingModal}
+            onOpenChange={setShowMessagingModal}
+            dealName={selectedDeal.name}
+            onSave={handleModalSave}
+          />
+        </>
+      )}
     </div>
   );
 }
