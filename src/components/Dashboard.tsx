@@ -28,6 +28,7 @@ import {
   Settings,
   FileText
 } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 
 interface Deal {
   id: string;
@@ -64,6 +65,7 @@ export function Dashboard() {
     terms: false,
   });
   const [deals, setDeals] = useState<Deal[]>([]);
+  const { toast } = useToast();
 
   const backgroundStepConfig = [
     { key: 'personal', label: 'Personal Info', icon: User, description: 'Identity & personal details' },
@@ -83,6 +85,21 @@ export function Dashboard() {
     };
     setDeals([...deals, newDeal]);
     setShowDealModal(false);
+  };
+
+  const handleCreateRefinance = (refinanceData: any) => {
+    const refinanceDeal: Deal = {
+      id: Date.now().toString() + '_refinance',
+      name: refinanceData.name,
+      amount: refinanceData.amount,
+      type: 'mortgage',
+      status: 'draft'
+    };
+    setDeals(prev => [...prev, refinanceDeal]);
+    toast({
+      title: "Refinance Application Created",
+      description: "A mortgage application has been created for your bridging exit strategy.",
+    });
   };
 
   const openDealModal = (deal: Deal, modalType: string) => {
@@ -331,6 +348,7 @@ export function Dashboard() {
             dealType={selectedDeal.type}
             dealName={selectedDeal.name}
             onSave={handleModalSave}
+            onCreateRefinance={handleCreateRefinance}
           />
 
           <PropertyDetailsModal

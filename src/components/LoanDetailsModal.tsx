@@ -1,13 +1,11 @@
 import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Textarea } from "@/components/ui/textarea";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { Calculator, Target, Clock, Banknote } from "lucide-react";
+import { BridgingFinanceModal } from "@/components/loan-types/BridgingFinanceModal";
+import { MortgageModal } from "@/components/loan-types/MortgageModal";
+import { BusinessLoanModal } from "@/components/loan-types/BusinessLoanModal";
+import { DevelopmentFinanceModal } from "@/components/loan-types/DevelopmentFinanceModal";
 
 interface LoanDetailsModalProps {
   open: boolean;
@@ -15,26 +13,18 @@ interface LoanDetailsModalProps {
   dealType: string;
   dealName: string;
   onSave: (data: any) => void;
+  onCreateRefinance?: (refinanceData: any) => void;
 }
 
-export function LoanDetailsModal({ open, onOpenChange, dealType, dealName, onSave }: LoanDetailsModalProps) {
-  const [formData, setFormData] = useState({
-    amount: '',
-    term: '',
-    rationale: '',
-    exitStrategy: '',
-    plannedSpend: '',
-    purchaseType: '',
-    refinanceAmount: '',
-    capitalRaise: ''
-  });
+export function LoanDetailsModal({ open, onOpenChange, dealType, dealName, onSave, onCreateRefinance }: LoanDetailsModalProps) {
+  const [formData, setFormData] = useState({});
   const { toast } = useToast();
 
   const handleSave = () => {
-    onSave(formData);
+    onSave({ ...formData, dealType, dealName });
     toast({
       title: "Loan Details Saved",
-      description: "Your loan details have been saved successfully.",
+      description: `Your ${dealType} details have been saved successfully.`,
     });
     onOpenChange(false);
   };
@@ -43,172 +33,68 @@ export function LoanDetailsModal({ open, onOpenChange, dealType, dealName, onSav
     onOpenChange(false);
   };
 
+  const handleAutoRefinance = (refinanceData: any) => {
+    if (onCreateRefinance) {
+      onCreateRefinance(refinanceData);
+      toast({
+        title: "Refinance Product Created",
+        description: "A mortgage application has been automatically created for your exit strategy.",
+      });
+    }
+  };
+
+  const renderLoanTypeModal = () => {
+    const props = {
+      formData: { ...formData, dealName },
+      onFormDataChange: setFormData
+    };
+
+    switch (dealType) {
+      case 'bridging':
+        return <BridgingFinanceModal {...props} onAutoRefinance={handleAutoRefinance} />;
+      case 'mortgage':
+        return <MortgageModal {...props} />;
+      case 'business':
+        return <BusinessLoanModal {...props} />;
+      case 'development':
+        return <DevelopmentFinanceModal {...props} onAutoRefinance={handleAutoRefinance} />;
+      case 'factoring':
+      case 'asset':
+      case 'mca':
+      case 'equity':
+        // For now, use business loan modal as base - these can be specialized later
+        return <BusinessLoanModal {...props} />;
+      default:
+        return <div className="p-4 text-center text-muted-foreground">Loan type not yet implemented</div>;
+    }
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="text-2xl text-navy">
-            Loan Details - {dealName}
+            {dealType.charAt(0).toUpperCase() + dealType.slice(1)} Details - {dealName}
           </DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center space-x-2">
-                <Calculator className="w-5 h-5" />
-                <span>Basic Loan Information</span>
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="amount">Loan Amount (£)</Label>
-                  <Input
-                    id="amount"
-                    type="number"
-                    placeholder="500000"
-                    value={formData.amount}
-                    onChange={(e) => setFormData({...formData, amount: e.target.value})}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="term">Term (months)</Label>
-                  <Input
-                    id="term"
-                    type="number"
-                    placeholder="12"
-                    value={formData.term}
-                    onChange={(e) => setFormData({...formData, term: e.target.value})}
-                  />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+        {renderLoanTypeModal()}
 
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center space-x-2">
-                <Target className="w-5 h-5" />
-                <span>Purpose & Strategy</span>
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="rationale">Rationale for Loan</Label>
-                <Textarea
-                  id="rationale"
-                  placeholder="Please explain the purpose of this loan..."
-                  className="min-h-[100px]"
-                  value={formData.rationale}
-                  onChange={(e) => setFormData({...formData, rationale: e.target.value})}
-                />
-              </div>
-
-              {(dealType === 'bridging' || dealType === 'development') && (
-                <div className="space-y-2">
-                  <Label htmlFor="exitStrategy">Exit Strategy</Label>
-                  <Select
-                    value={formData.exitStrategy}
-                    onValueChange={(value) => setFormData({...formData, exitStrategy: value})}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select exit strategy" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="sale">Sale</SelectItem>
-                      <SelectItem value="refinance">Refinance to Mortgage</SelectItem>
-                      <SelectItem value="retain">Retain & Refinance</SelectItem>
-                      <SelectItem value="other">Other</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center space-x-2">
-                <Banknote className="w-5 h-5" />
-                <span>Financial Details</span>
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="purchaseType">Transaction Type</Label>
-                <Select
-                  value={formData.purchaseType}
-                  onValueChange={(value) => setFormData({...formData, purchaseType: value})}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select transaction type" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="purchase">Purchase</SelectItem>
-                    <SelectItem value="refinance">Refinance</SelectItem>
-                    <SelectItem value="refinance-capital">Refinance & Capital Raise</SelectItem>
-                    <SelectItem value="second-charge">Second Charge Capital Raise</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {(dealType === 'development' || dealType === 'bridging') && (
-                <div className="space-y-2">
-                  <Label htmlFor="plannedSpend">Planned Development/Refurbishment Spend (£)</Label>
-                  <Input
-                    id="plannedSpend"
-                    type="number"
-                    placeholder="100000"
-                    value={formData.plannedSpend}
-                    onChange={(e) => setFormData({...formData, plannedSpend: e.target.value})}
-                  />
-                </div>
-              )}
-
-              {formData.purchaseType?.includes('refinance') && (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="refinanceAmount">Existing Debt to Refinance (£)</Label>
-                    <Input
-                      id="refinanceAmount"
-                      type="number"
-                      placeholder="300000"
-                      value={formData.refinanceAmount}
-                      onChange={(e) => setFormData({...formData, refinanceAmount: e.target.value})}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="capitalRaise">Additional Capital Raise (£)</Label>
-                    <Input
-                      id="capitalRaise"
-                      type="number"
-                      placeholder="100000"
-                      value={formData.capitalRaise}
-                      onChange={(e) => setFormData({...formData, capitalRaise: e.target.value})}
-                    />
-                  </div>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* Action Buttons */}
-          <div className="flex space-x-3 pt-4 border-t">
-            <Button 
-              variant="outline" 
-              onClick={handleCancel}
-              className="flex-1"
-            >
-              Cancel
-            </Button>
-            <Button 
-              onClick={handleSave}
-              className="flex-1 bg-gradient-primary hover:opacity-90"
-            >
-              Save Loan Details
-            </Button>
-          </div>
+        {/* Action Buttons */}
+        <div className="flex space-x-3 pt-4 border-t">
+          <Button 
+            variant="outline" 
+            onClick={handleCancel}
+            className="flex-1"
+          >
+            Cancel
+          </Button>
+          <Button 
+            onClick={handleSave}
+            className="flex-1 bg-gradient-primary hover:opacity-90"
+          >
+            Save {dealType.charAt(0).toUpperCase() + dealType.slice(1)} Details
+          </Button>
         </div>
       </DialogContent>
     </Dialog>
