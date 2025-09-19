@@ -7,6 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useToast } from "@/hooks/use-toast";
 import { Home, Building, MapPin, PoundSterling } from "lucide-react";
 
@@ -66,7 +67,18 @@ export function PropertyDetailsModal({ open, onOpenChange, dealName, onSave }: P
     condition: '',
     refurbRequired: '',
     refurbCost: '',
-    description: ''
+    description: '',
+    
+    // New properties to fix build errors
+    planning: '',
+    units: '',
+    propertyAge: '',
+    currentlyLet: '',
+    passingRent: '',
+    marketRent: '',
+    valuation: '',
+    gdv: '',
+    notes: ''
   });
   const { toast } = useToast();
 
