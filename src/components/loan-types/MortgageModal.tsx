@@ -20,57 +20,92 @@ export function MortgageModal({ formData, onFormDataChange }: MortgageModalProps
 
   return (
     <div className="space-y-6">
-      {/* Mortgage Type */}
+      {/* Property Type & Purpose */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center space-x-2">
             <Home className="w-5 h-5" />
-            <span>Mortgage Type</span>
+            <span>Property Type & Purpose</span>
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="space-y-3">
-            <Label>Mortgage Type</Label>
-            <RadioGroup
-              value={formData.mortgageType || ''}
-              onValueChange={(value) => handleFieldChange('mortgageType', value)}
-            >
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="residential-purchase" id="residential-purchase" />
-                <Label htmlFor="residential-purchase">Residential Purchase</Label>
-              </div>
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="btl-purchase" id="btl-purchase" />
-                <Label htmlFor="btl-purchase">Buy-to-Let Purchase</Label>
-              </div>
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="remortgage" id="remortgage" />
-                <Label htmlFor="remortgage">Remortgage</Label>
-              </div>
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="product-transfer" id="product-transfer" />
-                <Label htmlFor="product-transfer">Product Transfer</Label>
-              </div>
-            </RadioGroup>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="space-y-3">
+              <Label>Property Type</Label>
+              <RadioGroup
+                value={formData.propertyType || ''}
+                onValueChange={(value) => handleFieldChange('propertyType', value)}
+              >
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="residential" id="residential" />
+                  <Label htmlFor="residential">Residential</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="buy-to-let" id="buy-to-let" />
+                  <Label htmlFor="buy-to-let">Buy to Let</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="holiday-let" id="holiday-let" />
+                  <Label htmlFor="holiday-let">Holiday Let</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="second-property" id="second-property" />
+                  <Label htmlFor="second-property">Second Property</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="commercial-investment" id="commercial-investment" />
+                  <Label htmlFor="commercial-investment">Commercial Investment</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="mixed-use-investment" id="mixed-use-investment" />
+                  <Label htmlFor="mixed-use-investment">Mixed Use Investment</Label>
+                </div>
+              </RadioGroup>
+            </div>
+            
+            <div className="space-y-3">
+              <Label>Purpose</Label>
+              <RadioGroup
+                value={formData.purpose || ''}
+                onValueChange={(value) => handleFieldChange('purpose', value)}
+              >
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="purchase" id="purchase" />
+                  <Label htmlFor="purchase">Purchase</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="remortgage" id="remortgage" />
+                  <Label htmlFor="remortgage">Remortgage (£4£)</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="capital-raise" id="capital-raise" />
+                  <Label htmlFor="capital-raise">Capital Raise</Label>
+                </div>
+              </RadioGroup>
+            </div>
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="propertyPurpose">Property Purpose</Label>
-            <Select
-              value={formData.propertyPurpose || ''}
-              onValueChange={(value) => handleFieldChange('propertyPurpose', value)}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Select property purpose" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="owner-occupied">Owner Occupied</SelectItem>
-                <SelectItem value="buy-to-let">Buy-to-Let</SelectItem>
-                <SelectItem value="holiday-let">Holiday Let</SelectItem>
-                <SelectItem value="commercial-investment">Commercial Investment</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+          {formData.purpose === 'capital-raise' && (
+            <div className="space-y-2">
+              <Label htmlFor="capitalRaisePurpose">Purpose of Capital Raise</Label>
+              <Select
+                value={formData.capitalRaisePurpose || ''}
+                onValueChange={(value) => handleFieldChange('capitalRaisePurpose', value)}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select purpose" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="home-improvements">Home Improvements</SelectItem>
+                  <SelectItem value="debt-consolidation">Debt Consolidation</SelectItem>
+                  <SelectItem value="business-investment">Business Investment</SelectItem>
+                  <SelectItem value="property-purchase">Property Purchase</SelectItem>
+                  <SelectItem value="education-fees">Education Fees</SelectItem>
+                  <SelectItem value="other">Other</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          )}
 
           <div className="space-y-2">
             <Label htmlFor="applicantType">Applicant Type</Label>
@@ -82,10 +117,18 @@ export function MortgageModal({ formData, onFormDataChange }: MortgageModalProps
                 <SelectValue placeholder="Select applicant type" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="personal">Personal</SelectItem>
-                <SelectItem value="ltd-company">Ltd Company</SelectItem>
-                <SelectItem value="partnership">Partnership</SelectItem>
-                <SelectItem value="trust">Trust</SelectItem>
+                {formData.propertyType === 'residential' ? (
+                  <>
+                    <SelectItem value="personal">Personal</SelectItem>
+                  </>
+                ) : (
+                  <>
+                    <SelectItem value="personal">Personal</SelectItem>
+                    <SelectItem value="ltd-company">Ltd Company</SelectItem>
+                    <SelectItem value="partnership">Partnership</SelectItem>
+                    <SelectItem value="trust">Trust</SelectItem>
+                  </>
+                )}
               </SelectContent>
             </Select>
           </div>
@@ -124,7 +167,7 @@ export function MortgageModal({ formData, onFormDataChange }: MortgageModalProps
             </div>
           </div>
 
-          {(formData.mortgageType === 'residential-purchase' || formData.mortgageType === 'btl-purchase') && (
+          {formData.purpose === 'purchase' && (
             <div className="space-y-2">
               <Label htmlFor="purchasePrice">Purchase Price (£)</Label>
               <Input
@@ -137,7 +180,7 @@ export function MortgageModal({ formData, onFormDataChange }: MortgageModalProps
             </div>
           )}
 
-          {(formData.mortgageType === 'remortgage' || formData.mortgageType === 'product-transfer') && (
+          {(formData.purpose === 'remortgage' || formData.purpose === 'capital-raise') && (
             <div className="space-y-2">
               <Label htmlFor="propertyValue">Current Property Value (£)</Label>
               <Input
@@ -150,7 +193,7 @@ export function MortgageModal({ formData, onFormDataChange }: MortgageModalProps
             </div>
           )}
 
-          {formData.mortgageType === 'remortgage' && (
+          {formData.purpose === 'remortgage' && (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="existingMortgage">Existing Mortgage Balance (£)</Label>
@@ -174,11 +217,106 @@ export function MortgageModal({ formData, onFormDataChange }: MortgageModalProps
               </div>
             </div>
           )}
+
+          {formData.purpose === 'capital-raise' && (
+            <div className="space-y-2">
+              <Label htmlFor="capitalRaiseAmount">Capital Raise Amount (£)</Label>
+              <Input
+                id="capitalRaiseAmount"
+                type="number"
+                placeholder="100000"
+                value={formData.capitalRaiseAmount || ''}
+                onChange={(e) => handleFieldChange('capitalRaiseAmount', e.target.value)}
+              />
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Mortgage Preferences */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center space-x-2">
+            <Target className="w-5 h-5" />
+            <span>Mortgage Preferences</span>
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="space-y-3">
+            <Label>Rate Type Preference</Label>
+            <RadioGroup
+              value={formData.rateType || ''}
+              onValueChange={(value) => handleFieldChange('rateType', value)}
+            >
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="variable" id="variable" />
+                <Label htmlFor="variable">Variable Rate</Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="fixed" id="fixed" />
+                <Label htmlFor="fixed">Fixed Rate</Label>
+              </div>
+            </RadioGroup>
+          </div>
+
+          {formData.rateType === 'fixed' && (
+            <div className="space-y-2">
+              <Label htmlFor="fixedTerm">Fixed Rate Term (years)</Label>
+              <Select
+                value={formData.fixedTerm || ''}
+                onValueChange={(value) => handleFieldChange('fixedTerm', value)}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select term" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="2">2 Years</SelectItem>
+                  <SelectItem value="3">3 Years</SelectItem>
+                  <SelectItem value="5">5 Years</SelectItem>
+                  <SelectItem value="7">7 Years</SelectItem>
+                  <SelectItem value="10">10 Years</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+
+          <div className="space-y-3">
+            <Label>Additional Features (The best mortgage might not have all selected features)</Label>
+            <div className="space-y-2">
+              <div className="flex items-center space-x-2">
+                <input
+                  type="checkbox"
+                  id="automatedValuation"
+                  checked={formData.automatedValuation || false}
+                  onChange={(e) => handleFieldChange('automatedValuation', e.target.checked.toString())}
+                />
+                <Label htmlFor="automatedValuation">Automated Valuation</Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <input
+                  type="checkbox"
+                  id="freeLegalFees"
+                  checked={formData.freeLegalFees || false}
+                  onChange={(e) => handleFieldChange('freeLegalFees', e.target.checked.toString())}
+                />
+                <Label htmlFor="freeLegalFees">Free Legal Fees</Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <input
+                  type="checkbox"
+                  id="cashback"
+                  checked={formData.cashback || false}
+                  onChange={(e) => handleFieldChange('cashback', e.target.checked.toString())}
+                />
+                <Label htmlFor="cashback">Cashback</Label>
+              </div>
+            </div>
+          </div>
         </CardContent>
       </Card>
 
       {/* BTL Specific Details */}
-      {(formData.propertyPurpose === 'buy-to-let' || formData.propertyPurpose === 'holiday-let') && (
+      {(formData.propertyType === 'buy-to-let' || formData.propertyType === 'holiday-let') && (
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center space-x-2">
@@ -235,57 +373,6 @@ export function MortgageModal({ formData, onFormDataChange }: MortgageModalProps
           </CardContent>
         </Card>
       )}
-
-      {/* Income Verification */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center space-x-2">
-            <Target className="w-5 h-5" />
-            <span>Income Verification</span>
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="incomeType">Primary Income Type</Label>
-            <Select
-              value={formData.incomeType || ''}
-              onValueChange={(value) => handleFieldChange('incomeType', value)}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Select income type" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="employed">Employed</SelectItem>
-                <SelectItem value="self-employed">Self-Employed</SelectItem>
-                <SelectItem value="company-director">Ltd Company Director</SelectItem>
-                <SelectItem value="retired">Retired</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="annualIncome">Annual Gross Income (£)</Label>
-            <Input
-              id="annualIncome"
-              type="number"
-              placeholder="75000"
-              value={formData.annualIncome || ''}
-              onChange={(e) => handleFieldChange('annualIncome', e.target.value)}
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="purpose">Purpose of Mortgage</Label>
-            <Textarea
-              id="purpose"
-              placeholder="Please describe the intended use of the property and mortgage..."
-              className="min-h-[100px]"
-              value={formData.purpose || ''}
-              onChange={(e) => handleFieldChange('purpose', e.target.value)}
-            />
-          </div>
-        </CardContent>
-      </Card>
     </div>
   );
 }

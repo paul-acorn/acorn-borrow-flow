@@ -140,7 +140,7 @@ export function BridgingFinanceModal({ formData, onFormDataChange, onAutoRefinan
             </div>
           )}
 
-          {(formData.bridgingPurpose === 'bmv-purchase' || formData.transactionType === 'refinance') && (
+          {(formData.transactionType === 'refinance' || formData.transactionType === 'raise-capital' || formData.bridgingPurpose === 'bmv-purchase') && (
             <div className="space-y-2">
               <Label htmlFor="propertyValue">Property Value (£)</Label>
               <Input
@@ -150,6 +150,71 @@ export function BridgingFinanceModal({ formData, onFormDataChange, onAutoRefinan
                 value={formData.propertyValue || ''}
                 onChange={(e) => handleFieldChange('propertyValue', e.target.value)}
               />
+            </div>
+          )}
+
+          {formData.bridgingPurpose === 'bmv-purchase' && (
+            <div className="space-y-2">
+              <Label htmlFor="bmvExplanation">Below Market Value Explanation</Label>
+              <Textarea
+                id="bmvExplanation"
+                placeholder="Please explain why this property is below market value and the circumstances..."
+                className="min-h-[80px]"
+                value={formData.bmvExplanation || ''}
+                onChange={(e) => handleFieldChange('bmvExplanation', e.target.value)}
+              />
+            </div>
+          )}
+
+          {(formData.transactionType === 'refinance' || formData.transactionType === 'raise-capital') && (
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="existingLoansCount">Number of Existing Loans to Repay</Label>
+                <Input
+                  id="existingLoansCount"
+                  type="number"
+                  placeholder="1"
+                  value={formData.existingLoansCount || ''}
+                  onChange={(e) => handleFieldChange('existingLoansCount', e.target.value)}
+                />
+              </div>
+              {Array.from({ length: parseInt(formData.existingLoansCount || '0') }, (_, i) => (
+                <div key={i} className="space-y-2 p-4 border rounded-lg">
+                  <Label>Existing Loan {i + 1}</Label>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor={`existingLoanBalance${i}`}>Balance (£)</Label>
+                      <Input
+                        id={`existingLoanBalance${i}`}
+                        type="number"
+                        placeholder="200000"
+                        value={formData[`existingLoanBalance${i}`] || ''}
+                        onChange={(e) => handleFieldChange(`existingLoanBalance${i}`, e.target.value)}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor={`existingLoanLender${i}`}>Lender</Label>
+                      <Input
+                        id={`existingLoanLender${i}`}
+                        placeholder="Current lender name"
+                        value={formData[`existingLoanLender${i}`] || ''}
+                        onChange={(e) => handleFieldChange(`existingLoanLender${i}`, e.target.value)}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor={`existingLoanRate${i}`}>Interest Rate (%)</Label>
+                      <Input
+                        id={`existingLoanRate${i}`}
+                        type="number"
+                        step="0.01"
+                        placeholder="5.5"
+                        value={formData[`existingLoanRate${i}`] || ''}
+                        onChange={(e) => handleFieldChange(`existingLoanRate${i}`, e.target.value)}
+                      />
+                    </div>
+                  </div>
+                </div>
+              ))}
             </div>
           )}
 
@@ -167,15 +232,21 @@ export function BridgingFinanceModal({ formData, onFormDataChange, onAutoRefinan
           )}
 
           {formData.bridgingPurpose === 'refurbishment' && (
-            <div className="space-y-2">
-              <Label htmlFor="refurbCosts">Refurbishment Costs (£)</Label>
-              <Input
-                id="refurbCosts"
-                type="number"
-                placeholder="100000"
-                value={formData.refurbCosts || ''}
-                onChange={(e) => handleFieldChange('refurbCosts', e.target.value)}
-              />
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="refurbCosts">Refurbishment Costs (£)</Label>
+                <Input
+                  id="refurbCosts"
+                  type="number"
+                  placeholder="100000"
+                  value={formData.refurbCosts || ''}
+                  onChange={(e) => handleFieldChange('refurbCosts', e.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Upload Schedule of Works</Label>
+                <p className="text-sm text-muted-foreground">This will be requested on the loan details page</p>
+              </div>
             </div>
           )}
         </CardContent>
@@ -218,6 +289,9 @@ export function BridgingFinanceModal({ formData, onFormDataChange, onAutoRefinan
                 value={formData.projectedRent || ''}
                 onChange={(e) => handleFieldChange('projectedRent', e.target.value)}
               />
+              <p className="text-sm text-muted-foreground">
+                A mortgage application will be created for 75% of the GDV ({formData.gdv ? `£${(parseFloat(formData.gdv) * 0.75).toLocaleString()}` : '£0'})
+              </p>
             </div>
           )}
 
