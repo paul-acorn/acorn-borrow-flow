@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { Eye, EyeOff, ArrowLeft } from "lucide-react";
+import { TermsPrivacyModal } from "@/components/TermsPrivacyModal";
 
 interface AuthFormProps {
   onLogin: () => void;
@@ -15,6 +16,9 @@ interface AuthFormProps {
 export function AuthForm({ onLogin, onBack }: AuthFormProps) {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [showTermsModal, setShowTermsModal] = useState(false);
+  const [termsAccepted, setTermsAccepted] = useState(false);
+  const [privacyAccepted, setPrivacyAccepted] = useState(false);
   const { toast } = useToast();
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -34,6 +38,16 @@ export function AuthForm({ onLogin, onBack }: AuthFormProps) {
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!termsAccepted || !privacyAccepted) {
+      toast({
+        title: "Terms Required",
+        description: "Please accept the Terms and Privacy Policy to continue",
+        variant: "destructive"
+      });
+      return;
+    }
+    
     setIsLoading(true);
     
     // Simulate registration
@@ -41,9 +55,14 @@ export function AuthForm({ onLogin, onBack }: AuthFormProps) {
       setIsLoading(false);
       toast({
         title: "Registration Successful", 
-        description: "Please check your email for verification",
+        description: "Please check your email for verification instructions",
       });
     }, 1500);
+  };
+
+  const handleTermsAccept = (terms: boolean, privacy: boolean, marketing: boolean) => {
+    setTermsAccepted(terms);
+    setPrivacyAccepted(privacy);
   };
 
   return (
@@ -163,16 +182,6 @@ export function AuthForm({ onLogin, onBack }: AuthFormProps) {
                     />
                   </div>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="phone">Phone Number</Label>
-                    <Input 
-                      id="phone"
-                      type="tel"
-                      placeholder="+44 7XXX XXXXXX"
-                      required
-                      className="h-11"
-                    />
-                  </div>
 
                   <div className="space-y-2">
                     <Label htmlFor="regPassword">Password</Label>
@@ -198,7 +207,7 @@ export function AuthForm({ onLogin, onBack }: AuthFormProps) {
                     type="submit" 
                     size="lg"
                     className="w-full bg-gradient-primary hover:opacity-90"
-                    disabled={isLoading}
+                    disabled={isLoading || !termsAccepted || !privacyAccepted}
                   >
                     {isLoading ? "Creating Account..." : "Create Account"}
                   </Button>
@@ -206,15 +215,34 @@ export function AuthForm({ onLogin, onBack }: AuthFormProps) {
 
                 <div className="text-xs text-center text-muted-foreground leading-relaxed">
                   By registering, you agree to our{" "}
-                  <button className="text-premium hover:underline">Terms of Service</button>
+                  <button 
+                    onClick={() => setShowTermsModal(true)}
+                    className="text-premium hover:underline"
+                  >
+                    Terms of Service
+                  </button>
                   {" "}and{" "}
-                  <button className="text-premium hover:underline">Privacy Policy</button>
+                  <button 
+                    onClick={() => setShowTermsModal(true)}
+                    className="text-premium hover:underline"
+                  >
+                    Privacy Policy
+                  </button>
+                  {(termsAccepted && privacyAccepted) && (
+                    <span className="block mt-2 text-success text-xs">✓ Terms and Privacy accepted</span>
+                  )}
                 </div>
               </TabsContent>
             </Tabs>
           </CardContent>
         </Card>
       </div>
+
+      <TermsPrivacyModal
+        open={showTermsModal}
+        onOpenChange={setShowTermsModal}
+        onAccept={handleTermsAccept}
+      />
     </div>
   );
 }

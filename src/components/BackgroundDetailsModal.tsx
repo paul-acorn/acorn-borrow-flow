@@ -20,7 +20,6 @@ interface BackgroundDetailsModalProps {
     address: boolean;
     financial: boolean;
     credit: boolean;
-    terms: boolean;
   };
   onStepComplete: (step: string) => void;
 }
@@ -227,7 +226,6 @@ export function BackgroundDetailsModal({ open, onOpenChange, steps, onStepComple
     { key: 'address', label: 'Address', icon: MapPin },
     { key: 'financial', label: 'Financial', icon: CreditCard },
     { key: 'credit', label: 'Credit', icon: FileCheck },
-    { key: 'terms', label: 'Terms', icon: Shield },
   ];
 
   return (
@@ -238,7 +236,7 @@ export function BackgroundDetailsModal({ open, onOpenChange, steps, onStepComple
         </DialogHeader>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid grid-cols-5 bg-secondary">
+          <TabsList className="grid grid-cols-4 bg-secondary">
             {stepConfig.map((step) => {
               const IconComponent = step.icon;
               const isComplete = steps[step.key as keyof typeof steps];
@@ -1741,76 +1739,6 @@ export function BackgroundDetailsModal({ open, onOpenChange, steps, onStepComple
             </Card>
           </TabsContent>
 
-          {/* Terms Tab */}
-          <TabsContent value="terms" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center space-x-2">
-                  <Shield className="w-5 h-5" />
-                  <span>Terms & Privacy</span>
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-4">
-                  <div className="space-y-4">
-                    <div className="p-4 border rounded-lg bg-muted/50">
-                      <h4 className="font-medium mb-2">Terms and Conditions</h4>
-                      <div className="text-sm text-muted-foreground space-y-2">
-                        <p>By proceeding, you agree to our terms and conditions including:</p>
-                        <ul className="list-disc list-inside space-y-1 ml-4">
-                          <li>Accurate information provision</li>
-                          <li>Consent to credit and affordability checks</li>
-                          <li>Understanding that this is not a guarantee of lending</li>
-                          <li>Agreement to our data processing policies</li>
-                        </ul>
-                      </div>
-                    </div>
-
-                    <div className="p-4 border rounded-lg bg-muted/50">
-                      <h4 className="font-medium mb-2">Privacy Policy</h4>
-                      <div className="text-sm text-muted-foreground space-y-2">
-                        <p>We are committed to protecting your privacy:</p>
-                        <ul className="list-disc list-inside space-y-1 ml-4">
-                          <li>Your data is encrypted and stored securely</li>
-                          <li>Information is only shared with relevant lenders</li>
-                          <li>You can request data deletion at any time</li>
-                          <li>We comply with GDPR and UK data protection laws</li>
-                        </ul>
-                      </div>
-                    </div>
-
-                    <div className="space-y-3">
-                      <div className="flex items-center space-x-2">
-                        <Checkbox id="terms" />
-                        <Label htmlFor="terms" className="text-sm">
-                          I agree to the Terms and Conditions
-                        </Label>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <Checkbox id="privacy" />
-                        <Label htmlFor="privacy" className="text-sm">
-                          I agree to the Privacy Policy
-                        </Label>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <Checkbox id="marketing" />
-                        <Label htmlFor="marketing" className="text-sm">
-                          I consent to receiving marketing communications (optional)
-                        </Label>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <Button 
-                  onClick={() => handleStepComplete('terms')}
-                  className="w-full bg-gradient-primary hover:opacity-90"
-                >
-                  Complete Registration
-                </Button>
-              </CardContent>
-            </Card>
-          </TabsContent>
         </Tabs>
       </DialogContent>
     </Dialog>

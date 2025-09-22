@@ -62,7 +62,6 @@ export function Dashboard() {
     address: false,
     financial: false,
     credit: false,
-    terms: false,
   });
   const [deals, setDeals] = useState<Deal[]>([]);
   const { toast } = useToast();
@@ -72,7 +71,6 @@ export function Dashboard() {
     { key: 'address', label: 'Address History', icon: MapPin, description: '3-year address verification' },
     { key: 'financial', label: 'Financial Details', icon: CreditCard, description: 'Assets, income & expenditure' },
     { key: 'credit', label: 'Credit History', icon: FileCheck, description: 'Credit assessment questions' },
-    { key: 'terms', label: 'Terms & Privacy', icon: Shield, description: 'Agreements & compliance' },
   ];
 
   const isBackgroundComplete = Object.values(backgroundSteps).every(Boolean);
@@ -173,7 +171,7 @@ export function Dashboard() {
           </CardHeader>
           
           <CardContent>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
               {backgroundStepConfig.map((step) => {
                 const IconComponent = step.icon;
                 const isComplete = backgroundSteps[step.key as keyof typeof backgroundSteps];
@@ -285,15 +283,17 @@ export function Dashboard() {
                           Loan Details
                         </Button>
                         
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => openDealModal(deal, 'property')}
-                          className="text-xs"
-                        >
-                          <Home className="w-3 h-3 mr-1" />
-                          Property
-                        </Button>
+                        {!['factoring', 'asset', 'mca'].includes(deal.type) && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => openDealModal(deal, 'property')}
+                            className="text-xs"
+                          >
+                            <Home className="w-3 h-3 mr-1" />
+                            Property
+                          </Button>
+                        )}
 
                         <Button
                           variant="outline"
