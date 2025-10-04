@@ -6,6 +6,7 @@ import { BridgingFinanceModal } from "@/components/loan-types/BridgingFinanceMod
 import { MortgageModal } from "@/components/loan-types/MortgageModal";
 import { BusinessLoanModal } from "@/components/loan-types/BusinessLoanModal";
 import { DevelopmentFinanceModal } from "@/components/loan-types/DevelopmentFinanceModal";
+import { EquityReleaseModal } from "@/components/loan-types/EquityReleaseModal";
 
 interface LoanDetailsModalProps {
   open: boolean;
@@ -58,10 +59,11 @@ export function LoanDetailsModal({ open, onOpenChange, dealType, dealName, onSav
         return <BusinessLoanModal {...props} />;
       case 'development':
         return <DevelopmentFinanceModal {...props} onAutoRefinance={handleAutoRefinance} />;
+      case 'equity':
+        return <EquityReleaseModal {...props} />;
       case 'factoring':
       case 'asset':
       case 'mca':
-      case 'equity':
         // For now, use business loan modal as base - these can be specialized later
         return <BusinessLoanModal {...props} />;
       default:
