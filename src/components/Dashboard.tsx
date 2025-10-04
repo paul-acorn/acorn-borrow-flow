@@ -51,6 +51,7 @@ const loanTypeIcons = {
 
 export function Dashboard() {
   const [showBackgroundModal, setShowBackgroundModal] = useState(false);
+  const [backgroundInitialStep, setBackgroundInitialStep] = useState<string | undefined>(undefined);
   const [showDealModal, setShowDealModal] = useState(false);
   const [showLoanDetailsModal, setShowLoanDetailsModal] = useState(false);
   const [showPropertyDetailsModal, setShowPropertyDetailsModal] = useState(false);
@@ -83,6 +84,10 @@ export function Dashboard() {
     };
     setDeals([...deals, newDeal]);
     setShowDealModal(false);
+    toast({
+      title: "Application Created",
+      description: `${dealData.name} has been created successfully.`,
+    });
   };
 
   const handleCreateRefinance = (refinanceData: any) => {
@@ -185,7 +190,10 @@ export function Dashboard() {
                         ? 'border-success bg-success/5 text-success hover:bg-success/10' 
                         : 'border-border hover:border-primary/50'
                     }`}
-                    onClick={() => setShowBackgroundModal(true)}
+                    onClick={() => {
+                      setBackgroundInitialStep(step.key);
+                      setShowBackgroundModal(true);
+                    }}
                   >
                     <IconComponent className={`w-6 h-6 ${isComplete ? 'text-success' : 'text-muted-foreground'}`} />
                     <div>
@@ -327,11 +335,15 @@ export function Dashboard() {
       {/* Modals */}
       <BackgroundDetailsModal 
         open={showBackgroundModal}
-        onOpenChange={setShowBackgroundModal}
+        onOpenChange={(open) => {
+          setShowBackgroundModal(open);
+          if (!open) setBackgroundInitialStep(undefined);
+        }}
         steps={backgroundSteps}
         onStepComplete={(step) => {
           setBackgroundSteps(prev => ({ ...prev, [step]: true }));
         }}
+        initialStep={backgroundInitialStep}
       />
       
       <DealCreationModal
@@ -347,6 +359,7 @@ export function Dashboard() {
             onOpenChange={setShowLoanDetailsModal}
             dealType={selectedDeal.type}
             dealName={selectedDeal.name}
+            dealAmount={selectedDeal.amount}
             onSave={handleModalSave}
             onCreateRefinance={handleCreateRefinance}
           />

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -22,10 +22,18 @@ interface BackgroundDetailsModalProps {
     credit: boolean;
   };
   onStepComplete: (step: string) => void;
+  initialStep?: string;
 }
 
-export function BackgroundDetailsModal({ open, onOpenChange, steps, onStepComplete }: BackgroundDetailsModalProps) {
+export function BackgroundDetailsModal({ open, onOpenChange, steps, onStepComplete, initialStep }: BackgroundDetailsModalProps) {
   const [activeTab, setActiveTab] = useState("personal");
+
+  // Navigate to initial step when modal opens
+  useEffect(() => {
+    if (open && initialStep) {
+      setActiveTab(initialStep);
+    }
+  }, [open, initialStep]);
   const [formData, setFormData] = useState({
     // Personal
     title: '',

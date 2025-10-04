@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { HelpModal, HelpButton } from "@/components/HelpModal";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -14,6 +15,14 @@ interface BridgingFinanceModalProps {
 }
 
 export function BridgingFinanceModal({ formData, onFormDataChange, onAutoRefinance }: BridgingFinanceModalProps) {
+  const [showHelp, setShowHelp] = useState(false);
+  const [helpContent, setHelpContent] = useState({ title: '', content: '' });
+
+  const showHelpModal = (title: string, content: string) => {
+    setHelpContent({ title, content });
+    setShowHelp(true);
+  };
+
   const handleFieldChange = (field: string, value: string) => {
     const newData = { ...formData, [field]: value };
     onFormDataChange(newData);
@@ -106,7 +115,13 @@ export function BridgingFinanceModal({ formData, onFormDataChange, onAutoRefinan
         <CardContent className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="loanAmount">Loan Amount (£)</Label>
+              <div className="flex items-center space-x-2">
+                <Label htmlFor="loanAmount">Loan Amount (£)</Label>
+                <HelpButton onClick={() => showHelpModal(
+                  'Loan Amount',
+                  'The total amount you wish to borrow. This should cover your property purchase (if applicable), any refurbishment costs, and associated fees. Most bridging lenders will lend up to 75% of the property value (LTV).'
+                )} />
+              </div>
               <Input
                 id="loanAmount"
                 type="number"
@@ -220,7 +235,13 @@ export function BridgingFinanceModal({ formData, onFormDataChange, onAutoRefinan
 
           {(formData.bridgingPurpose === 'refurbishment' || formData.bridgingPurpose?.includes('development')) && (
             <div className="space-y-2">
-              <Label htmlFor="gdv">Gross Development Value - GDV (£)</Label>
+              <div className="flex items-center space-x-2">
+                <Label htmlFor="gdv">Gross Development Value - GDV (£)</Label>
+                <HelpButton onClick={() => showHelpModal(
+                  'Gross Development Value (GDV)',
+                  'GDV is the estimated market value of the property after all refurbishment works or development are completed. Lenders use this figure to calculate your maximum loan amount and assess the viability of your project.'
+                )} />
+              </div>
               <Input
                 id="gdv"
                 type="number"
@@ -349,6 +370,13 @@ export function BridgingFinanceModal({ formData, onFormDataChange, onAutoRefinan
           </CardContent>
         </Card>
       )}
+
+      <HelpModal
+        open={showHelp}
+        onOpenChange={setShowHelp}
+        title={helpContent.title}
+        content={helpContent.content}
+      />
     </div>
   );
 }

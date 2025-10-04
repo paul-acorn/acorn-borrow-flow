@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { HelpModal, HelpButton } from "@/components/HelpModal";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -13,6 +14,14 @@ interface BusinessLoanModalProps {
 }
 
 export function BusinessLoanModal({ formData, onFormDataChange }: BusinessLoanModalProps) {
+  const [showHelp, setShowHelp] = useState(false);
+  const [helpContent, setHelpContent] = useState({ title: '', content: '' });
+
+  const showHelpModal = (title: string, content: string) => {
+    setHelpContent({ title, content });
+    setShowHelp(true);
+  };
+
   const handleFieldChange = (field: string, value: string) => {
     const newData = { ...formData, [field]: value };
     onFormDataChange(newData);
@@ -307,10 +316,17 @@ export function BusinessLoanModal({ formData, onFormDataChange }: BusinessLoanMo
                 <RadioGroupItem value="no" id="guarantees-no" />
                 <Label htmlFor="guarantees-no">No</Label>
               </div>
-            </RadioGroup>
+          </RadioGroup>
           </div>
         </CardContent>
       </Card>
+
+      <HelpModal
+        open={showHelp}
+        onOpenChange={setShowHelp}
+        title={helpContent.title}
+        content={helpContent.content}
+      />
     </div>
   );
 }

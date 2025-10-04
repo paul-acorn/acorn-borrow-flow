@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { HelpModal, HelpButton } from "@/components/HelpModal";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -14,6 +15,14 @@ interface DevelopmentFinanceModalProps {
 }
 
 export function DevelopmentFinanceModal({ formData, onFormDataChange, onAutoRefinance }: DevelopmentFinanceModalProps) {
+  const [showHelp, setShowHelp] = useState(false);
+  const [helpContent, setHelpContent] = useState({ title: '', content: '' });
+
+  const showHelpModal = (title: string, content: string) => {
+    setHelpContent({ title, content });
+    setShowHelp(true);
+  };
+
   const handleFieldChange = (field: string, value: string) => {
     const newData = { ...formData, [field]: value };
     onFormDataChange(newData);
@@ -366,6 +375,13 @@ export function DevelopmentFinanceModal({ formData, onFormDataChange, onAutoRefi
           </CardContent>
         </Card>
       )}
+
+      <HelpModal
+        open={showHelp}
+        onOpenChange={setShowHelp}
+        title={helpContent.title}
+        content={helpContent.content}
+      />
     </div>
   );
 }

@@ -13,12 +13,24 @@ interface LoanDetailsModalProps {
   onOpenChange: (open: boolean) => void;
   dealType: string;
   dealName: string;
+  dealAmount?: number;
   onSave: (data: any) => void;
   onCreateRefinance?: (refinanceData: any) => void;
 }
 
-export function LoanDetailsModal({ open, onOpenChange, dealType, dealName, onSave, onCreateRefinance }: LoanDetailsModalProps) {
-  const [formData, setFormData] = useState({});
+export function LoanDetailsModal({ open, onOpenChange, dealType, dealName, dealAmount, onSave, onCreateRefinance }: LoanDetailsModalProps) {
+  const [formData, setFormData] = useState<any>({});
+
+  // Initialize form data with deal amount when modal opens
+  useState(() => {
+    if (open && dealAmount) {
+      setFormData((prev: any) => ({
+        ...prev,
+        loanAmount: dealAmount,
+        amount: dealAmount,
+      }));
+    }
+  });
   const { toast } = useToast();
 
   const handleSave = () => {
@@ -46,7 +58,12 @@ export function LoanDetailsModal({ open, onOpenChange, dealType, dealName, onSav
 
   const renderLoanTypeModal = () => {
     const props = {
-      formData: { ...formData, dealName },
+      formData: { 
+        ...formData, 
+        dealName,
+        loanAmount: formData.loanAmount || dealAmount,
+        amount: formData.amount || dealAmount,
+      },
       onFormDataChange: setFormData
     };
 
