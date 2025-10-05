@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
@@ -20,18 +20,20 @@ interface LoanDetailsModalProps {
 
 export function LoanDetailsModal({ open, onOpenChange, dealType, dealName, dealAmount, onSave, onCreateRefinance }: LoanDetailsModalProps) {
   const [formData, setFormData] = useState<any>({});
+  const { toast } = useToast();
 
-  // Initialize form data with deal amount when modal opens
-  useState(() => {
+  // Reset and initialize form data when modal opens or deal changes
+  useEffect(() => {
     if (open && dealAmount) {
-      setFormData((prev: any) => ({
-        ...prev,
+      setFormData({
         loanAmount: dealAmount,
         amount: dealAmount,
-      }));
+      });
+    } else if (!open) {
+      // Reset formData when modal closes
+      setFormData({});
     }
-  });
-  const { toast } = useToast();
+  }, [open, dealAmount, dealName]);
 
   const handleSave = () => {
     onSave({ ...formData, dealType, dealName });
