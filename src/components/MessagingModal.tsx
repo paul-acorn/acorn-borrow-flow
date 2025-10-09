@@ -1,8 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -10,129 +8,166 @@ import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useToast } from "@/hooks/use-toast";
 import { MessageCircle, Send, FileText, AlertCircle, CheckCircle, Clock } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 
 interface MessagingModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  dealId: string;
   dealName: string;
-  onSave: (data: any) => void;
+  onSave?: (data: any) => void;
 }
 
 interface Message {
   id: string;
-  sender: 'client' | 'broker';
+  sender: string;
   content: string;
-  timestamp: string;
-  type: 'message' | 'request' | 'update';
+  created_at: string;
+  type: string;
 }
 
 interface Requirement {
   id: string;
   title: string;
-  description: string;
-  status: 'pending' | 'submitted' | 'approved' | 'rejected';
-  dueDate: string;
-  priority: 'low' | 'medium' | 'high';
+  description: string | null;
+  status: string;
+  due_date: string | null;
+  priority: string;
 }
 
-const mockMessages: Message[] = [
-  {
-    id: '1',
-    sender: 'broker',
-    content: 'Welcome to your application for the High Street Property Purchase. I\'m your dedicated broker and will be guiding you through the process.',
-    timestamp: '2024-01-15 09:00',
-    type: 'message'
-  },
-  {
-    id: '2',
-    sender: 'broker',
-    content: 'We need your latest bank statements to proceed with the underwriting process.',
-    timestamp: '2024-01-15 10:30',
-    type: 'request'
-  },
-  {
-    id: '3',
-    sender: 'client',
-    content: 'Hi, thanks for the update. I\'ve uploaded the bank statements in the documents section. Please let me know if you need anything else.',
-    timestamp: '2024-01-15 14:20',
-    type: 'message'
-  },
-  {
-    id: '4',
-    sender: 'broker',
-    content: 'Perfect! Bank statements received and being reviewed. The lender has responded positively to the initial submission.',
-    timestamp: '2024-01-16 11:15',
-    type: 'update'
-  }
-];
-
-const mockRequirements: Requirement[] = [
-  {
-    id: '1',
-    title: 'Bank Statements (3 months)',
-    description: 'Please provide your personal bank statements for the last 3 months',
-    status: 'approved',
-    dueDate: '2024-01-20',
-    priority: 'high'
-  },
-  {
-    id: '2',
-    title: 'Property Valuation Report',
-    description: 'Professional valuation report for the subject property',
-    status: 'pending',
-    dueDate: '2024-01-25',
-    priority: 'high'
-  },
-  {
-    id: '3',
-    title: 'Tax Returns (2 years)',
-    description: 'SA302 forms or tax return summaries for the last 2 years',
-    status: 'submitted',
-    dueDate: '2024-01-22',
-    priority: 'medium'
-  },
-  {
-    id: '4',
-    title: 'Building Insurance Quote',
-    description: 'Insurance quote for the property covering the loan amount',
-    status: 'pending',
-    dueDate: '2024-01-28',
-    priority: 'low'
-  }
-];
-
-export function MessagingModal({ open, onOpenChange, dealName, onSave }: MessagingModalProps) {
-  const [messages, setMessages] = useState<Message[]>(mockMessages);
-  const [requirements, setRequirements] = useState<Requirement[]>(mockRequirements);
+export function MessagingModal({ open, onOpenChange, dealId, dealName, onSave }: MessagingModalProps) {
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [requirements, setRequirements] = useState<Requirement[]>([]);
   const [newMessage, setNewMessage] = useState('');
+  const [loading, setLoading] = useState(true);
   const { toast } = useToast();
 
-  const sendMessage = () => {
-    if (!newMessage.trim()) return;
+  // Fetch messages and requirements
+  useEffect(() => {
+    if (!open || !dealId) return;
 
-    const message: Message = {
-      id: Date.now().toString(),
-      sender: 'client',
-      content: newMessage,
-      timestamp: new Date().toLocaleString(),
-      type: 'message'
+    const fetchData = async () => {
+      setLoading(true);
+      
+      // Fetch messages
+      const { data: messagesData, error: messagesError } = await supabase
+        .from('messages')
+        .select('*')
+        .eq('deal_id', dealId)
+        .order('created_at', { ascending: true });
+
+      if (messagesError) {
+        console.error('Error fetching messages:', messagesError);
+        toast({
+          title: "Error",
+          description: "Failed to load messages.",
+          variant: "destructive",
+        });
+      } else {
+        setMessages(messagesData || []);
+      }
+
+      // Fetch requirements
+      const { data: requirementsData, error: requirementsError } = await supabase
+        .from('requirements')
+        .select('*')
+        .eq('deal_id', dealId)
+        .order('created_at', { ascending: true });
+
+      if (requirementsError) {
+        console.error('Error fetching requirements:', requirementsError);
+        toast({
+          title: "Error",
+          description: "Failed to load requirements.",
+          variant: "destructive",
+        });
+      } else {
+        setRequirements(requirementsData || []);
+      }
+
+      setLoading(false);
     };
 
-    setMessages(prev => [...prev, message]);
-    setNewMessage('');
-    
-    toast({
-      title: "Message Sent",
-      description: "Your message has been sent to your broker team.",
-    });
+    fetchData();
+  }, [open, dealId, toast]);
+
+  // Set up realtime subscriptions
+  useEffect(() => {
+    if (!open || !dealId) return;
+
+    const channel = supabase
+      .channel('deal-updates')
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'messages',
+          filter: `deal_id=eq.${dealId}`,
+        },
+        (payload) => {
+          setMessages((prev) => [...prev, payload.new as Message]);
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'requirements',
+          filter: `deal_id=eq.${dealId}`,
+        },
+        (payload) => {
+          if (payload.eventType === 'INSERT') {
+            setRequirements((prev) => [...prev, payload.new as Requirement]);
+          } else if (payload.eventType === 'UPDATE') {
+            setRequirements((prev) =>
+              prev.map((req) => (req.id === payload.new.id ? (payload.new as Requirement) : req))
+            );
+          } else if (payload.eventType === 'DELETE') {
+            setRequirements((prev) => prev.filter((req) => req.id !== payload.old.id));
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [open, dealId]);
+
+  const sendMessage = async () => {
+    if (!newMessage.trim()) return;
+
+    const { error } = await supabase
+      .from('messages')
+      .insert({
+        deal_id: dealId,
+        sender: 'client',
+        content: newMessage,
+        type: 'message',
+      });
+
+    if (error) {
+      console.error('Error sending message:', error);
+      toast({
+        title: "Error",
+        description: "Failed to send message. Please try again.",
+        variant: "destructive",
+      });
+    } else {
+      setNewMessage('');
+      toast({
+        title: "Message Sent",
+        description: "Your message has been sent to your broker team.",
+      });
+    }
   };
 
   const handleSave = () => {
-    onSave({ messages, requirements });
-    toast({
-      title: "Communication Saved",
-      description: "Your communication history has been saved.",
-    });
+    if (onSave) {
+      onSave({ messages, requirements });
+    }
     onOpenChange(false);
   };
 
@@ -204,33 +239,39 @@ export function MessagingModal({ open, onOpenChange, dealName, onSave }: Messagi
                 <CardContent>
                   <ScrollArea className="h-96 mb-4">
                     <div className="space-y-4">
-                      {messages.map((message) => (
-                        <div
-                          key={message.id}
-                          className={`flex ${message.sender === 'client' ? 'justify-end' : 'justify-start'}`}
-                        >
+                      {loading ? (
+                        <div className="text-center text-muted-foreground">Loading messages...</div>
+                      ) : messages.length === 0 ? (
+                        <div className="text-center text-muted-foreground">No messages yet. Start the conversation!</div>
+                      ) : (
+                        messages.map((message) => (
                           <div
-                            className={`max-w-[70%] p-3 rounded-lg ${
-                              message.sender === 'client'
-                                ? 'bg-primary text-white'
-                                : message.type === 'request'
-                                ? 'bg-yellow-100 border border-yellow-300'
-                                : message.type === 'update'
-                                ? 'bg-green-100 border border-green-300'
-                                : 'bg-gray-100'
-                            }`}
+                            key={message.id}
+                            className={`flex ${message.sender === 'client' ? 'justify-end' : 'justify-start'}`}
                           >
-                            <div className="text-sm">{message.content}</div>
                             <div
-                              className={`text-xs mt-2 ${
-                                message.sender === 'client' ? 'text-white/70' : 'text-gray-500'
+                              className={`max-w-[70%] p-3 rounded-lg ${
+                                message.sender === 'client'
+                                  ? 'bg-primary text-white'
+                                  : message.type === 'request'
+                                  ? 'bg-yellow-100 border border-yellow-300'
+                                  : message.type === 'update'
+                                  ? 'bg-green-100 border border-green-300'
+                                  : 'bg-gray-100'
                               }`}
                             >
-                              {message.sender === 'client' ? 'You' : 'Broker'} • {message.timestamp}
+                              <div className="text-sm">{message.content}</div>
+                              <div
+                                className={`text-xs mt-2 ${
+                                  message.sender === 'client' ? 'text-white/70' : 'text-gray-500'
+                                }`}
+                              >
+                                {message.sender === 'client' ? 'You' : 'Broker'} • {new Date(message.created_at).toLocaleString()}
+                              </div>
                             </div>
                           </div>
-                        </div>
-                      ))}
+                        ))
+                      )}
                     </div>
                   </ScrollArea>
 
@@ -269,42 +310,48 @@ export function MessagingModal({ open, onOpenChange, dealName, onSave }: Messagi
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4">
-                    {requirements.map((requirement) => (
-                      <div key={requirement.id} className="p-4 border rounded-lg">
-                        <div className="flex items-center justify-between mb-3">
-                          <div className="flex items-center space-x-3">
-                            {getStatusIcon(requirement.status)}
-                            <div>
-                              <h4 className="font-medium">{requirement.title}</h4>
-                              <p className="text-sm text-muted-foreground">
-                                Due: {requirement.dueDate}
-                              </p>
+                    {loading ? (
+                      <div className="text-center text-muted-foreground">Loading requirements...</div>
+                    ) : requirements.length === 0 ? (
+                      <div className="text-center text-muted-foreground">No requirements yet.</div>
+                    ) : (
+                      requirements.map((requirement) => (
+                        <div key={requirement.id} className="p-4 border rounded-lg">
+                          <div className="flex items-center justify-between mb-3">
+                            <div className="flex items-center space-x-3">
+                              {getStatusIcon(requirement.status)}
+                              <div>
+                                <h4 className="font-medium">{requirement.title}</h4>
+                                <p className="text-sm text-muted-foreground">
+                                  Due: {requirement.due_date ? new Date(requirement.due_date).toLocaleDateString() : 'N/A'}
+                                </p>
+                              </div>
+                            </div>
+                            <div className="flex items-center space-x-2">
+                              {getPriorityBadge(requirement.priority)}
+                              {getStatusBadge(requirement.status)}
                             </div>
                           </div>
-                          <div className="flex items-center space-x-2">
-                            {getPriorityBadge(requirement.priority)}
-                            {getStatusBadge(requirement.status)}
-                          </div>
+                          <p className="text-sm text-muted-foreground mb-3">
+                            {requirement.description || 'No description provided'}
+                          </p>
+                          {requirement.status === 'pending' && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => {
+                                toast({
+                                  title: "Redirecting",
+                                  description: "Opening document upload section...",
+                                });
+                              }}
+                            >
+                              Upload Document
+                            </Button>
+                          )}
                         </div>
-                        <p className="text-sm text-muted-foreground mb-3">
-                          {requirement.description}
-                        </p>
-                        {requirement.status === 'pending' && (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => {
-                              toast({
-                                title: "Redirecting",
-                                description: "Opening document upload section...",
-                              });
-                            }}
-                          >
-                            Upload Document
-                          </Button>
-                        )}
-                      </div>
-                    ))}
+                      ))
+                    )}
                   </div>
                 </CardContent>
               </Card>

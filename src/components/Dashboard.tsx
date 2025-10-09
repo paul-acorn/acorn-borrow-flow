@@ -381,6 +381,7 @@ export function Dashboard() {
           <MessagingModal
             open={showMessagingModal}
             onOpenChange={setShowMessagingModal}
+            dealId={selectedDeal.id}
             dealName={selectedDeal.name}
             onSave={handleModalSave}
           />
