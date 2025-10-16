@@ -29,6 +29,7 @@ import {
   FileText
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 interface Deal {
   id: string;
@@ -76,18 +77,53 @@ export function Dashboard() {
 
   const isBackgroundComplete = Object.values(backgroundSteps).every(Boolean);
 
-  const handleCreateDeal = (dealData: { name: string; amount: number; type: Deal['type'] }) => {
+  const handleCreateDeal = async (dealData: { name: string; amount: number; type: Deal['type'] }) => {
     const newDeal: Deal = {
       id: Date.now().toString(),
       ...dealData,
       status: 'draft'
     };
+    
+    try {
+      // Sync to HubSpot
+      const { data, error } = await supabase.functions.invoke('hubspot', {
+        body: {
+          action: 'createDeal',
+          properties: {
+            dealname: dealData.name,
+            amount: dealData.amount.toString(),
+            dealstage: 'appointmentscheduled',
+            pipeline: 'default',
+            loan_type: dealData.type
+          }
+        }
+      });
+
+      if (error) {
+        console.error('HubSpot sync error:', error);
+        toast({
+          title: "Application Created",
+          description: `${dealData.name} created, but HubSpot sync failed.`,
+          variant: "destructive"
+        });
+      } else {
+        console.log('Deal synced to HubSpot:', data);
+        toast({
+          title: "Application Created & Synced",
+          description: `${dealData.name} has been created and synced to HubSpot.`,
+        });
+      }
+    } catch (error) {
+      console.error('Error syncing to HubSpot:', error);
+      toast({
+        title: "Application Created",
+        description: `${dealData.name} created, but HubSpot sync failed.`,
+        variant: "destructive"
+      });
+    }
+    
     setDeals([...deals, newDeal]);
     setShowDealModal(false);
-    toast({
-      title: "Application Created",
-      description: `${dealData.name} has been created successfully.`,
-    });
   };
 
   const handleCreateRefinance = (refinanceData: any) => {
