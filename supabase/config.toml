@@ -1,1 +1,7 @@
 project_id = "hooffptvzsvwukvstjai"
+
+[functions.google-drive]
+verify_jwt = true
+
+[functions.hubspot]
+verify_jwt = true
