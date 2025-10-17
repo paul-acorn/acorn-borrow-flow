@@ -93,8 +93,7 @@ export function Dashboard() {
             dealname: dealData.name,
             amount: dealData.amount.toString(),
             dealstage: 'appointmentscheduled',
-            pipeline: 'default',
-            loan_type: dealData.type
+            pipeline: 'default'
           }
         }
       });
