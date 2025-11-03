@@ -4,63 +4,121 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useToast } from "@/hooks/use-toast";
 import { Eye, EyeOff, ArrowLeft } from "lucide-react";
 import { TermsPrivacyModal } from "@/components/TermsPrivacyModal";
+import { useAuth } from "@/hooks/useAuth";
+import { toast } from "sonner";
+import { z } from "zod";
+
+const emailSchema = z.string().email("Invalid email address");
+const passwordSchema = z.string().min(6, "Password must be at least 6 characters");
+const nameSchema = z.string().min(1, "This field is required");
 
 interface AuthFormProps {
-  onLogin: () => void;
   onBack: () => void;
 }
 
-export function AuthForm({ onLogin, onBack }: AuthFormProps) {
+export function AuthForm({ onBack }: AuthFormProps) {
+  const { signIn, signUp } = useAuth();
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [showTermsModal, setShowTermsModal] = useState(false);
   const [termsAccepted, setTermsAccepted] = useState(false);
   const [privacyAccepted, setPrivacyAccepted] = useState(false);
-  const { toast } = useToast();
+  
+  const [loginEmail, setLoginEmail] = useState("");
+  const [loginPassword, setLoginPassword] = useState("");
+  const [registerEmail, setRegisterEmail] = useState("");
+  const [registerPassword, setRegisterPassword] = useState("");
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
+  const [invitationCode, setInvitationCode] = useState("");
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     
-    // Simulate login process
-    setTimeout(() => {
+    try {
+      emailSchema.parse(loginEmail);
+      passwordSchema.parse(loginPassword);
+
+      const { error } = await signIn(loginEmail, loginPassword);
+      
+      if (error) {
+        toast.error("Login failed", {
+          description: error.message || "Invalid email or password"
+        });
+      } else {
+        toast.success("Login successful!", {
+          description: "Welcome back to Acorn Finance"
+        });
+      }
+    } catch (err) {
+      if (err instanceof z.ZodError) {
+        toast.error("Validation error", {
+          description: err.errors[0].message
+        });
+      } else {
+        toast.error("An error occurred", {
+          description: "Please try again"
+        });
+      }
+    } finally {
       setIsLoading(false);
-      toast({
-        title: "Login Successful",
-        description: "Welcome to Acorn Finance",
-      });
-      onLogin();
-    }, 1500);
+    }
   };
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!termsAccepted || !privacyAccepted) {
-      toast({
-        title: "Terms Required",
-        description: "Please accept the Terms and Privacy Policy to continue",
-        variant: "destructive"
+      toast.error("Terms Required", {
+        description: "Please accept the Terms and Privacy Policy to continue"
       });
       return;
     }
     
     setIsLoading(true);
     
-    // Simulate registration
-    setTimeout(() => {
+    try {
+      emailSchema.parse(registerEmail);
+      passwordSchema.parse(registerPassword);
+      nameSchema.parse(firstName);
+      nameSchema.parse(lastName);
+
+      const { error } = await signUp(
+        registerEmail, 
+        registerPassword, 
+        firstName, 
+        lastName,
+        invitationCode || undefined
+      );
+      
+      if (error) {
+        toast.error("Registration failed", {
+          description: error.message || "Please try again"
+        });
+      } else {
+        toast.success("Registration successful!", {
+          description: "Please check your email to verify your account"
+        });
+      }
+    } catch (err) {
+      if (err instanceof z.ZodError) {
+        toast.error("Validation error", {
+          description: err.errors[0].message
+        });
+      } else {
+        toast.error("An error occurred", {
+          description: "Please try again"
+        });
+      }
+    } finally {
       setIsLoading(false);
-      toast({
-        title: "Registration Successful", 
-        description: "Please check your email for verification instructions",
-      });
-    }, 1500);
+    }
   };
 
-  const handleTermsAccept = (terms: boolean, privacy: boolean, marketing: boolean) => {
+  const handleTermsAccept = (terms: boolean, privacy: boolean) => {
     setTermsAccepted(terms);
     setPrivacyAccepted(privacy);
   };
@@ -68,7 +126,6 @@ export function AuthForm({ onLogin, onBack }: AuthFormProps) {
   return (
     <div className="min-h-screen bg-gradient-surface flex items-center justify-center p-4">
       <div className="w-full max-w-md">
-        {/* Back Button */}
         <Button 
           variant="ghost" 
           size="sm" 
@@ -105,6 +162,8 @@ export function AuthForm({ onLogin, onBack }: AuthFormProps) {
                       id="email"
                       type="email"
                       placeholder="your@email.com"
+                      value={loginEmail}
+                      onChange={(e) => setLoginEmail(e.target.value)}
                       required
                       className="h-11"
                     />
@@ -117,6 +176,8 @@ export function AuthForm({ onLogin, onBack }: AuthFormProps) {
                         id="password"
                         type={showPassword ? "text" : "password"}
                         placeholder="Enter password"
+                        value={loginPassword}
+                        onChange={(e) => setLoginPassword(e.target.value)}
                         required
                         className="h-11 pr-10"
                       />
@@ -156,6 +217,8 @@ export function AuthForm({ onLogin, onBack }: AuthFormProps) {
                       <Input 
                         id="firstName"
                         placeholder="John"
+                        value={firstName}
+                        onChange={(e) => setFirstName(e.target.value)}
                         required
                         className="h-11"
                       />
@@ -165,6 +228,8 @@ export function AuthForm({ onLogin, onBack }: AuthFormProps) {
                       <Input 
                         id="lastName"
                         placeholder="Smith"
+                        value={lastName}
+                        onChange={(e) => setLastName(e.target.value)}
                         required
                         className="h-11"
                       />
@@ -177,11 +242,24 @@ export function AuthForm({ onLogin, onBack }: AuthFormProps) {
                       id="regEmail"
                       type="email"
                       placeholder="your@email.com"
+                      value={registerEmail}
+                      onChange={(e) => setRegisterEmail(e.target.value)}
                       required
                       className="h-11"
                     />
                   </div>
 
+                  <div className="space-y-2">
+                    <Label htmlFor="invitationCode">Invitation Code (Optional)</Label>
+                    <Input 
+                      id="invitationCode"
+                      type="text"
+                      placeholder="Enter code if you have one"
+                      value={invitationCode}
+                      onChange={(e) => setInvitationCode(e.target.value.toUpperCase())}
+                      className="h-11"
+                    />
+                  </div>
 
                   <div className="space-y-2">
                     <Label htmlFor="regPassword">Password</Label>
@@ -189,7 +267,9 @@ export function AuthForm({ onLogin, onBack }: AuthFormProps) {
                       <Input 
                         id="regPassword"
                         type={showPassword ? "text" : "password"}
-                        placeholder="Create password"
+                        placeholder="Create password (min 6 characters)"
+                        value={registerPassword}
+                        onChange={(e) => setRegisterPassword(e.target.value)}
                         required
                         className="h-11 pr-10"
                       />
