@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -29,6 +30,7 @@ import {
   FileText
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 
 interface Deal {
@@ -65,8 +67,26 @@ export function Dashboard() {
     financial: false,
     credit: false,
   });
-  const [deals, setDeals] = useState<Deal[]>([]);
   const { toast } = useToast();
+  const { user, signOut } = useAuth();
+  const queryClient = useQueryClient();
+
+  // Fetch deals from database
+  const { data: deals = [], isLoading: isLoadingDeals } = useQuery({
+    queryKey: ['deals', user?.id],
+    queryFn: async () => {
+      if (!user) return [];
+      
+      const { data, error } = await supabase
+        .from('deals')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      return data as Deal[];
+    },
+    enabled: !!user,
+  });
 
   const backgroundStepConfig = [
     { key: 'personal', label: 'Personal Info', icon: User, description: 'Identity & personal details' },
@@ -78,15 +98,41 @@ export function Dashboard() {
   const isBackgroundComplete = Object.values(backgroundSteps).every(Boolean);
 
   const handleCreateDeal = async (dealData: { name: string; amount: number; type: Deal['type'] }) => {
-    const newDeal: Deal = {
-      id: Date.now().toString(),
-      ...dealData,
-      status: 'draft'
-    };
-    
+    if (!user) return;
+
     try {
-      // Sync to HubSpot
-      const { data, error } = await supabase.functions.invoke('hubspot', {
+      // Insert deal into database
+      const { data: newDeal, error: dealError } = await supabase
+        .from('deals')
+        .insert({
+          user_id: user.id,
+          created_by_user_id: user.id,
+          name: dealData.name,
+          amount: dealData.amount,
+          type: dealData.type,
+          status: 'draft'
+        })
+        .select()
+        .single();
+
+      if (dealError) throw dealError;
+
+      // Add current user as deal participant
+      const { error: participantError } = await supabase
+        .from('deal_participants')
+        .insert({
+          deal_id: newDeal.id,
+          user_id: user.id,
+          role: 'client'
+        });
+
+      if (participantError) throw participantError;
+
+      // Refresh deals list
+      queryClient.invalidateQueries({ queryKey: ['deals', user.id] });
+
+      // Sync to HubSpot (non-blocking)
+      supabase.functions.invoke('hubspot', {
         body: {
           action: 'createDeal',
           properties: {
@@ -96,48 +142,72 @@ export function Dashboard() {
             pipeline: 'default'
           }
         }
+      }).then(({ error }) => {
+        if (error) {
+          console.error('HubSpot sync error:', error);
+        }
       });
 
-      if (error) {
-        console.error('HubSpot sync error:', error);
-        toast({
-          title: "Application Created",
-          description: `${dealData.name} created, but HubSpot sync failed.`,
-          variant: "destructive"
-        });
-      } else {
-        console.log('Deal synced to HubSpot:', data);
-        toast({
-          title: "Application Created & Synced",
-          description: `${dealData.name} has been created and synced to HubSpot.`,
-        });
-      }
-    } catch (error) {
-      console.error('Error syncing to HubSpot:', error);
       toast({
         title: "Application Created",
-        description: `${dealData.name} created, but HubSpot sync failed.`,
+        description: `${dealData.name} has been created successfully.`,
+      });
+      
+      setShowDealModal(false);
+    } catch (error) {
+      console.error('Error creating deal:', error);
+      toast({
+        title: "Error",
+        description: "Failed to create application. Please try again.",
         variant: "destructive"
       });
     }
-    
-    setDeals([...deals, newDeal]);
-    setShowDealModal(false);
   };
 
-  const handleCreateRefinance = (refinanceData: any) => {
-    const refinanceDeal: Deal = {
-      id: Date.now().toString() + '_refinance',
-      name: refinanceData.name,
-      amount: refinanceData.amount,
-      type: 'mortgage',
-      status: 'draft'
-    };
-    setDeals(prev => [...prev, refinanceDeal]);
-    toast({
-      title: "Refinance Application Created",
-      description: "A mortgage application has been created for your bridging exit strategy.",
-    });
+  const handleCreateRefinance = async (refinanceData: any) => {
+    if (!user) return;
+
+    try {
+      // Insert refinance deal into database
+      const { data: newDeal, error: dealError } = await supabase
+        .from('deals')
+        .insert({
+          user_id: user.id,
+          created_by_user_id: user.id,
+          name: refinanceData.name,
+          amount: refinanceData.amount,
+          type: 'mortgage',
+          status: 'draft'
+        })
+        .select()
+        .single();
+
+      if (dealError) throw dealError;
+
+      // Add current user as deal participant
+      await supabase
+        .from('deal_participants')
+        .insert({
+          deal_id: newDeal.id,
+          user_id: user.id,
+          role: 'client'
+        });
+
+      // Refresh deals list
+      queryClient.invalidateQueries({ queryKey: ['deals', user.id] });
+
+      toast({
+        title: "Refinance Application Created",
+        description: "A mortgage application has been created for your bridging exit strategy.",
+      });
+    } catch (error) {
+      console.error('Error creating refinance deal:', error);
+      toast({
+        title: "Error",
+        description: "Failed to create refinance application.",
+        variant: "destructive"
+      });
+    }
   };
 
   const openDealModal = (deal: Deal, modalType: string) => {
@@ -183,7 +253,12 @@ export function Dashboard() {
             <h1 className="text-xl font-semibold text-navy">
               Finance Dashboard
             </h1>
-            <Button variant="ghost" size="sm" className="text-muted-foreground">
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="text-muted-foreground"
+              onClick={() => signOut()}
+            >
               <LogOut className="w-4 h-4 mr-2" />
               Sign Out
             </Button>
@@ -259,7 +334,14 @@ export function Dashboard() {
             </Button>
           </div>
 
-          {deals.length === 0 ? (
+          {isLoadingDeals ? (
+            <Card className="text-center p-12">
+              <div className="space-y-4">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
+                <p className="text-muted-foreground">Loading applications...</p>
+              </div>
+            </Card>
+          ) : deals.length === 0 ? (
             <Card className="text-center p-12 border-dashed border-2 border-border">
               <div className="space-y-4">
                 <Plus className="w-12 h-12 mx-auto text-muted-foreground" />

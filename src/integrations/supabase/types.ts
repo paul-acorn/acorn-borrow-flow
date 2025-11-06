@@ -51,26 +51,35 @@ export type Database = {
       }
       deals: {
         Row: {
+          amount: number | null
           created_at: string
           created_by_user_id: string | null
           id: string
           name: string
+          status: Database["public"]["Enums"]["deal_status"]
+          type: Database["public"]["Enums"]["loan_type"]
           updated_at: string
           user_id: string
         }
         Insert: {
+          amount?: number | null
           created_at?: string
           created_by_user_id?: string | null
           id?: string
           name: string
+          status?: Database["public"]["Enums"]["deal_status"]
+          type: Database["public"]["Enums"]["loan_type"]
           updated_at?: string
           user_id: string
         }
         Update: {
+          amount?: number | null
           created_at?: string
           created_by_user_id?: string | null
           id?: string
           name?: string
+          status?: Database["public"]["Enums"]["deal_status"]
+          type?: Database["public"]["Enums"]["loan_type"]
           updated_at?: string
           user_id?: string
         }
@@ -249,6 +258,21 @@ export type Database = {
     }
     Enums: {
       app_role: "client" | "team_member" | "admin"
+      deal_status:
+        | "draft"
+        | "in_progress"
+        | "submitted"
+        | "approved"
+        | "declined"
+      loan_type:
+        | "bridging"
+        | "mortgage"
+        | "development"
+        | "business"
+        | "factoring"
+        | "asset"
+        | "mca"
+        | "equity"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -377,6 +401,23 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["client", "team_member", "admin"],
+      deal_status: [
+        "draft",
+        "in_progress",
+        "submitted",
+        "approved",
+        "declined",
+      ],
+      loan_type: [
+        "bridging",
+        "mortgage",
+        "development",
+        "business",
+        "factoring",
+        "asset",
+        "mca",
+        "equity",
+      ],
     },
   },
 } as const
