@@ -1,8 +1,9 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { BackgroundDetailsModal } from "@/components/BackgroundDetailsModal";
 import { DealCreationModal } from "@/components/DealCreationModal";
 import { LoanDetailsModal } from "@/components/LoanDetailsModal";
@@ -61,6 +62,8 @@ export function Dashboard() {
   const [showDocumentUploadModal, setShowDocumentUploadModal] = useState(false);
   const [showMessagingModal, setShowMessagingModal] = useState(false);
   const [selectedDeal, setSelectedDeal] = useState<Deal | null>(null);
+  const [filterType, setFilterType] = useState<string>("all");
+  const [filterStatus, setFilterStatus] = useState<string>("all");
   const [backgroundSteps, setBackgroundSteps] = useState({
     personal: false,
     address: false,
@@ -86,6 +89,39 @@ export function Dashboard() {
       return data as Deal[];
     },
     enabled: !!user,
+  });
+
+  // Set up real-time subscription for deal updates
+  useEffect(() => {
+    if (!user) return;
+
+    const channel = supabase
+      .channel('deals-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'deals'
+        },
+        (payload) => {
+          console.log('Deal change received:', payload);
+          // Invalidate the deals query to refetch
+          queryClient.invalidateQueries({ queryKey: ['deals', user.id] });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user, queryClient]);
+
+  // Filter deals based on selected filters
+  const filteredDeals = deals.filter(deal => {
+    const typeMatch = filterType === "all" || deal.type === filterType;
+    const statusMatch = filterStatus === "all" || deal.status === filterStatus;
+    return typeMatch && statusMatch;
   });
 
   const backgroundStepConfig = [
@@ -322,16 +358,48 @@ export function Dashboard() {
 
         {/* Deals Section */}
         <div className="space-y-6">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <h2 className="text-2xl font-semibold text-navy">Your Applications</h2>
-            <Button 
-              onClick={() => setShowDealModal(true)}
-              className="bg-gradient-primary hover:opacity-90"
-              size="lg"
-            >
-              <Plus className="w-4 h-4 mr-2" />
-              New Application
-            </Button>
+            <div className="flex items-center gap-3 w-full sm:w-auto">
+              <Select value={filterType} onValueChange={setFilterType}>
+                <SelectTrigger className="w-full sm:w-[180px]">
+                  <SelectValue placeholder="Filter by type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Types</SelectItem>
+                  <SelectItem value="bridging">Bridging</SelectItem>
+                  <SelectItem value="mortgage">Mortgage</SelectItem>
+                  <SelectItem value="development">Development</SelectItem>
+                  <SelectItem value="business">Business</SelectItem>
+                  <SelectItem value="factoring">Factoring</SelectItem>
+                  <SelectItem value="asset">Asset</SelectItem>
+                  <SelectItem value="mca">MCA</SelectItem>
+                  <SelectItem value="equity">Equity Release</SelectItem>
+                </SelectContent>
+              </Select>
+
+              <Select value={filterStatus} onValueChange={setFilterStatus}>
+                <SelectTrigger className="w-full sm:w-[180px]">
+                  <SelectValue placeholder="Filter by status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Status</SelectItem>
+                  <SelectItem value="draft">Draft</SelectItem>
+                  <SelectItem value="submitted">Submitted</SelectItem>
+                  <SelectItem value="approved">Approved</SelectItem>
+                  <SelectItem value="declined">Declined</SelectItem>
+                </SelectContent>
+              </Select>
+
+              <Button 
+                onClick={() => setShowDealModal(true)}
+                className="bg-gradient-primary hover:opacity-90"
+                size="lg"
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                New Application
+              </Button>
+            </div>
           </div>
 
           {isLoadingDeals ? (
@@ -341,7 +409,8 @@ export function Dashboard() {
                 <p className="text-muted-foreground">Loading applications...</p>
               </div>
             </Card>
-          ) : deals.length === 0 ? (
+          ) : filteredDeals.length === 0 ? (
+            deals.length === 0 ? (
             <Card className="text-center p-12 border-dashed border-2 border-border">
               <div className="space-y-4">
                 <Plus className="w-12 h-12 mx-auto text-muted-foreground" />
@@ -360,9 +429,31 @@ export function Dashboard() {
                 </div>
               </div>
             </Card>
+            ) : (
+              <Card className="text-center p-12 border-dashed border-2 border-border">
+                <div className="space-y-4">
+                  <FileText className="w-12 h-12 mx-auto text-muted-foreground" />
+                  <div>
+                    <h3 className="text-lg font-medium text-navy mb-2">No Matching Applications</h3>
+                    <p className="text-muted-foreground mb-6">
+                      Try adjusting your filters to see more applications
+                    </p>
+                    <Button 
+                      onClick={() => {
+                        setFilterType("all");
+                        setFilterStatus("all");
+                      }}
+                      variant="outline"
+                    >
+                      Clear Filters
+                    </Button>
+                  </div>
+                </div>
+              </Card>
+            )
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {deals.map((deal) => {
+              {filteredDeals.map((deal) => {
                 const IconComponent = loanTypeIcons[deal.type];
                 return (
                   <Card key={deal.id} className="hover:shadow-lg transition-shadow">
