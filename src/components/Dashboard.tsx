@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -73,6 +73,7 @@ export function Dashboard() {
   const { toast } = useToast();
   const { user, signOut } = useAuth();
   const queryClient = useQueryClient();
+  const previousDealsRef = useRef<Deal[]>([]);
 
   // Fetch deals from database
   const { data: deals = [], isLoading: isLoadingDeals } = useQuery({
@@ -116,6 +117,26 @@ export function Dashboard() {
       supabase.removeChannel(channel);
     };
   }, [user, queryClient]);
+
+  // Track deal status changes and show toast notifications
+  useEffect(() => {
+    if (deals && previousDealsRef.current.length > 0) {
+      deals.forEach((currentDeal) => {
+        const previousDeal = previousDealsRef.current.find((d) => d.id === currentDeal.id);
+        
+        if (previousDeal && previousDeal.status !== currentDeal.status) {
+          toast({
+            title: "Deal Status Updated",
+            description: `"${currentDeal.name}" status changed from ${previousDeal.status} to ${currentDeal.status}`,
+          });
+        }
+      });
+    }
+    
+    if (deals) {
+      previousDealsRef.current = [...deals];
+    }
+  }, [deals, toast]);
 
   // Filter deals based on selected filters
   const filteredDeals = deals.filter(deal => {
