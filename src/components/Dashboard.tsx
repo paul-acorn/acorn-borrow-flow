@@ -10,6 +10,7 @@ import { LoanDetailsModal } from "@/components/LoanDetailsModal";
 import { PropertyDetailsModal } from "@/components/PropertyDetailsModal";
 import { DocumentUploadModal } from "@/components/DocumentUploadModal";
 import { MessagingModal } from "@/components/MessagingModal";
+import { NotificationCenter, type Notification as DealNotification } from "@/components/NotificationCenter";
 import { 
   User, 
   MapPin, 
@@ -74,6 +75,10 @@ export function Dashboard() {
   const { user, signOut } = useAuth();
   const queryClient = useQueryClient();
   const previousDealsRef = useRef<Deal[]>([]);
+  const [notifications, setNotifications] = useState<DealNotification[]>(() => {
+    const saved = localStorage.getItem('deal-notifications');
+    return saved ? JSON.parse(saved) : [];
+  });
 
   // Fetch deals from database
   const { data: deals = [], isLoading: isLoadingDeals } = useQuery({
@@ -118,6 +123,11 @@ export function Dashboard() {
     };
   }, [user, queryClient]);
 
+  // Save notifications to localStorage
+  useEffect(() => {
+    localStorage.setItem('deal-notifications', JSON.stringify(notifications));
+  }, [notifications]);
+
   // Track deal status changes and show toast notifications
   useEffect(() => {
     if (deals && previousDealsRef.current.length > 0) {
@@ -125,9 +135,19 @@ export function Dashboard() {
         const previousDeal = previousDealsRef.current.find((d) => d.id === currentDeal.id);
         
         if (previousDeal && previousDeal.status !== currentDeal.status) {
-          toast({
+          const notification: DealNotification = {
+            id: `${currentDeal.id}-${Date.now()}`,
             title: "Deal Status Updated",
             description: `"${currentDeal.name}" status changed from ${previousDeal.status} to ${currentDeal.status}`,
+            timestamp: new Date(),
+            read: false,
+          };
+          
+          setNotifications(prev => [notification, ...prev]);
+          
+          toast({
+            title: notification.title,
+            description: notification.description,
           });
         }
       });
@@ -137,6 +157,16 @@ export function Dashboard() {
       previousDealsRef.current = [...deals];
     }
   }, [deals, toast]);
+
+  const handleClearAllNotifications = () => {
+    setNotifications([]);
+  };
+
+  const handleMarkAsRead = (id: string) => {
+    setNotifications(prev =>
+      prev.map(n => n.id === id ? { ...n, read: true } : n)
+    );
+  };
 
   // Filter deals based on selected filters
   const filteredDeals = deals.filter(deal => {
@@ -310,15 +340,22 @@ export function Dashboard() {
             <h1 className="text-xl font-semibold text-navy">
               Finance Dashboard
             </h1>
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              className="text-muted-foreground"
-              onClick={() => signOut()}
-            >
-              <LogOut className="w-4 h-4 mr-2" />
-              Sign Out
-            </Button>
+            <div className="flex items-center gap-2">
+              <NotificationCenter 
+                notifications={notifications}
+                onClearAll={handleClearAllNotifications}
+                onMarkAsRead={handleMarkAsRead}
+              />
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="text-muted-foreground"
+                onClick={() => signOut()}
+              >
+                <LogOut className="w-4 h-4 mr-2" />
+                Sign Out
+              </Button>
+            </div>
           </div>
         </div>
       </header>
