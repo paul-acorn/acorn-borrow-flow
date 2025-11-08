@@ -2,8 +2,9 @@ import { useState, useEffect } from "react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Bell, Trash2 } from "lucide-react";
+import { Bell, Trash2, Settings } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { NotificationPreferencesModal } from "./NotificationPreferences";
 
 export interface Notification {
   id: string;
@@ -21,6 +22,7 @@ interface NotificationCenterProps {
 
 export function NotificationCenter({ notifications, onClearAll, onMarkAsRead }: NotificationCenterProps) {
   const [open, setOpen] = useState(false);
+  const [preferencesOpen, setPreferencesOpen] = useState(false);
   const unreadCount = notifications.filter(n => !n.read).length;
 
   const handleOpen = () => {
@@ -52,17 +54,26 @@ export function NotificationCenter({ notifications, onClearAll, onMarkAsRead }: 
         <SheetHeader>
           <div className="flex items-center justify-between">
             <SheetTitle>Notifications</SheetTitle>
-            {notifications.length > 0 && (
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                onClick={onClearAll}
-                className="text-muted-foreground"
+            <div className="flex gap-2">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setPreferencesOpen(true)}
+                className="text-muted-foreground hover:text-foreground"
               >
-                <Trash2 className="h-4 w-4 mr-2" />
-                Clear All
+                <Settings className="h-4 w-4" />
               </Button>
-            )}
+              {notifications.length > 0 && (
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  onClick={onClearAll}
+                  className="text-muted-foreground hover:text-destructive"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              )}
+            </div>
           </div>
         </SheetHeader>
         <ScrollArea className="h-[calc(100vh-100px)] mt-6">
@@ -100,6 +111,11 @@ export function NotificationCenter({ notifications, onClearAll, onMarkAsRead }: 
           )}
         </ScrollArea>
       </SheetContent>
+
+      <NotificationPreferencesModal 
+        open={preferencesOpen}
+        onOpenChange={setPreferencesOpen}
+      />
     </Sheet>
   );
 }

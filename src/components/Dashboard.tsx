@@ -11,6 +11,7 @@ import { PropertyDetailsModal } from "@/components/PropertyDetailsModal";
 import { DocumentUploadModal } from "@/components/DocumentUploadModal";
 import { MessagingModal } from "@/components/MessagingModal";
 import { NotificationCenter, type Notification as DealNotification } from "@/components/NotificationCenter";
+import { getNotificationPreferences } from "./NotificationPreferences";
 import { 
   User, 
   MapPin, 
@@ -131,10 +132,15 @@ export function Dashboard() {
   // Track deal status changes and show toast notifications
   useEffect(() => {
     if (deals && previousDealsRef.current.length > 0) {
+      const preferences = getNotificationPreferences();
+      
       deals.forEach((currentDeal) => {
         const previousDeal = previousDealsRef.current.find((d) => d.id === currentDeal.id);
         
         if (previousDeal && previousDeal.status !== currentDeal.status) {
+          // Only create notification if status change notifications are enabled
+          if (!preferences.statusChanges) return;
+          
           const notification: DealNotification = {
             id: `${currentDeal.id}-${Date.now()}`,
             title: "Deal Status Updated",
@@ -149,6 +155,13 @@ export function Dashboard() {
             title: notification.title,
             description: notification.description,
           });
+          
+          // Play notification sound if enabled
+          if (preferences.enableSounds) {
+            const audio = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBSuBzvLZiTYIGGa77OikTgwOUKji8Ldm');
+            audio.volume = 0.3;
+            audio.play().catch(() => {});
+          }
         }
       });
     }
