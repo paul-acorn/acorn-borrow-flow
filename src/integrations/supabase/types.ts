@@ -257,6 +257,7 @@ export type Database = {
         Args: { _deal_id: string; _user_id: string }
         Returns: boolean
       }
+      generate_deal_code: { Args: { broker_initials: string }; Returns: string }
       generate_invitation_code: { Args: never; Returns: string }
       has_role: {
         Args: {

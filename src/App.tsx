@@ -7,6 +7,7 @@ import { useState, useEffect } from "react";
 import { SplashScreen } from "@/components/SplashScreen";
 import { AuthForm } from "@/components/AuthForm";
 import { Dashboard } from "@/components/Dashboard";
+import { AdminDashboard } from "@/components/AdminDashboard";
 import { AuthProvider, useAuth } from "@/hooks/useAuth";
 
 const queryClient = new QueryClient();
@@ -14,7 +15,7 @@ const queryClient = new QueryClient();
 type AppState = 'splash' | 'auth' | 'dashboard';
 
 const AppContent = () => {
-  const { user, isLoading } = useAuth();
+  const { user, isLoading, hasRole } = useAuth();
   const [showSplash, setShowSplash] = useState(true);
 
   useEffect(() => {
@@ -38,10 +39,12 @@ const AppContent = () => {
     );
   }
 
+  const isAdmin = hasRole('super_admin') || hasRole('admin');
+
   return (
     <Routes>
       <Route path="/" element={
-        user ? <Dashboard /> : <Navigate to="/auth" replace />
+        user ? (isAdmin ? <AdminDashboard /> : <Dashboard />) : <Navigate to="/auth" replace />
       } />
       <Route path="/auth" element={
         user ? <Navigate to="/" replace /> : <AuthForm onBack={() => {}} />

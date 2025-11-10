@@ -1,0 +1,213 @@
+import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { supabase } from "@/integrations/supabase/client";
+import { Briefcase, Search } from "lucide-react";
+
+interface Deal {
+  id: string;
+  name: string;
+  amount: number | null;
+  type: string;
+  status: string;
+  created_at: string;
+  user_id: string;
+}
+
+interface Profile {
+  id: string;
+  email: string;
+  first_name: string | null;
+  last_name: string | null;
+  deal_code: string | null;
+}
+
+export function AllDealsView() {
+  const [searchTerm, setSearchTerm] = useState("");
+  const [filterType, setFilterType] = useState("all");
+  const [filterStatus, setFilterStatus] = useState("all");
+
+  // Fetch all deals
+  const { data: deals = [], isLoading: isLoadingDeals } = useQuery({
+    queryKey: ['admin-all-deals'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('deals')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      return data as Deal[];
+    },
+  });
+
+  // Fetch all profiles for user lookup
+  const { data: profiles = [] } = useQuery({
+    queryKey: ['admin-profiles'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*');
+
+      if (error) throw error;
+      return data as Profile[];
+    },
+  });
+
+  const profilesMap = profiles.reduce((acc, profile) => {
+    acc[profile.id] = profile;
+    return acc;
+  }, {} as Record<string, Profile>);
+
+  const filteredDeals = deals.filter(deal => {
+    const profile = profilesMap[deal.user_id];
+    const matchesSearch = 
+      deal.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      profile?.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      profile?.deal_code?.toLowerCase().includes(searchTerm.toLowerCase());
+    
+    const matchesType = filterType === "all" || deal.type === filterType;
+    const matchesStatus = filterStatus === "all" || deal.status === filterStatus;
+    
+    return matchesSearch && matchesType && matchesStatus;
+  });
+
+  const formatCurrency = (amount: number | null) => {
+    if (!amount) return '-';
+    return new Intl.NumberFormat('en-GB', {
+      style: 'currency',
+      currency: 'GBP',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    }).format(amount);
+  };
+
+  const getStatusVariant = (status: string) => {
+    switch (status) {
+      case 'draft': return 'outline';
+      case 'in_progress': return 'secondary';
+      case 'submitted': return 'default';
+      case 'approved': return 'default';
+      case 'declined': return 'destructive';
+      default: return 'outline';
+    }
+  };
+
+  return (
+    <Card>
+      <CardHeader>
+        <div className="flex items-center gap-2">
+          <Briefcase className="w-5 h-5" />
+          <div>
+            <CardTitle>All Deals</CardTitle>
+            <CardDescription>View and manage all deals across the platform</CardDescription>
+          </div>
+        </div>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="flex gap-4 flex-wrap">
+          <div className="relative flex-1 min-w-[200px]">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
+            <Input
+              placeholder="Search by deal name, email, or code..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-10"
+            />
+          </div>
+          <Select value={filterType} onValueChange={setFilterType}>
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder="Filter by type" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Types</SelectItem>
+              <SelectItem value="bridging">Bridging</SelectItem>
+              <SelectItem value="mortgage">Mortgage</SelectItem>
+              <SelectItem value="development">Development</SelectItem>
+              <SelectItem value="business">Business</SelectItem>
+              <SelectItem value="equity">Equity Release</SelectItem>
+            </SelectContent>
+          </Select>
+          <Select value={filterStatus} onValueChange={setFilterStatus}>
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder="Filter by status" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Status</SelectItem>
+              <SelectItem value="draft">Draft</SelectItem>
+              <SelectItem value="in_progress">In Progress</SelectItem>
+              <SelectItem value="submitted">Submitted</SelectItem>
+              <SelectItem value="approved">Approved</SelectItem>
+              <SelectItem value="declined">Declined</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        {isLoadingDeals ? (
+          <div className="text-center p-8">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+          </div>
+        ) : (
+          <div className="border rounded-lg">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Deal Name</TableHead>
+                  <TableHead>Client</TableHead>
+                  <TableHead>Deal Code</TableHead>
+                  <TableHead>Type</TableHead>
+                  <TableHead>Amount</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Created</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filteredDeals.map((deal) => {
+                  const profile = profilesMap[deal.user_id];
+                  return (
+                    <TableRow key={deal.id}>
+                      <TableCell className="font-medium">{deal.name}</TableCell>
+                      <TableCell>
+                        {profile ? `${profile.first_name} ${profile.last_name}` : 'Unknown'}
+                      </TableCell>
+                      <TableCell>
+                        {profile?.deal_code && (
+                          <Badge variant="outline">{profile.deal_code}</Badge>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant="secondary">
+                          {deal.type.replace('_', ' ')}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>{formatCurrency(deal.amount)}</TableCell>
+                      <TableCell>
+                        <Badge variant={getStatusVariant(deal.status)}>
+                          {deal.status.replace('_', ' ')}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        {new Date(deal.created_at).toLocaleDateString()}
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+                {filteredDeals.length === 0 && (
+                  <TableRow>
+                    <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
+                      No deals found
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
