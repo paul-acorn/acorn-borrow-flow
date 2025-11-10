@@ -58,14 +58,21 @@ export const ClientManagement = () => {
     enabled: !!user?.id,
   });
 
-  // Create client mutation
+  // Create client invitation mutation
   const createClientMutation = useMutation({
     mutationFn: async () => {
       if (!brokerInitials.trim()) {
         throw new Error("Broker initials are required");
       }
 
-      // Call the generate_deal_code function
+      // Generate invitation code
+      const { data: invitationCode, error: invitationError } = await supabase.rpc(
+        "generate_invitation_code"
+      );
+
+      if (invitationError) throw invitationError;
+
+      // Generate deal code
       const { data: dealCodeData, error: dealCodeError } = await supabase.rpc(
         "generate_deal_code",
         { broker_initials: brokerInitials.toUpperCase() }
@@ -73,35 +80,35 @@ export const ClientManagement = () => {
 
       if (dealCodeError) throw dealCodeError;
 
-      // Create auth user
-      const { data: authData, error: authError } = await supabase.auth.admin.createUser({
+      // Create invitation with client role
+      const expiresAt = new Date();
+      expiresAt.setDate(expiresAt.getDate() + 7); // 7 day expiry
+
+      const { error: insertError } = await supabase
+        .from("team_invitations")
+        .insert({
+          invitation_code: invitationCode,
+          role: "client",
+          created_by: user?.id,
+          expires_at: expiresAt.toISOString(),
+        });
+
+      if (insertError) throw insertError;
+
+      // Send invitation email (for now, just return the code)
+      return {
+        invitationCode,
+        dealCode: dealCodeData,
         email: newClientEmail,
-        email_confirm: true,
-        user_metadata: {
-          first_name: newClientFirstName,
-          last_name: newClientLastName,
-        },
-      });
-
-      if (authError) throw authError;
-
-      // Update profile with broker assignment and deal code
-      const { error: profileError } = await supabase
-        .from("profiles")
-        .update({
-          assigned_broker: user?.id,
-          deal_code: dealCodeData,
-          first_name: newClientFirstName,
-          last_name: newClientLastName,
-        })
-        .eq("id", authData.user.id);
-
-      if (profileError) throw profileError;
-
-      return authData.user;
+        firstName: newClientFirstName,
+        lastName: newClientLastName,
+      };
     },
-    onSuccess: () => {
-      toast.success("Client added successfully");
+    onSuccess: (data) => {
+      toast.success(
+        `Client invitation created! Share this code with ${data.firstName}: ${data.invitationCode}`,
+        { duration: 10000 }
+      );
       queryClient.invalidateQueries({ queryKey: ["broker-clients"] });
       setIsAddDialogOpen(false);
       setNewClientEmail("");
