@@ -5,6 +5,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { Briefcase, Search } from "lucide-react";
 
@@ -30,6 +31,8 @@ export function AllDealsView() {
   const [searchTerm, setSearchTerm] = useState("");
   const [filterType, setFilterType] = useState("all");
   const [filterStatus, setFilterStatus] = useState("all");
+  const [selectedDealId, setSelectedDealId] = useState<string | null>(null);
+  const [isDetailsOpen, setIsDetailsOpen] = useState(false);
 
   // Fetch all deals
   const { data: deals = [], isLoading: isLoadingDeals } = useQuery({
@@ -95,6 +98,14 @@ export function AllDealsView() {
       case 'declined': return 'destructive';
       default: return 'outline';
     }
+  };
+
+  const selectedDeal = deals.find(d => d.id === selectedDealId);
+  const selectedProfile = selectedDeal ? profilesMap[selectedDeal.user_id] : null;
+
+  const handleRowClick = (dealId: string) => {
+    setSelectedDealId(dealId);
+    setIsDetailsOpen(true);
   };
 
   return (
@@ -169,7 +180,11 @@ export function AllDealsView() {
                 {filteredDeals.map((deal) => {
                   const profile = profilesMap[deal.user_id];
                   return (
-                    <TableRow key={deal.id}>
+                    <TableRow 
+                      key={deal.id} 
+                      className="cursor-pointer hover:bg-muted/50"
+                      onClick={() => handleRowClick(deal.id)}
+                    >
                       <TableCell className="font-medium">{deal.name}</TableCell>
                       <TableCell>
                         {profile ? `${profile.first_name} ${profile.last_name}` : 'Unknown'}
@@ -208,6 +223,74 @@ export function AllDealsView() {
           </div>
         )}
       </CardContent>
+
+      <Dialog open={isDetailsOpen} onOpenChange={setIsDetailsOpen}>
+        <DialogContent className="max-w-2xl bg-background">
+          <DialogHeader>
+            <DialogTitle>Deal Details</DialogTitle>
+            <DialogDescription>
+              View detailed information about this deal
+            </DialogDescription>
+          </DialogHeader>
+          
+          {selectedDeal && (
+            <div className="space-y-6">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-sm text-muted-foreground">Deal Name</p>
+                  <p className="font-medium">{selectedDeal.name}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Amount</p>
+                  <p className="font-medium">{formatCurrency(selectedDeal.amount)}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Type</p>
+                  <Badge variant="secondary">{selectedDeal.type.replace('_', ' ')}</Badge>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Status</p>
+                  <Badge variant={getStatusVariant(selectedDeal.status)}>
+                    {selectedDeal.status.replace('_', ' ')}
+                  </Badge>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Created</p>
+                  <p className="font-medium">{new Date(selectedDeal.created_at).toLocaleDateString()}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Deal ID</p>
+                  <p className="font-mono text-xs">{selectedDeal.id}</p>
+                </div>
+              </div>
+
+              {selectedProfile && (
+                <div className="border-t pt-4">
+                  <h4 className="text-sm font-semibold mb-3">Client Information</h4>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <p className="text-sm text-muted-foreground">Name</p>
+                      <p className="font-medium">
+                        {selectedProfile.first_name} {selectedProfile.last_name}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground">Email</p>
+                      <p className="font-medium">{selectedProfile.email}</p>
+                    </div>
+                    {selectedProfile.deal_code && (
+                      <div>
+                        <p className="text-sm text-muted-foreground">Deal Code</p>
+                        <Badge variant="outline">{selectedProfile.deal_code}</Badge>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </Card>
   );
 }

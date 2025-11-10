@@ -42,7 +42,7 @@ export const ClientManagement = () => {
   const [newClientLastName, setNewClientLastName] = useState("");
   const [brokerInitials, setBrokerInitials] = useState("");
 
-  // Fetch broker's clients
+  // Fetch broker's registered clients
   const { data: clients, isLoading } = useQuery({
     queryKey: ["broker-clients", user?.id],
     queryFn: async () => {
@@ -50,6 +50,24 @@ export const ClientManagement = () => {
         .from("profiles")
         .select("*")
         .eq("assigned_broker", user?.id)
+        .order("created_at", { ascending: false });
+
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!user?.id,
+  });
+
+  // Fetch pending invitations created by broker
+  const { data: pendingInvitations } = useQuery({
+    queryKey: ["broker-invitations", user?.id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("team_invitations")
+        .select("*")
+        .eq("created_by", user?.id)
+        .eq("role", "client")
+        .is("used_at", null)
         .order("created_at", { ascending: false });
 
       if (error) throw error;
@@ -216,37 +234,78 @@ export const ClientManagement = () => {
           </Dialog>
         </div>
       </CardHeader>
-      <CardContent>
-        {clients && clients.length > 0 ? (
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Deal Code</TableHead>
-                <TableHead>Name</TableHead>
-                <TableHead>Email</TableHead>
-                <TableHead>Added</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {clients.map((client) => (
-                <TableRow key={client.id}>
-                  <TableCell>
-                    <Badge variant="outline">{client.deal_code || "N/A"}</Badge>
-                  </TableCell>
-                  <TableCell>
-                    {client.first_name} {client.last_name}
-                  </TableCell>
-                  <TableCell>{client.email}</TableCell>
-                  <TableCell>
-                    {new Date(client.created_at).toLocaleDateString()}
-                  </TableCell>
+      <CardContent className="space-y-6">
+        {/* Registered Clients */}
+        {clients && clients.length > 0 && (
+          <div>
+            <h3 className="text-sm font-medium mb-3">Registered Clients</h3>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Deal Code</TableHead>
+                  <TableHead>Name</TableHead>
+                  <TableHead>Email</TableHead>
+                  <TableHead>Registered</TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        ) : (
+              </TableHeader>
+              <TableBody>
+                {clients.map((client) => (
+                  <TableRow key={client.id}>
+                    <TableCell>
+                      <Badge variant="outline">{client.deal_code || "N/A"}</Badge>
+                    </TableCell>
+                    <TableCell>
+                      {client.first_name} {client.last_name}
+                    </TableCell>
+                    <TableCell>{client.email}</TableCell>
+                    <TableCell>
+                      {new Date(client.created_at).toLocaleDateString()}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        )}
+
+        {/* Pending Invitations */}
+        {pendingInvitations && pendingInvitations.length > 0 && (
+          <div>
+            <h3 className="text-sm font-medium mb-3">Pending Invitations</h3>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Invitation Code</TableHead>
+                  <TableHead>Created</TableHead>
+                  <TableHead>Expires</TableHead>
+                  <TableHead>Status</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {pendingInvitations.map((invitation) => (
+                  <TableRow key={invitation.id}>
+                    <TableCell>
+                      <Badge className="font-mono">{invitation.invitation_code}</Badge>
+                    </TableCell>
+                    <TableCell>
+                      {new Date(invitation.created_at).toLocaleDateString()}
+                    </TableCell>
+                    <TableCell>
+                      {new Date(invitation.expires_at).toLocaleDateString()}
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant="secondary">Pending</Badge>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        )}
+
+        {(!clients || clients.length === 0) && (!pendingInvitations || pendingInvitations.length === 0) && (
           <div className="text-center py-8 text-muted-foreground">
-            No clients assigned yet. Add your first client to get started.
+            No clients or pending invitations yet. Add your first client to get started.
           </div>
         )}
       </CardContent>

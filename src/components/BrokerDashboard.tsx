@@ -2,11 +2,12 @@ import { useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { LogOut, Users, FileText, Plus } from "lucide-react";
+import { Users, FileText, Plus } from "lucide-react";
 import { ClientManagement } from "@/components/broker/ClientManagement";
 import { BrokerDealsView } from "@/components/broker/BrokerDealsView";
 import { BrokerDealCreationModal } from "@/components/broker/BrokerDealCreationModal";
 import { CustomerDropdown } from "@/components/CustomerDropdown";
+import { UserProfileMenu } from "@/components/UserProfileMenu";
 
 export const BrokerDashboard = () => {
   const { signOut, user } = useAuth();
@@ -24,10 +25,7 @@ export const BrokerDashboard = () => {
             </div>
             <div className="flex items-center gap-3">
               <CustomerDropdown />
-              <Button variant="outline" onClick={signOut}>
-                <LogOut className="mr-2 h-4 w-4" />
-                Sign Out
-              </Button>
+              <UserProfileMenu />
             </div>
           </div>
         </div>

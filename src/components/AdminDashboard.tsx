@@ -1,12 +1,12 @@
 import { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Button } from "@/components/ui/button";
-import { LogOut, Users, Shield, Briefcase } from "lucide-react";
+import { Users, Shield, Briefcase } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { UserManagement } from "./admin/UserManagement";
 import { RoleManagement } from "./admin/RoleManagement";
 import { AllDealsView } from "./admin/AllDealsView";
 import { CustomerDropdown } from "@/components/CustomerDropdown";
+import { UserProfileMenu } from "@/components/UserProfileMenu";
 
 export function AdminDashboard() {
   const { signOut, hasRole } = useAuth();
@@ -24,15 +24,7 @@ export function AdminDashboard() {
             </h1>
             <div className="flex items-center gap-3">
               <CustomerDropdown />
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                className="text-muted-foreground"
-                onClick={() => signOut()}
-              >
-                <LogOut className="w-4 h-4 mr-2" />
-                Sign Out
-              </Button>
+              <UserProfileMenu />
             </div>
           </div>
         </div>
