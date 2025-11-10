@@ -10,6 +10,7 @@ import { Dashboard } from "@/components/Dashboard";
 import { AdminDashboard } from "@/components/AdminDashboard";
 import { BrokerDashboard } from "@/components/BrokerDashboard";
 import { AuthProvider, useAuth } from "@/hooks/useAuth";
+import Index from "@/pages/Index";
 
 const queryClient = new QueryClient();
 
@@ -51,20 +52,10 @@ const AppContent = () => {
 
   return (
     <Routes>
-      <Route path="/" element={
-        user ? getDashboard() : <Navigate to="/auth" replace />
-      } />
-      <Route path="/auth" element={
-        user ? <Navigate to="/" replace /> : <AuthForm onBack={() => {}} />
-      } />
-      <Route path="*" element={
-        <div className="min-h-screen flex items-center justify-center bg-background">
-          <div className="text-center space-y-4">
-            <h1 className="text-2xl font-semibold text-navy">Page Not Found</h1>
-            <p className="text-muted-foreground">The page you're looking for doesn't exist.</p>
-          </div>
-        </div>
-      } />
+      <Route path="/" element={user ? getDashboard() : <Navigate to="/welcome" replace />} />
+      <Route path="/welcome" element={user ? <Navigate to="/" replace /> : <Index />} />
+      <Route path="/auth" element={user ? <Navigate to="/" replace /> : <AuthForm onBack={() => window.history.back()} />} />
+      <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );
 };

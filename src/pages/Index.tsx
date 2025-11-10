@@ -1,11 +1,40 @@
-// Update this page (the content is just a fallback if you fail to update the page)
+import { useNavigate } from "react-router-dom";
+import { Button } from "@/components/ui/button";
+import { Building2 } from "lucide-react";
 
 const Index = () => {
+  const navigate = useNavigate();
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background">
-      <div className="text-center">
-        <h1 className="mb-4 text-4xl font-bold">Welcome to Your Blank App</h1>
-        <p className="text-xl text-muted-foreground">Start building your amazing project here!</p>
+    <div className="min-h-screen bg-gradient-surface flex items-center justify-center p-4">
+      <div className="text-center space-y-6 max-w-2xl">
+        <div className="flex justify-center mb-6">
+          <div className="bg-white p-4 rounded-2xl shadow-lg">
+            <Building2 className="w-16 h-16 text-premium" />
+          </div>
+        </div>
+        
+        <h1 className="text-5xl font-bold text-navy mb-4">
+          Acorn Finance
+        </h1>
+        
+        <p className="text-xl text-muted-foreground mb-8">
+          Comprehensive mortgage and finance deal management platform
+        </p>
+        
+        <div className="space-y-3">
+          <Button 
+            onClick={() => navigate('/auth')}
+            size="lg"
+            className="w-full max-w-xs bg-gradient-primary hover:opacity-90"
+          >
+            Sign In / Register
+          </Button>
+          
+          <div className="text-sm text-muted-foreground">
+            Multi-role platform for clients, brokers, and administrators
+          </div>
+        </div>
       </div>
     </div>
   );
