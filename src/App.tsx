@@ -8,6 +8,7 @@ import { SplashScreen } from "@/components/SplashScreen";
 import { AuthForm } from "@/components/AuthForm";
 import { Dashboard } from "@/components/Dashboard";
 import { AdminDashboard } from "@/components/AdminDashboard";
+import { BrokerDashboard } from "@/components/BrokerDashboard";
 import { AuthProvider, useAuth } from "@/hooks/useAuth";
 
 const queryClient = new QueryClient();
@@ -40,11 +41,18 @@ const AppContent = () => {
   }
 
   const isAdmin = hasRole('super_admin') || hasRole('admin');
+  const isBroker = hasRole('broker');
+
+  const getDashboard = () => {
+    if (isAdmin) return <AdminDashboard />;
+    if (isBroker) return <BrokerDashboard />;
+    return <Dashboard />;
+  };
 
   return (
     <Routes>
       <Route path="/" element={
-        user ? (isAdmin ? <AdminDashboard /> : <Dashboard />) : <Navigate to="/auth" replace />
+        user ? getDashboard() : <Navigate to="/auth" replace />
       } />
       <Route path="/auth" element={
         user ? <Navigate to="/" replace /> : <AuthForm onBack={() => {}} />
