@@ -115,7 +115,8 @@ export function UserManagement() {
         .insert({
           created_by: user.id,
           invitation_code: inviteCode,
-          expires_at: expiresAt.toISOString()
+          expires_at: expiresAt.toISOString(),
+          role: newUserRole as 'client' | 'broker' | 'admin'
         });
 
       if (inviteError) throw inviteError;
