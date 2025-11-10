@@ -30,7 +30,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { UserPlus, Loader2 } from "lucide-react";
+import { UserPlus, Loader2, Copy, Check } from "lucide-react";
 import { toast } from "sonner";
 
 export const ClientManagement = () => {
@@ -41,6 +41,7 @@ export const ClientManagement = () => {
   const [newClientFirstName, setNewClientFirstName] = useState("");
   const [newClientLastName, setNewClientLastName] = useState("");
   const [brokerInitials, setBrokerInitials] = useState("");
+  const [copiedCode, setCopiedCode] = useState<string | null>(null);
 
   // Fetch broker's registered clients
   const { data: clients, isLoading } = useQuery({
@@ -145,6 +146,17 @@ export const ClientManagement = () => {
       return;
     }
     createClientMutation.mutate();
+  };
+
+  const copyToClipboard = async (text: string, label: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopiedCode(text);
+      toast.success(`${label} copied to clipboard`);
+      setTimeout(() => setCopiedCode(null), 2000);
+    } catch (err) {
+      toast.error("Failed to copy to clipboard");
+    }
   };
 
   if (isLoading) {
@@ -252,7 +264,23 @@ export const ClientManagement = () => {
                 {clients.map((client) => (
                   <TableRow key={client.id}>
                     <TableCell>
-                      <Badge variant="outline">{client.deal_code || "N/A"}</Badge>
+                      <div className="flex items-center gap-2">
+                        <Badge variant="outline">{client.deal_code || "N/A"}</Badge>
+                        {client.deal_code && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-6 w-6 p-0"
+                            onClick={() => copyToClipboard(client.deal_code!, "Deal code")}
+                          >
+                            {copiedCode === client.deal_code ? (
+                              <Check className="h-3 w-3 text-green-600" />
+                            ) : (
+                              <Copy className="h-3 w-3" />
+                            )}
+                          </Button>
+                        )}
+                      </div>
                     </TableCell>
                     <TableCell>
                       {client.first_name} {client.last_name}
@@ -285,7 +313,21 @@ export const ClientManagement = () => {
                 {pendingInvitations.map((invitation) => (
                   <TableRow key={invitation.id}>
                     <TableCell>
-                      <Badge className="font-mono">{invitation.invitation_code}</Badge>
+                      <div className="flex items-center gap-2">
+                        <Badge className="font-mono">{invitation.invitation_code}</Badge>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-6 w-6 p-0"
+                          onClick={() => copyToClipboard(invitation.invitation_code, "Invitation code")}
+                        >
+                          {copiedCode === invitation.invitation_code ? (
+                            <Check className="h-3 w-3 text-green-600" />
+                          ) : (
+                            <Copy className="h-3 w-3" />
+                          )}
+                        </Button>
+                      </div>
                     </TableCell>
                     <TableCell>
                       {new Date(invitation.created_at).toLocaleDateString()}
