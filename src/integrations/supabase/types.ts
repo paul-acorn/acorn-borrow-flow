@@ -122,7 +122,9 @@ export type Database = {
       }
       profiles: {
         Row: {
+          assigned_broker: string | null
           created_at: string
+          deal_code: string | null
           email: string
           first_name: string | null
           id: string
@@ -130,7 +132,9 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          assigned_broker?: string | null
           created_at?: string
+          deal_code?: string | null
           email: string
           first_name?: string | null
           id: string
@@ -138,7 +142,9 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          assigned_broker?: string | null
           created_at?: string
+          deal_code?: string | null
           email?: string
           first_name?: string | null
           id?: string
@@ -261,7 +267,7 @@ export type Database = {
       }
     }
     Enums: {
-      app_role: "client" | "team_member" | "admin"
+      app_role: "client" | "team_member" | "admin" | "super_admin" | "broker"
       deal_status:
         | "draft"
         | "in_progress"
@@ -404,7 +410,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["client", "team_member", "admin"],
+      app_role: ["client", "team_member", "admin", "super_admin", "broker"],
       deal_status: [
         "draft",
         "in_progress",
