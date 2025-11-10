@@ -1,9 +1,8 @@
 import { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Users, Shield, Briefcase } from "lucide-react";
+import { Users, Briefcase } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { UserManagement } from "./admin/UserManagement";
-import { RoleManagement } from "./admin/RoleManagement";
 import { AllDealsView } from "./admin/AllDealsView";
 import { CustomerDropdown } from "@/components/CustomerDropdown";
 import { UserProfileMenu } from "@/components/UserProfileMenu";
@@ -32,14 +31,10 @@ export function AdminDashboard() {
 
       <div className="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-3 lg:w-[600px]">
+          <TabsList className="grid w-full grid-cols-2 lg:w-[400px]">
             <TabsTrigger value="users" className="flex items-center gap-2">
               <Users className="w-4 h-4" />
-              Users
-            </TabsTrigger>
-            <TabsTrigger value="roles" className="flex items-center gap-2" disabled={!isSuperAdmin}>
-              <Shield className="w-4 h-4" />
-              Roles
+              Users & Roles
             </TabsTrigger>
             <TabsTrigger value="deals" className="flex items-center gap-2">
               <Briefcase className="w-4 h-4" />
@@ -49,10 +44,6 @@ export function AdminDashboard() {
 
           <TabsContent value="users" className="space-y-4">
             <UserManagement />
-          </TabsContent>
-
-          <TabsContent value="roles" className="space-y-4">
-            <RoleManagement />
           </TabsContent>
 
           <TabsContent value="deals" className="space-y-4">

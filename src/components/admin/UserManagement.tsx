@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
-import { UserPlus, Search } from "lucide-react";
+import { UserPlus, Search, Edit2, Trash2 } from "lucide-react";
 
 interface Profile {
   id: string;
@@ -29,6 +29,9 @@ interface UserRole {
 export function UserManagement() {
   const [searchTerm, setSearchTerm] = useState("");
   const [showAddUserDialog, setShowAddUserDialog] = useState(false);
+  const [showEditRoleDialog, setShowEditRoleDialog] = useState(false);
+  const [selectedUserId, setSelectedUserId] = useState<string>("");
+  const [selectedRoleToEdit, setSelectedRoleToEdit] = useState<string>("");
   const [newUserEmail, setNewUserEmail] = useState("");
   const [newUserFirstName, setNewUserFirstName] = useState("");
   const [newUserLastName, setNewUserLastName] = useState("");
@@ -163,6 +166,76 @@ export function UserManagement() {
     }
   };
 
+  const handleEditRole = (userId: string) => {
+    const currentRoles = userRoles[userId];
+    setSelectedUserId(userId);
+    setSelectedRoleToEdit(currentRoles?.[0] || 'client');
+    setShowEditRoleDialog(true);
+  };
+
+  const handleUpdateRole = async () => {
+    if (!selectedUserId || !selectedRoleToEdit) return;
+
+    try {
+      // Remove existing roles
+      await supabase
+        .from('user_roles')
+        .delete()
+        .eq('user_id', selectedUserId);
+
+      // Add new role
+      const { error } = await supabase
+        .from('user_roles')
+        .insert([{
+          user_id: selectedUserId,
+          role: selectedRoleToEdit as any
+        }]);
+
+      if (error) throw error;
+
+      toast({
+        title: "Role Updated",
+        description: "User role has been updated successfully",
+      });
+
+      setShowEditRoleDialog(false);
+      queryClient.invalidateQueries({ queryKey: ['admin-user-roles'] });
+    } catch (error: any) {
+      console.error('Error updating role:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update role. Please try again.",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleRemoveRole = async (userId: string, role: string) => {
+    try {
+      const { error } = await supabase
+        .from('user_roles')
+        .delete()
+        .eq('user_id', userId)
+        .eq('role', role as any);
+
+      if (error) throw error;
+
+      toast({
+        title: "Role Removed",
+        description: "User role has been removed successfully",
+      });
+
+      queryClient.invalidateQueries({ queryKey: ['admin-user-roles'] });
+    } catch (error: any) {
+      console.error('Error removing role:', error);
+      toast({
+        title: "Error",
+        description: "Failed to remove role. Please try again.",
+        variant: "destructive"
+      });
+    }
+  };
+
   return (
     <Card>
       <CardHeader>
@@ -203,6 +276,7 @@ export function UserManagement() {
                   <TableHead>Email</TableHead>
                   <TableHead>Deal Code</TableHead>
                   <TableHead>Roles</TableHead>
+                  {isSuperAdmin && <TableHead className="w-[100px]">Actions</TableHead>}
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -226,6 +300,28 @@ export function UserManagement() {
                         )) || <Badge variant="outline">No roles</Badge>}
                       </div>
                     </TableCell>
+                    {isSuperAdmin && (
+                      <TableCell>
+                        <div className="flex gap-1">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleEditRole(user.id)}
+                          >
+                            <Edit2 className="w-4 h-4" />
+                          </Button>
+                          {userRoles[user.id]?.[0] && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleRemoveRole(user.id, userRoles[user.id][0])}
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          )}
+                        </div>
+                      </TableCell>
+                    )}
                   </TableRow>
                 ))}
               </TableBody>
@@ -308,6 +404,41 @@ export function UserManagement() {
             </Button>
             <Button onClick={handleAddUser}>
               Create User
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={showEditRoleDialog} onOpenChange={setShowEditRoleDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit User Role</DialogTitle>
+            <DialogDescription>
+              Change the user's role in the system
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="editRole">Role</Label>
+              <Select value={selectedRoleToEdit} onValueChange={setSelectedRoleToEdit}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select role" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="client">Client</SelectItem>
+                  <SelectItem value="broker">Broker</SelectItem>
+                  <SelectItem value="admin">Admin</SelectItem>
+                  {isSuperAdmin && <SelectItem value="super_admin">Super Admin</SelectItem>}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowEditRoleDialog(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleUpdateRole}>
+              Update Role
             </Button>
           </DialogFooter>
         </DialogContent>

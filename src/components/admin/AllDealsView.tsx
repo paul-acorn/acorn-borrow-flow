@@ -3,11 +3,14 @@ import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
-import { Briefcase, Search } from "lucide-react";
+import { Briefcase, Search, FileText, User } from "lucide-react";
+import { useAuth } from "@/hooks/useAuth";
 
 interface Deal {
   id: string;
@@ -25,9 +28,13 @@ interface Profile {
   first_name: string | null;
   last_name: string | null;
   deal_code: string | null;
+  assigned_broker: string | null;
 }
 
 export function AllDealsView() {
+  const { hasRole } = useAuth();
+  const isSuperAdmin = hasRole('super_admin');
+  const isAdmin = hasRole('admin');
   const [searchTerm, setSearchTerm] = useState("");
   const [filterType, setFilterType] = useState("all");
   const [filterStatus, setFilterStatus] = useState("all");
@@ -102,6 +109,7 @@ export function AllDealsView() {
 
   const selectedDeal = deals.find(d => d.id === selectedDealId);
   const selectedProfile = selectedDeal ? profilesMap[selectedDeal.user_id] : null;
+  const brokerProfile = selectedProfile?.assigned_broker ? profilesMap[selectedProfile.assigned_broker] : null;
 
   const handleRowClick = (dealId: string) => {
     setSelectedDealId(dealId);
@@ -169,7 +177,7 @@ export function AllDealsView() {
                 <TableRow>
                   <TableHead>Deal Name</TableHead>
                   <TableHead>Client</TableHead>
-                  <TableHead>Deal Code</TableHead>
+                  <TableHead>{(isSuperAdmin || isAdmin) ? 'Broker' : 'Deal Code'}</TableHead>
                   <TableHead>Type</TableHead>
                   <TableHead>Amount</TableHead>
                   <TableHead>Status</TableHead>
@@ -179,6 +187,7 @@ export function AllDealsView() {
               <TableBody>
                 {filteredDeals.map((deal) => {
                   const profile = profilesMap[deal.user_id];
+                  const broker = profile?.assigned_broker ? profilesMap[profile.assigned_broker] : null;
                   return (
                     <TableRow 
                       key={deal.id} 
@@ -190,8 +199,10 @@ export function AllDealsView() {
                         {profile ? `${profile.first_name} ${profile.last_name}` : 'Unknown'}
                       </TableCell>
                       <TableCell>
-                        {profile?.deal_code && (
-                          <Badge variant="outline">{profile.deal_code}</Badge>
+                        {(isSuperAdmin || isAdmin) ? (
+                          broker ? `${broker.first_name} ${broker.last_name}` : 'No Broker'
+                        ) : (
+                          profile?.deal_code && <Badge variant="outline">{profile.deal_code}</Badge>
                         )}
                       </TableCell>
                       <TableCell>
@@ -225,7 +236,7 @@ export function AllDealsView() {
       </CardContent>
 
       <Dialog open={isDetailsOpen} onOpenChange={setIsDetailsOpen}>
-        <DialogContent className="max-w-2xl bg-background">
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto bg-background">
           <DialogHeader>
             <DialogTitle>Deal Details</DialogTitle>
             <DialogDescription>
@@ -234,60 +245,120 @@ export function AllDealsView() {
           </DialogHeader>
           
           {selectedDeal && (
-            <div className="space-y-6">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <p className="text-sm text-muted-foreground">Deal Name</p>
-                  <p className="font-medium">{selectedDeal.name}</p>
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Amount</p>
-                  <p className="font-medium">{formatCurrency(selectedDeal.amount)}</p>
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Type</p>
-                  <Badge variant="secondary">{selectedDeal.type.replace('_', ' ')}</Badge>
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Status</p>
-                  <Badge variant={getStatusVariant(selectedDeal.status)}>
-                    {selectedDeal.status.replace('_', ' ')}
-                  </Badge>
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Created</p>
-                  <p className="font-medium">{new Date(selectedDeal.created_at).toLocaleDateString()}</p>
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Deal ID</p>
-                  <p className="font-mono text-xs">{selectedDeal.id}</p>
-                </div>
-              </div>
+            <Tabs defaultValue="overview" className="w-full">
+              <TabsList className="grid w-full grid-cols-3">
+                <TabsTrigger value="overview">Overview</TabsTrigger>
+                <TabsTrigger value="deal-info">
+                  <FileText className="w-4 h-4 mr-2" />
+                  Deal Information
+                </TabsTrigger>
+                <TabsTrigger value="client-info">
+                  <User className="w-4 h-4 mr-2" />
+                  Client Details
+                </TabsTrigger>
+              </TabsList>
 
-              {selectedProfile && (
-                <div className="border-t pt-4">
-                  <h4 className="text-sm font-semibold mb-3">Client Information</h4>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <p className="text-sm text-muted-foreground">Name</p>
-                      <p className="font-medium">
-                        {selectedProfile.first_name} {selectedProfile.last_name}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-muted-foreground">Email</p>
-                      <p className="font-medium">{selectedProfile.email}</p>
-                    </div>
-                    {selectedProfile.deal_code && (
-                      <div>
-                        <p className="text-sm text-muted-foreground">Deal Code</p>
-                        <Badge variant="outline">{selectedProfile.deal_code}</Badge>
-                      </div>
-                    )}
+              <TabsContent value="overview" className="space-y-4 mt-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-sm text-muted-foreground">Deal Name</p>
+                    <p className="font-medium">{selectedDeal.name}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">Amount</p>
+                    <p className="font-medium">{formatCurrency(selectedDeal.amount)}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">Type</p>
+                    <Badge variant="secondary">{selectedDeal.type.replace('_', ' ')}</Badge>
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">Status</p>
+                    <Badge variant={getStatusVariant(selectedDeal.status)}>
+                      {selectedDeal.status.replace('_', ' ')}
+                    </Badge>
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">Created</p>
+                    <p className="font-medium">{new Date(selectedDeal.created_at).toLocaleDateString()}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">Deal ID</p>
+                    <p className="font-mono text-xs">{selectedDeal.id}</p>
                   </div>
                 </div>
-              )}
-            </div>
+              </TabsContent>
+
+              <TabsContent value="deal-info" className="space-y-4 mt-4">
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-base">Deal Form Information</CardTitle>
+                    <CardDescription>Details submitted for this {selectedDeal.type} deal</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-4">
+                      <div>
+                        <p className="text-sm text-muted-foreground">Deal Type</p>
+                        <p className="font-medium capitalize">{selectedDeal.type.replace('_', ' ')}</p>
+                      </div>
+                      <div>
+                        <p className="text-sm text-muted-foreground">Amount Requested</p>
+                        <p className="font-medium">{formatCurrency(selectedDeal.amount)}</p>
+                      </div>
+                      <div className="border-t pt-4">
+                        <p className="text-sm text-muted-foreground mb-2">Form Data</p>
+                        <p className="text-sm text-muted-foreground italic">
+                          Additional deal-specific information will be displayed here
+                        </p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+
+              <TabsContent value="client-info" className="space-y-4 mt-4">
+                {selectedProfile && (
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="text-base">Client Information</CardTitle>
+                      <CardDescription>Complete profile details</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <p className="text-sm text-muted-foreground">Full Name</p>
+                          <p className="font-medium">
+                            {selectedProfile.first_name} {selectedProfile.last_name}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-sm text-muted-foreground">Email</p>
+                          <p className="font-medium">{selectedProfile.email}</p>
+                        </div>
+                        {selectedProfile.deal_code && (
+                          <div>
+                            <p className="text-sm text-muted-foreground">Deal Code</p>
+                            <Badge variant="outline">{selectedProfile.deal_code}</Badge>
+                          </div>
+                        )}
+                        {brokerProfile && (
+                          <div>
+                            <p className="text-sm text-muted-foreground">Assigned Broker</p>
+                            <p className="font-medium">
+                              {brokerProfile.first_name} {brokerProfile.last_name}
+                            </p>
+                          </div>
+                        )}
+                        <div>
+                          <p className="text-sm text-muted-foreground">Client ID</p>
+                          <p className="font-mono text-xs">{selectedProfile.id}</p>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
+              </TabsContent>
+            </Tabs>
           )}
         </DialogContent>
       </Dialog>
