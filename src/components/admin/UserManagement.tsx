@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
@@ -27,15 +28,19 @@ interface UserRole {
 
 export function UserManagement() {
   const [searchTerm, setSearchTerm] = useState("");
-  const [showAddClientDialog, setShowAddClientDialog] = useState(false);
-  const [newClientEmail, setNewClientEmail] = useState("");
-  const [newClientFirstName, setNewClientFirstName] = useState("");
-  const [newClientLastName, setNewClientLastName] = useState("");
+  const [showAddUserDialog, setShowAddUserDialog] = useState(false);
+  const [newUserEmail, setNewUserEmail] = useState("");
+  const [newUserFirstName, setNewUserFirstName] = useState("");
+  const [newUserLastName, setNewUserLastName] = useState("");
+  const [newUserRole, setNewUserRole] = useState<string>("client");
   const [brokerInitials, setBrokerInitials] = useState("");
   const { toast } = useToast();
   const { user, hasRole } = useAuth();
   const queryClient = useQueryClient();
+  const isSuperAdmin = hasRole('super_admin');
+  const isAdmin = hasRole('admin');
   const isBroker = hasRole('broker');
+  const canAddUsers = isSuperAdmin || isAdmin || isBroker;
 
   // Fetch all users
   const { data: users = [], isLoading } = useQuery({
@@ -74,8 +79,8 @@ export function UserManagement() {
     },
   });
 
-  const handleAddClient = async () => {
-    if (!user || !newClientEmail || !newClientFirstName || !newClientLastName) {
+  const handleAddUser = async () => {
+    if (!user || !newUserEmail || !newUserFirstName || !newUserLastName) {
       toast({
         title: "Missing Information",
         description: "Please fill in all fields",
@@ -85,14 +90,18 @@ export function UserManagement() {
     }
 
     try {
-      // Generate deal code
-      const initials = brokerInitials || (newClientFirstName[0] + newClientLastName[0]).toUpperCase();
-      const { data: dealCode, error: codeError } = await supabase
-        .rpc('generate_deal_code', { broker_initials: initials });
+      // Generate deal code for clients and brokers
+      let dealCode = null;
+      if (newUserRole === 'client' || newUserRole === 'broker') {
+        const initials = brokerInitials || (newUserFirstName[0] + newUserLastName[0]).toUpperCase();
+        const { data, error: codeError } = await supabase
+          .rpc('generate_deal_code', { broker_initials: initials });
 
-      if (codeError) throw codeError;
+        if (codeError) throw codeError;
+        dealCode = data;
+      }
 
-      // Create invitation for the client
+      // Create invitation for the user
       const expiresAt = new Date();
       expiresAt.setDate(expiresAt.getDate() + 7); // 7 days expiry
 
@@ -111,24 +120,26 @@ export function UserManagement() {
 
       if (inviteError) throw inviteError;
 
+      const roleLabel = newUserRole.replace('_', ' ');
       toast({
-        title: "Client Invitation Created",
-        description: `Deal code: ${dealCode}. Invitation code: ${inviteCode}`,
+        title: `${roleLabel.charAt(0).toUpperCase() + roleLabel.slice(1)} Invitation Created`,
+        description: `${dealCode ? `Deal code: ${dealCode}. ` : ''}Invitation code: ${inviteCode}`,
       });
 
       // Reset form
-      setNewClientEmail("");
-      setNewClientFirstName("");
-      setNewClientLastName("");
+      setNewUserEmail("");
+      setNewUserFirstName("");
+      setNewUserLastName("");
+      setNewUserRole("client");
       setBrokerInitials("");
-      setShowAddClientDialog(false);
+      setShowAddUserDialog(false);
 
       queryClient.invalidateQueries({ queryKey: ['admin-users'] });
     } catch (error) {
-      console.error('Error adding client:', error);
+      console.error('Error adding user:', error);
       toast({
         title: "Error",
-        description: "Failed to add client. Please try again.",
+        description: "Failed to add user. Please try again.",
         variant: "destructive"
       });
     }
@@ -159,10 +170,10 @@ export function UserManagement() {
             <CardTitle>User Management</CardTitle>
             <CardDescription>View and manage all users in the system</CardDescription>
           </div>
-          {isBroker && (
-            <Button onClick={() => setShowAddClientDialog(true)}>
+          {canAddUsers && (
+            <Button onClick={() => setShowAddUserDialog(true)}>
               <UserPlus className="w-4 h-4 mr-2" />
-              Add Client
+              Add User
             </Button>
           )}
         </div>
@@ -222,21 +233,36 @@ export function UserManagement() {
         )}
       </CardContent>
 
-      <Dialog open={showAddClientDialog} onOpenChange={setShowAddClientDialog}>
+      <Dialog open={showAddUserDialog} onOpenChange={setShowAddUserDialog}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Add New Client</DialogTitle>
+            <DialogTitle>Add New User</DialogTitle>
             <DialogDescription>
-              Create a new client with a unique deal code
+              Create a new user and send them an invitation code
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
+            {isSuperAdmin && (
+              <div className="space-y-2">
+                <Label htmlFor="role">User Role</Label>
+                <Select value={newUserRole} onValueChange={setNewUserRole}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select role" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="client">Client</SelectItem>
+                    <SelectItem value="broker">Broker</SelectItem>
+                    <SelectItem value="admin">Admin</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
             <div className="space-y-2">
               <Label htmlFor="firstName">First Name</Label>
               <Input
                 id="firstName"
-                value={newClientFirstName}
-                onChange={(e) => setNewClientFirstName(e.target.value)}
+                value={newUserFirstName}
+                onChange={(e) => setNewUserFirstName(e.target.value)}
                 placeholder="John"
               />
             </div>
@@ -244,8 +270,8 @@ export function UserManagement() {
               <Label htmlFor="lastName">Last Name</Label>
               <Input
                 id="lastName"
-                value={newClientLastName}
-                onChange={(e) => setNewClientLastName(e.target.value)}
+                value={newUserLastName}
+                onChange={(e) => setNewUserLastName(e.target.value)}
                 placeholder="Doe"
               />
             </div>
@@ -254,31 +280,33 @@ export function UserManagement() {
               <Input
                 id="email"
                 type="email"
-                value={newClientEmail}
-                onChange={(e) => setNewClientEmail(e.target.value)}
+                value={newUserEmail}
+                onChange={(e) => setNewUserEmail(e.target.value)}
                 placeholder="john@example.com"
               />
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="initials">Broker Initials (optional)</Label>
-              <Input
-                id="initials"
-                value={brokerInitials}
-                onChange={(e) => setBrokerInitials(e.target.value.toUpperCase())}
-                placeholder="JD"
-                maxLength={4}
-              />
-              <p className="text-xs text-muted-foreground">
-                Leave empty to use client initials
-              </p>
-            </div>
+            {(newUserRole === 'client' || newUserRole === 'broker') && (
+              <div className="space-y-2">
+                <Label htmlFor="initials">Initials for Deal Code (optional)</Label>
+                <Input
+                  id="initials"
+                  value={brokerInitials}
+                  onChange={(e) => setBrokerInitials(e.target.value.toUpperCase())}
+                  placeholder="JD"
+                  maxLength={4}
+                />
+                <p className="text-xs text-muted-foreground">
+                  Leave empty to use user's initials
+                </p>
+              </div>
+            )}
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setShowAddClientDialog(false)}>
+            <Button variant="outline" onClick={() => setShowAddUserDialog(false)}>
               Cancel
             </Button>
-            <Button onClick={handleAddClient}>
-              Create Client
+            <Button onClick={handleAddUser}>
+              Create User
             </Button>
           </DialogFooter>
         </DialogContent>
