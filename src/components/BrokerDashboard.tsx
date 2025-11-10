@@ -2,13 +2,15 @@ import { useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { LogOut, Users, FileText } from "lucide-react";
+import { LogOut, Users, FileText, Plus } from "lucide-react";
 import { ClientManagement } from "@/components/broker/ClientManagement";
 import { BrokerDealsView } from "@/components/broker/BrokerDealsView";
+import { BrokerDealCreationModal } from "@/components/broker/BrokerDealCreationModal";
 
 export const BrokerDashboard = () => {
   const { signOut, user } = useAuth();
   const [activeTab, setActiveTab] = useState("clients");
+  const [isDealCreationOpen, setIsDealCreationOpen] = useState(false);
 
   return (
     <div className="min-h-screen bg-background">
@@ -28,6 +30,13 @@ export const BrokerDashboard = () => {
       </header>
 
       <main className="container mx-auto px-4 py-8">
+        <div className="flex justify-end mb-6">
+          <Button onClick={() => setIsDealCreationOpen(true)}>
+            <Plus className="mr-2 h-4 w-4" />
+            Create Deal
+          </Button>
+        </div>
+
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList className="grid w-full max-w-md grid-cols-2">
             <TabsTrigger value="clients" className="flex items-center gap-2">
@@ -48,6 +57,11 @@ export const BrokerDashboard = () => {
             <BrokerDealsView />
           </TabsContent>
         </Tabs>
+
+        <BrokerDealCreationModal 
+          open={isDealCreationOpen} 
+          onOpenChange={setIsDealCreationOpen} 
+        />
       </main>
     </div>
   );
