@@ -6,6 +6,7 @@ import { LogOut, Users, FileText, Plus } from "lucide-react";
 import { ClientManagement } from "@/components/broker/ClientManagement";
 import { BrokerDealsView } from "@/components/broker/BrokerDealsView";
 import { BrokerDealCreationModal } from "@/components/broker/BrokerDealCreationModal";
+import { CustomerDropdown } from "@/components/CustomerDropdown";
 
 export const BrokerDashboard = () => {
   const { signOut, user } = useAuth();
@@ -16,15 +17,18 @@ export const BrokerDashboard = () => {
     <div className="min-h-screen bg-background">
       <header className="border-b border-border bg-card">
         <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between gap-4 flex-wrap">
             <div>
               <h1 className="text-2xl font-bold text-foreground">Broker Dashboard</h1>
               <p className="text-sm text-muted-foreground">{user?.email}</p>
             </div>
-            <Button variant="outline" onClick={signOut}>
-              <LogOut className="mr-2 h-4 w-4" />
-              Sign Out
-            </Button>
+            <div className="flex items-center gap-3">
+              <CustomerDropdown />
+              <Button variant="outline" onClick={signOut}>
+                <LogOut className="mr-2 h-4 w-4" />
+                Sign Out
+              </Button>
+            </div>
           </div>
         </div>
       </header>

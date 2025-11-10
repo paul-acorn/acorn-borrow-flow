@@ -6,6 +6,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { UserManagement } from "./admin/UserManagement";
 import { RoleManagement } from "./admin/RoleManagement";
 import { AllDealsView } from "./admin/AllDealsView";
+import { CustomerDropdown } from "@/components/CustomerDropdown";
 
 export function AdminDashboard() {
   const { signOut, hasRole } = useAuth();
@@ -17,19 +18,22 @@ export function AdminDashboard() {
       {/* Header */}
       <header className="bg-white border-b border-border shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
+          <div className="flex justify-between items-center h-16 gap-4 flex-wrap">
             <h1 className="text-xl font-semibold text-navy">
               Admin Dashboard
             </h1>
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              className="text-muted-foreground"
-              onClick={() => signOut()}
-            >
-              <LogOut className="w-4 h-4 mr-2" />
-              Sign Out
-            </Button>
+            <div className="flex items-center gap-3">
+              <CustomerDropdown />
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="text-muted-foreground"
+                onClick={() => signOut()}
+              >
+                <LogOut className="w-4 h-4 mr-2" />
+                Sign Out
+              </Button>
+            </div>
           </div>
         </div>
       </header>
