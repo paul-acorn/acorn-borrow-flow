@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
-import { UserPlus, Search, Edit2, Trash2 } from "lucide-react";
+import { UserPlus, Search, Edit2, Shield } from "lucide-react";
 
 interface Profile {
   id: string;
@@ -29,9 +29,15 @@ interface UserRole {
 export function UserManagement() {
   const [searchTerm, setSearchTerm] = useState("");
   const [showAddUserDialog, setShowAddUserDialog] = useState(false);
+  const [showEditUserDialog, setShowEditUserDialog] = useState(false);
   const [showEditRoleDialog, setShowEditRoleDialog] = useState(false);
+  const [selectedUser, setSelectedUser] = useState<Profile | null>(null);
   const [selectedUserId, setSelectedUserId] = useState<string>("");
   const [selectedRoleToEdit, setSelectedRoleToEdit] = useState<string>("");
+  const [editFirstName, setEditFirstName] = useState("");
+  const [editLastName, setEditLastName] = useState("");
+  const [editEmail, setEditEmail] = useState("");
+  const [editDealCode, setEditDealCode] = useState("");
   const [newUserEmail, setNewUserEmail] = useState("");
   const [newUserFirstName, setNewUserFirstName] = useState("");
   const [newUserLastName, setNewUserLastName] = useState("");
@@ -166,6 +172,48 @@ export function UserManagement() {
     }
   };
 
+  const handleEditUser = (user: Profile) => {
+    setSelectedUser(user);
+    setEditFirstName(user.first_name || "");
+    setEditLastName(user.last_name || "");
+    setEditEmail(user.email);
+    setEditDealCode(user.deal_code || "");
+    setShowEditUserDialog(true);
+  };
+
+  const handleUpdateUser = async () => {
+    if (!selectedUser) return;
+
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({
+          first_name: editFirstName,
+          last_name: editLastName,
+          email: editEmail,
+          deal_code: editDealCode || null,
+        })
+        .eq('id', selectedUser.id);
+
+      if (error) throw error;
+
+      toast({
+        title: "User Updated",
+        description: "User details have been updated successfully",
+      });
+
+      setShowEditUserDialog(false);
+      queryClient.invalidateQueries({ queryKey: ['admin-users'] });
+    } catch (error: any) {
+      console.error('Error updating user:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update user. Please try again.",
+        variant: "destructive"
+      });
+    }
+  };
+
   const handleEditRole = (userId: string) => {
     const currentRoles = userRoles[userId];
     setSelectedUserId(userId);
@@ -276,7 +324,7 @@ export function UserManagement() {
                   <TableHead>Email</TableHead>
                   <TableHead>Deal Code</TableHead>
                   <TableHead>Roles</TableHead>
-                  {isSuperAdmin && <TableHead className="w-[100px]">Actions</TableHead>}
+                  {isSuperAdmin && <TableHead className="w-[150px]">Actions</TableHead>}
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -306,19 +354,19 @@ export function UserManagement() {
                           <Button
                             variant="ghost"
                             size="sm"
-                            onClick={() => handleEditRole(user.id)}
+                            onClick={() => handleEditUser(user)}
+                            title="Edit user details"
                           >
                             <Edit2 className="w-4 h-4" />
                           </Button>
-                          {userRoles[user.id]?.[0] && (
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleRemoveRole(user.id, userRoles[user.id][0])}
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </Button>
-                          )}
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleEditRole(user.id)}
+                            title="Edit user role"
+                          >
+                            <Shield className="w-4 h-4" />
+                          </Button>
                         </div>
                       </TableCell>
                     )}
@@ -404,6 +452,64 @@ export function UserManagement() {
             </Button>
             <Button onClick={handleAddUser}>
               Create User
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={showEditUserDialog} onOpenChange={setShowEditUserDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit User Details</DialogTitle>
+            <DialogDescription>
+              Update user information
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="editFirstName">First Name</Label>
+              <Input
+                id="editFirstName"
+                value={editFirstName}
+                onChange={(e) => setEditFirstName(e.target.value)}
+                placeholder="John"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="editLastName">Last Name</Label>
+              <Input
+                id="editLastName"
+                value={editLastName}
+                onChange={(e) => setEditLastName(e.target.value)}
+                placeholder="Doe"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="editEmail">Email</Label>
+              <Input
+                id="editEmail"
+                type="email"
+                value={editEmail}
+                onChange={(e) => setEditEmail(e.target.value)}
+                placeholder="john@example.com"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="editDealCode">Deal Code</Label>
+              <Input
+                id="editDealCode"
+                value={editDealCode}
+                onChange={(e) => setEditDealCode(e.target.value.toUpperCase())}
+                placeholder="JD01"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowEditUserDialog(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleUpdateUser}>
+              Save Changes
             </Button>
           </DialogFooter>
         </DialogContent>

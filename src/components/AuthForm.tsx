@@ -299,23 +299,39 @@ export function AuthForm({ onBack }: AuthFormProps) {
                   </Button>
                 </form>
 
-                <div className="text-xs text-center text-muted-foreground leading-relaxed">
-                  By registering, you agree to our{" "}
-                  <button 
-                    onClick={() => setShowTermsModal(true)}
-                    className="text-premium hover:underline"
-                  >
-                    Terms of Service
-                  </button>
-                  {" "}and{" "}
-                  <button 
-                    onClick={() => setShowTermsModal(true)}
-                    className="text-premium hover:underline"
-                  >
-                    Privacy Policy
-                  </button>
+                <div className="space-y-3">
+                  <div className="text-xs text-center text-muted-foreground leading-relaxed">
+                    By registering, you agree to our{" "}
+                    <button 
+                      onClick={() => setShowTermsModal(true)}
+                      className="text-premium hover:underline font-medium"
+                    >
+                      Terms of Service
+                    </button>
+                    {" "}and{" "}
+                    <button 
+                      onClick={() => setShowTermsModal(true)}
+                      className="text-premium hover:underline font-medium"
+                    >
+                      Privacy Policy
+                    </button>
+                  </div>
                   {(termsAccepted && privacyAccepted) && (
-                    <span className="block mt-2 text-success text-xs">✓ Terms and Privacy accepted</span>
+                    <div className="flex items-center justify-center gap-2 text-success text-sm">
+                      <span className="text-lg">✓</span>
+                      <span>Terms and Privacy accepted</span>
+                    </div>
+                  )}
+                  {!(termsAccepted && privacyAccepted) && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setShowTermsModal(true)}
+                      className="w-full"
+                    >
+                      Review & Accept Terms
+                    </Button>
                   )}
                 </div>
               </TabsContent>

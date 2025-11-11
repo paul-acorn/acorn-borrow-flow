@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { User, Settings, LogOut, Shield } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -10,9 +11,15 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useAuth } from "@/hooks/useAuth";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { ProfileEditModal } from "./ProfileEditModal";
+import { SettingsModal } from "./SettingsModal";
+import { SecurityModal } from "./SecurityModal";
 
 export const UserProfileMenu = () => {
   const { user, signOut, userRoles } = useAuth();
+  const [showProfileModal, setShowProfileModal] = useState(false);
+  const [showSettingsModal, setShowSettingsModal] = useState(false);
+  const [showSecurityModal, setShowSecurityModal] = useState(false);
 
   const getInitials = () => {
     if (!user?.email) return "U";
@@ -47,15 +54,15 @@ export const UserProfileMenu = () => {
           </div>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
-        <DropdownMenuItem disabled className="cursor-not-allowed opacity-50">
+        <DropdownMenuItem onClick={() => setShowProfileModal(true)}>
           <User className="mr-2 h-4 w-4" />
           <span>Profile</span>
         </DropdownMenuItem>
-        <DropdownMenuItem disabled className="cursor-not-allowed opacity-50">
+        <DropdownMenuItem onClick={() => setShowSettingsModal(true)}>
           <Settings className="mr-2 h-4 w-4" />
           <span>Settings</span>
         </DropdownMenuItem>
-        <DropdownMenuItem disabled className="cursor-not-allowed opacity-50">
+        <DropdownMenuItem onClick={() => setShowSecurityModal(true)}>
           <Shield className="mr-2 h-4 w-4" />
           <span>Security</span>
         </DropdownMenuItem>
@@ -65,6 +72,10 @@ export const UserProfileMenu = () => {
           <span>Sign Out</span>
         </DropdownMenuItem>
       </DropdownMenuContent>
+
+      <ProfileEditModal open={showProfileModal} onOpenChange={setShowProfileModal} />
+      <SettingsModal open={showSettingsModal} onOpenChange={setShowSettingsModal} />
+      <SecurityModal open={showSecurityModal} onOpenChange={setShowSecurityModal} />
     </DropdownMenu>
   );
 };

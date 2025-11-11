@@ -6,7 +6,6 @@ import { Users, FileText, Plus } from "lucide-react";
 import { ClientManagement } from "@/components/broker/ClientManagement";
 import { BrokerDealsView } from "@/components/broker/BrokerDealsView";
 import { BrokerDealCreationModal } from "@/components/broker/BrokerDealCreationModal";
-import { CustomerDropdown } from "@/components/CustomerDropdown";
 import { UserProfileMenu } from "@/components/UserProfileMenu";
 
 export const BrokerDashboard = () => {
@@ -24,7 +23,6 @@ export const BrokerDashboard = () => {
               <p className="text-sm text-muted-foreground">{user?.email}</p>
             </div>
             <div className="flex items-center gap-3">
-              <CustomerDropdown />
               <UserProfileMenu />
             </div>
           </div>

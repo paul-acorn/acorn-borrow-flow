@@ -8,6 +8,7 @@ import { SplashScreen } from "@/components/SplashScreen";
 import { AuthForm } from "@/components/AuthForm";
 import { Dashboard } from "@/components/Dashboard";
 import { AdminDashboard } from "@/components/AdminDashboard";
+import { SuperAdminDashboard } from "@/components/SuperAdminDashboard";
 import { BrokerDashboard } from "@/components/BrokerDashboard";
 import { AuthProvider, useAuth } from "@/hooks/useAuth";
 import Index from "@/pages/Index";
@@ -41,10 +42,12 @@ const AppContent = () => {
     );
   }
 
-  const isAdmin = hasRole('super_admin') || hasRole('admin');
+  const isSuperAdmin = hasRole('super_admin');
+  const isAdmin = hasRole('admin');
   const isBroker = hasRole('broker');
 
   const getDashboard = () => {
+    if (isSuperAdmin) return <SuperAdminDashboard />;
     if (isAdmin) return <AdminDashboard />;
     if (isBroker) return <BrokerDashboard />;
     return <Dashboard />;
