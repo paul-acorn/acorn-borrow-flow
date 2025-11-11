@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
-import { Briefcase, Search, FileText, User, UserPlus, History } from "lucide-react";
+import { Briefcase, Search, FileText, User, UserPlus, History, Download } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -52,6 +52,7 @@ export function AllDealsView() {
   const [selectedDealId, setSelectedDealId] = useState<string | null>(null);
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
   const [selectedBrokerId, setSelectedBrokerId] = useState<string>("");
+  const [isSyncing, setIsSyncing] = useState(false);
   const queryClient = useQueryClient();
 
   // Fetch all deals
@@ -265,15 +266,57 @@ export function AllDealsView() {
     assignBrokerMutation.mutate({ dealId: selectedDealId, brokerId: selectedBrokerId });
   };
 
+  const handleSyncToGoogleSheets = async () => {
+    setIsSyncing(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('google-sheets-sync', {
+        method: 'POST',
+      });
+
+      if (error) throw error;
+
+      if (data.success) {
+        toast.success('Successfully synced to Google Sheets!', {
+          description: 'Opening spreadsheet...',
+          action: {
+            label: 'Open',
+            onClick: () => window.open(data.spreadsheetUrl, '_blank'),
+          },
+        });
+        window.open(data.spreadsheetUrl, '_blank');
+      } else {
+        throw new Error(data.error || 'Failed to sync');
+      }
+    } catch (error) {
+      console.error('Error syncing to Google Sheets:', error);
+      toast.error('Failed to sync to Google Sheets', {
+        description: error.message,
+      });
+    } finally {
+      setIsSyncing(false);
+    }
+  };
+
   return (
     <Card>
       <CardHeader>
-        <div className="flex items-center gap-2">
-          <Briefcase className="w-5 h-5" />
-          <div>
-            <CardTitle>All Deals</CardTitle>
-            <CardDescription>View and manage all deals across the platform</CardDescription>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Briefcase className="w-5 h-5" />
+            <div>
+              <CardTitle>All Deals</CardTitle>
+              <CardDescription>View and manage all deals across the platform</CardDescription>
+            </div>
           </div>
+          <Button 
+            onClick={handleSyncToGoogleSheets}
+            disabled={isSyncing}
+            variant="outline"
+            className="gap-2"
+          >
+            <Download className="w-4 h-4" />
+            {isSyncing ? 'Syncing...' : 'Export to Google Sheets'}
+          </Button>
         </div>
       </CardHeader>
       <CardContent className="space-y-4">

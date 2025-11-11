@@ -3,5 +3,8 @@ project_id = "hooffptvzsvwukvstjai"
 [functions.google-drive]
 verify_jwt = true
 
+[functions.google-sheets-sync]
+verify_jwt = true
+
 [functions.hubspot]
 verify_jwt = true
