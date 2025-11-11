@@ -131,11 +131,11 @@ export const CustomerDropdown = () => {
     <>
       <div className="flex items-center gap-2">
         <Select value={selectedCustomerId} onValueChange={handleCustomerChange}>
-          <SelectTrigger className="w-[200px] bg-background">
+          <SelectTrigger className="w-[200px] bg-background text-foreground">
             <Users className="mr-2 h-4 w-4" />
-            <SelectValue placeholder="Select customer" />
+            <SelectValue placeholder="Select customer" className="text-foreground" />
           </SelectTrigger>
-          <SelectContent className="bg-background z-50">
+          <SelectContent className="bg-background text-foreground z-50 border border-border">
             {customers?.map((customer) => (
               <SelectItem key={customer.id} value={customer.id}>
                 {customer.first_name} {customer.last_name}

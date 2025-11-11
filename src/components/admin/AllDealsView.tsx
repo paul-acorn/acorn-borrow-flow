@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useState, useEffect } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
@@ -9,8 +9,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
-import { Briefcase, Search, FileText, User } from "lucide-react";
+import { Briefcase, Search, FileText, User, UserPlus, History } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
+import { toast } from "sonner";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 interface Deal {
   id: string;
@@ -31,8 +33,17 @@ interface Profile {
   assigned_broker: string | null;
 }
 
+interface ActivityLog {
+  id: string;
+  deal_id: string;
+  user_id: string;
+  action: string;
+  details: any;
+  created_at: string;
+}
+
 export function AllDealsView() {
-  const { hasRole } = useAuth();
+  const { hasRole, user } = useAuth();
   const isSuperAdmin = hasRole('super_admin');
   const isAdmin = hasRole('admin');
   const [searchTerm, setSearchTerm] = useState("");
@@ -40,6 +51,8 @@ export function AllDealsView() {
   const [filterStatus, setFilterStatus] = useState("all");
   const [selectedDealId, setSelectedDealId] = useState<string | null>(null);
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
+  const [selectedBrokerId, setSelectedBrokerId] = useState<string>("");
+  const queryClient = useQueryClient();
 
   // Fetch all deals
   const { data: deals = [], isLoading: isLoadingDeals } = useQuery({
@@ -65,6 +78,129 @@ export function AllDealsView() {
 
       if (error) throw error;
       return data as Profile[];
+    },
+  });
+
+  // Fetch brokers for assignment
+  const { data: brokers = [] } = useQuery({
+    queryKey: ['brokers'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('user_roles')
+        .select('user_id')
+        .eq('role', 'broker');
+
+      if (error) throw error;
+      
+      const brokerIds = data.map(r => r.user_id);
+      const { data: brokerProfiles, error: profilesError } = await supabase
+        .from('profiles')
+        .select('*')
+        .in('id', brokerIds);
+
+      if (profilesError) throw profilesError;
+      return brokerProfiles as Profile[];
+    },
+  });
+
+  // Fetch activity logs for selected deal
+  const { data: activityLogs = [] } = useQuery({
+    queryKey: ['deal-activity-logs', selectedDealId],
+    queryFn: async () => {
+      if (!selectedDealId) return [];
+      
+      const { data, error } = await supabase
+        .from('deal_activity_logs')
+        .select('*')
+        .eq('deal_id', selectedDealId)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      return data as ActivityLog[];
+    },
+    enabled: !!selectedDealId && isDetailsOpen,
+  });
+
+  // Real-time subscription for deals
+  useEffect(() => {
+    const channel = supabase
+      .channel('deals-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'deals'
+        },
+        () => {
+          queryClient.invalidateQueries({ queryKey: ['admin-all-deals'] });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [queryClient]);
+
+  // Real-time subscription for activity logs
+  useEffect(() => {
+    if (!selectedDealId) return;
+
+    const channel = supabase
+      .channel('activity-logs-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'deal_activity_logs',
+          filter: `deal_id=eq.${selectedDealId}`
+        },
+        () => {
+          queryClient.invalidateQueries({ queryKey: ['deal-activity-logs', selectedDealId] });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [selectedDealId, queryClient]);
+
+  // Mutation to assign broker
+  const assignBrokerMutation = useMutation({
+    mutationFn: async ({ dealId, brokerId }: { dealId: string; brokerId: string }) => {
+      const deal = deals.find(d => d.id === dealId);
+      if (!deal) throw new Error('Deal not found');
+
+      // Update the profile's assigned_broker
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .update({ assigned_broker: brokerId })
+        .eq('id', deal.user_id);
+
+      if (profileError) throw profileError;
+
+      // Log the activity
+      await supabase
+        .from('deal_activity_logs')
+        .insert({
+          deal_id: dealId,
+          user_id: user?.id || '',
+          action: 'broker_assigned',
+          details: { broker_id: brokerId }
+        });
+
+      return { dealId, brokerId };
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin-all-deals'] });
+      queryClient.invalidateQueries({ queryKey: ['admin-profiles'] });
+      toast.success('Broker assigned successfully');
+    },
+    onError: (error) => {
+      toast.error('Failed to assign broker: ' + error.message);
     },
   });
 
@@ -114,6 +250,19 @@ export function AllDealsView() {
   const handleRowClick = (dealId: string) => {
     setSelectedDealId(dealId);
     setIsDetailsOpen(true);
+    const deal = deals.find(d => d.id === dealId);
+    if (deal) {
+      const profile = profilesMap[deal.user_id];
+      setSelectedBrokerId(profile?.assigned_broker || "");
+    }
+  };
+
+  const handleAssignBroker = () => {
+    if (!selectedDealId || !selectedBrokerId) {
+      toast.error('Please select a broker');
+      return;
+    }
+    assignBrokerMutation.mutate({ dealId: selectedDealId, brokerId: selectedBrokerId });
   };
 
   return (
@@ -246,15 +395,19 @@ export function AllDealsView() {
           
           {selectedDeal && (
             <Tabs defaultValue="overview" className="w-full">
-              <TabsList className="grid w-full grid-cols-3">
+              <TabsList className="grid w-full grid-cols-4">
                 <TabsTrigger value="overview">Overview</TabsTrigger>
                 <TabsTrigger value="deal-info">
                   <FileText className="w-4 h-4 mr-2" />
-                  Deal Information
+                  Deal Info
                 </TabsTrigger>
                 <TabsTrigger value="client-info">
                   <User className="w-4 h-4 mr-2" />
-                  Client Details
+                  Client
+                </TabsTrigger>
+                <TabsTrigger value="activity">
+                  <History className="w-4 h-4 mr-2" />
+                  Activity
                 </TabsTrigger>
               </TabsList>
 
@@ -287,6 +440,40 @@ export function AllDealsView() {
                     <p className="font-mono text-xs">{selectedDeal.id}</p>
                   </div>
                 </div>
+
+                {(isSuperAdmin || isAdmin) && (
+                  <Card className="mt-4">
+                    <CardHeader>
+                      <CardTitle className="text-base flex items-center gap-2">
+                        <UserPlus className="w-4 h-4" />
+                        Assign Broker
+                      </CardTitle>
+                      <CardDescription>Assign or change the broker for this deal</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="flex gap-2">
+                        <Select value={selectedBrokerId} onValueChange={setSelectedBrokerId}>
+                          <SelectTrigger className="flex-1 bg-background text-foreground">
+                            <SelectValue placeholder="Select broker" />
+                          </SelectTrigger>
+                          <SelectContent className="bg-background text-foreground">
+                            {brokers.map((broker) => (
+                              <SelectItem key={broker.id} value={broker.id}>
+                                {broker.first_name} {broker.last_name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <Button 
+                          onClick={handleAssignBroker}
+                          disabled={!selectedBrokerId || assignBrokerMutation.isPending}
+                        >
+                          Assign
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
               </TabsContent>
 
               <TabsContent value="deal-info" className="space-y-4 mt-4">
@@ -357,6 +544,56 @@ export function AllDealsView() {
                     </CardContent>
                   </Card>
                 )}
+              </TabsContent>
+
+              <TabsContent value="activity" className="space-y-4 mt-4">
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-base">Activity Log</CardTitle>
+                    <CardDescription>Recent activities and changes for this deal</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <ScrollArea className="h-[300px] pr-4">
+                      {activityLogs.length > 0 ? (
+                        <div className="space-y-4">
+                          {activityLogs.map((log) => {
+                            const logUser = profilesMap[log.user_id];
+                            return (
+                              <div key={log.id} className="flex gap-3 pb-4 border-b last:border-0">
+                                <div className="flex-shrink-0 w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
+                                  <History className="w-4 h-4 text-primary" />
+                                </div>
+                                <div className="flex-1 space-y-1">
+                                  <div className="flex items-center justify-between">
+                                    <p className="text-sm font-medium">
+                                      {log.action.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                                    </p>
+                                    <p className="text-xs text-muted-foreground">
+                                      {new Date(log.created_at).toLocaleString()}
+                                    </p>
+                                  </div>
+                                  <p className="text-sm text-muted-foreground">
+                                    By {logUser ? `${logUser.first_name} ${logUser.last_name}` : 'Unknown user'}
+                                  </p>
+                                  {log.details && (
+                                    <div className="text-xs text-muted-foreground bg-muted p-2 rounded mt-1">
+                                      {JSON.stringify(log.details, null, 2)}
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      ) : (
+                        <div className="text-center py-8">
+                          <History className="w-12 h-12 text-muted-foreground mx-auto mb-2" />
+                          <p className="text-sm text-muted-foreground">No activity logs yet</p>
+                        </div>
+                      )}
+                    </ScrollArea>
+                  </CardContent>
+                </Card>
               </TabsContent>
             </Tabs>
           )}
