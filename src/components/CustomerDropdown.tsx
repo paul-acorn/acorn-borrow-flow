@@ -135,10 +135,16 @@ export const CustomerDropdown = () => {
             <Users className="mr-2 h-4 w-4" />
             <SelectValue placeholder="Select customer" className="text-foreground" />
           </SelectTrigger>
-          <SelectContent className="bg-background text-foreground z-50 border border-border">
+          <SelectContent className="bg-background border border-border z-50">
             {customers?.map((customer) => (
-              <SelectItem key={customer.id} value={customer.id}>
-                {customer.first_name} {customer.last_name}
+              <SelectItem 
+                key={customer.id} 
+                value={customer.id}
+                className="text-foreground cursor-pointer hover:bg-accent focus:bg-accent focus:text-accent-foreground"
+              >
+                <span className="text-foreground">
+                  {customer.first_name} {customer.last_name}
+                </span>
                 {customer.deal_code && (
                   <span className="ml-2 text-muted-foreground">
                     ({customer.deal_code})
