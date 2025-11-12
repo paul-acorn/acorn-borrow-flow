@@ -39,7 +39,6 @@ interface Requirement {
 
 export function MessagingModal({ open, onOpenChange, dealId, dealName, onSave }: MessagingModalProps) {
   const [messages, setMessages] = useState<Message[]>([]);
-  const [requirements, setRequirements] = useState<Requirement[]>([]);
   const [newMessage, setNewMessage] = useState('');
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
@@ -53,91 +52,48 @@ export function MessagingModal({ open, onOpenChange, dealId, dealName, onSave }:
     return 'client';
   };
 
-  // Fetch messages and requirements
+  // Check if user can manage requirements
+  const canManageRequirements = hasRole('broker') || hasRole('admin') || hasRole('super_admin');
+
+  // Fetch messages
   useEffect(() => {
     if (!open || !dealId) return;
-
-    const fetchData = async () => {
-      setLoading(true);
-      
-      // Fetch messages
-      const { data: messagesData, error: messagesError } = await supabase
+    
+    const fetchMessages = async () => {
+      const { data, error } = await supabase
         .from('messages')
         .select('*')
         .eq('deal_id', dealId)
         .order('created_at', { ascending: true });
 
-      if (messagesError) {
-        console.error('Error fetching messages:', messagesError);
+      if (error) {
+        console.error('Error fetching messages:', error);
         toast({
           title: "Error",
-          description: "Failed to load messages.",
+          description: "Failed to load messages",
           variant: "destructive",
         });
       } else {
-        setMessages(messagesData || []);
+        setMessages(data || []);
       }
-
-      // Fetch requirements
-      const { data: requirementsData, error: requirementsError } = await supabase
-        .from('requirements')
-        .select('*')
-        .eq('deal_id', dealId)
-        .order('created_at', { ascending: true });
-
-      if (requirementsError) {
-        console.error('Error fetching requirements:', requirementsError);
-        toast({
-          title: "Error",
-          description: "Failed to load requirements.",
-          variant: "destructive",
-        });
-      } else {
-        setRequirements(requirementsData || []);
-      }
-
       setLoading(false);
     };
 
-    fetchData();
-  }, [open, dealId, toast]);
+    fetchMessages();
 
-  // Set up realtime subscriptions
-  useEffect(() => {
-    if (!open || !dealId) return;
-
+    // Subscribe to real-time updates for messages only
     const channel = supabase
-      .channel('deal-updates')
-      .on(
-        'postgres_changes',
-        {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'messages',
-          filter: `deal_id=eq.${dealId}`,
-        },
-        (payload) => {
-          setMessages((prev) => [...prev, payload.new as Message]);
-        }
-      )
+      .channel(`deal-messages-${dealId}`)
       .on(
         'postgres_changes',
         {
           event: '*',
           schema: 'public',
-          table: 'requirements',
-          filter: `deal_id=eq.${dealId}`,
+          table: 'messages',
+          filter: `deal_id=eq.${dealId}`
         },
-        (payload) => {
-          if (payload.eventType === 'INSERT') {
-            setRequirements((prev) => [...prev, payload.new as Requirement]);
-          } else if (payload.eventType === 'UPDATE') {
-            setRequirements((prev) =>
-              prev.map((req) => (req.id === payload.new.id ? (payload.new as Requirement) : req))
-            );
-          } else if (payload.eventType === 'DELETE') {
-            setRequirements((prev) => prev.filter((req) => req.id !== payload.old.id));
-          }
+        () => {
+          fetchMessages();
         }
       )
       .subscribe();
@@ -195,7 +151,7 @@ export function MessagingModal({ open, onOpenChange, dealId, dealName, onSave }:
 
   const handleSave = () => {
     if (onSave) {
-      onSave({ messages, requirements });
+      onSave({ messages });
     }
     onOpenChange(false);
   };
@@ -330,60 +286,10 @@ export function MessagingModal({ open, onOpenChange, dealId, dealName, onSave }:
             </TabsContent>
 
             <TabsContent value="requirements" className="space-y-4">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center space-x-2">
-                    <FileText className="w-5 h-5" />
-                    <span>Outstanding Requirements</span>
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    {loading ? (
-                      <div className="text-center text-muted-foreground">Loading requirements...</div>
-                    ) : requirements.length === 0 ? (
-                      <div className="text-center text-muted-foreground">No requirements yet.</div>
-                    ) : (
-                      requirements.map((requirement) => (
-                        <div key={requirement.id} className="p-4 border rounded-lg">
-                          <div className="flex items-center justify-between mb-3">
-                            <div className="flex items-center space-x-3">
-                              {getStatusIcon(requirement.status)}
-                              <div>
-                                <h4 className="font-medium">{requirement.title}</h4>
-                                <p className="text-sm text-muted-foreground">
-                                  Due: {requirement.due_date ? new Date(requirement.due_date).toLocaleDateString() : 'N/A'}
-                                </p>
-                              </div>
-                            </div>
-                            <div className="flex items-center space-x-2">
-                              {getPriorityBadge(requirement.priority)}
-                              {getStatusBadge(requirement.status)}
-                            </div>
-                          </div>
-                          <p className="text-sm text-muted-foreground mb-3">
-                            {requirement.description || 'No description provided'}
-                          </p>
-                          {requirement.status === 'pending' && (
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => {
-                                toast({
-                                  title: "Redirecting",
-                                  description: "Opening document upload section...",
-                                });
-                              }}
-                            >
-                              Upload Document
-                            </Button>
-                          )}
-                        </div>
-                      ))
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
+              <RequirementsManager 
+                dealId={dealId} 
+                canManage={canManageRequirements}
+              />
             </TabsContent>
           </Tabs>
 
