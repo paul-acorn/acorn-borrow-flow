@@ -15,7 +15,8 @@ import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { Plus, Calendar, AlertCircle, CheckCircle, Clock } from "lucide-react";
+import { Plus, Calendar, AlertCircle, CheckCircle, Clock, Upload, FileText, X, Download } from "lucide-react";
+import { z } from "zod";
 
 interface Requirement {
   id: string;
@@ -28,6 +29,35 @@ interface Requirement {
   updated_at: string;
 }
 
+interface RequirementDocument {
+  id: string;
+  requirement_id: string;
+  file_name: string;
+  file_path: string;
+  file_size: number;
+  mime_type: string;
+  uploaded_by: string;
+  uploaded_at: string;
+}
+
+// File validation schema
+const fileSchema = z.object({
+  size: z.number().max(10 * 1024 * 1024, "File size must be less than 10MB"),
+  type: z.string().refine(
+    (type) => [
+      'application/pdf',
+      'image/jpeg',
+      'image/png',
+      'image/jpg',
+      'application/msword',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      'application/vnd.ms-excel',
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    ].includes(type),
+    "File type must be PDF, JPG, PNG, DOC, DOCX, XLS, or XLSX"
+  ),
+});
+
 interface RequirementsManagerProps {
   dealId: string;
   canManage?: boolean;
@@ -35,7 +65,9 @@ interface RequirementsManagerProps {
 
 export function RequirementsManager({ dealId, canManage = false }: RequirementsManagerProps) {
   const [requirements, setRequirements] = useState<Requirement[]>([]);
+  const [documents, setDocuments] = useState<Record<string, RequirementDocument[]>>({});
   const [loading, setLoading] = useState(true);
+  const [uploadingFile, setUploadingFile] = useState<string | null>(null);
   const [showAddForm, setShowAddForm] = useState(false);
   const [newRequirement, setNewRequirement] = useState({
     title: "",
@@ -49,9 +81,10 @@ export function RequirementsManager({ dealId, canManage = false }: RequirementsM
   useEffect(() => {
     if (!dealId) return;
     fetchRequirements();
+    fetchDocuments();
 
-    // Subscribe to real-time updates
-    const channel = supabase
+    // Subscribe to real-time updates for requirements
+    const requirementsChannel = supabase
       .channel(`requirements-${dealId}`)
       .on(
         "postgres_changes",
@@ -67,8 +100,26 @@ export function RequirementsManager({ dealId, canManage = false }: RequirementsM
       )
       .subscribe();
 
+    // Subscribe to real-time updates for documents
+    const documentsChannel = supabase
+      .channel(`requirement-documents-${dealId}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "requirement_documents",
+          filter: `deal_id=eq.${dealId}`,
+        },
+        () => {
+          fetchDocuments();
+        }
+      )
+      .subscribe();
+
     return () => {
-      supabase.removeChannel(channel);
+      supabase.removeChannel(requirementsChannel);
+      supabase.removeChannel(documentsChannel);
     };
   }, [dealId]);
 
@@ -89,6 +140,28 @@ export function RequirementsManager({ dealId, canManage = false }: RequirementsM
       setRequirements(data || []);
     }
     setLoading(false);
+  };
+
+  const fetchDocuments = async () => {
+    const { data, error } = await supabase
+      .from("requirement_documents")
+      .select("*")
+      .eq("deal_id", dealId)
+      .order("uploaded_at", { ascending: false });
+
+    if (error) {
+      console.error("Failed to load documents:", error);
+    } else {
+      // Group documents by requirement_id
+      const grouped = (data || []).reduce((acc, doc) => {
+        if (!acc[doc.requirement_id]) {
+          acc[doc.requirement_id] = [];
+        }
+        acc[doc.requirement_id].push(doc);
+        return acc;
+      }, {} as Record<string, RequirementDocument[]>);
+      setDocuments(grouped);
+    }
   };
 
   const handleAddRequirement = async () => {
