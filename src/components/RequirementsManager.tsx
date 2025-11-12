@@ -291,20 +291,29 @@ export function RequirementsManager({ dealId, canManage = false }: RequirementsM
     setUploadingFile(requirementId);
 
     try {
-      // Get the requirement to find the deal and client info
+      // Get the requirement to find the deal
       const { data: requirement, error: reqError } = await supabase
         .from('requirements')
-        .select('deal_id, deals(user_id, profiles(deal_code, google_drive_folder_id))')
+        .select('deal_id, deals!inner(user_id)')
         .eq('id', requirementId)
         .single();
 
       if (reqError) throw reqError;
 
-      const dealInfo = (requirement as any).deals;
-      const clientProfile = dealInfo?.profiles;
+      const dealUserId = (requirement as any)?.deals?.user_id;
+      if (!dealUserId) throw new Error('Deal user not found');
+
+      // Get client profile
+      const { data: clientProfile, error: profileError } = await supabase
+        .from('profiles')
+        .select('deal_code, google_drive_folder_id')
+        .eq('id', dealUserId)
+        .single() as any;
+
+      if (profileError) throw profileError;
       
       if (!clientProfile?.deal_code) {
-        throw new Error('Client profile not found');
+        throw new Error('Client deal code not found');
       }
 
       // Get root folder ID from system settings
@@ -312,7 +321,7 @@ export function RequirementsManager({ dealId, canManage = false }: RequirementsM
         .from('system_settings' as any)
         .select('setting_value')
         .eq('setting_key', 'google_drive_root_folder_id')
-        .single();
+        .maybeSingle();
 
       const rootFolderId = (settings as any)?.setting_value;
 
@@ -340,7 +349,7 @@ export function RequirementsManager({ dealId, canManage = false }: RequirementsM
         await supabase
           .from('profiles')
           .update({ google_drive_folder_id: clientFolderId } as any)
-          .eq('id', dealInfo.user_id);
+          .eq('id', dealUserId);
       }
 
       // Convert file to ArrayBuffer for upload
