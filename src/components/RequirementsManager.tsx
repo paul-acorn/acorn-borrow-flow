@@ -290,17 +290,71 @@ export function RequirementsManager({ dealId, canManage = false }: RequirementsM
     setUploadingFile(requirementId);
 
     try {
-      // Create unique file path
-      const fileExt = file.name.split('.').pop();
-      const fileName = `${user.id}/${requirementId}/${Date.now()}.${fileExt}`;
+      // Get the requirement to find the deal and client info
+      const { data: requirement, error: reqError } = await supabase
+        .from('requirements')
+        .select('deal_id, deals(user_id, profiles(deal_code, google_drive_folder_id))')
+        .eq('id', requirementId)
+        .single();
 
-      // Upload to storage
-      const { error: uploadError } = await supabase.storage
-        .from('requirement-documents')
-        .upload(fileName, file, {
-          cacheControl: '3600',
-          upsert: false
+      if (reqError) throw reqError;
+
+      const dealInfo = (requirement as any).deals;
+      const clientProfile = dealInfo?.profiles;
+      
+      if (!clientProfile?.deal_code) {
+        throw new Error('Client profile not found');
+      }
+
+      // Get root folder ID from system settings
+      const { data: settings } = await supabase
+        .from('system_settings')
+        .select('setting_value')
+        .eq('setting_key', 'google_drive_root_folder_id')
+        .single();
+
+      const rootFolderId = settings?.setting_value;
+
+      if (!rootFolderId) {
+        throw new Error('Google Drive root folder not configured. Please contact your administrator.');
+      }
+
+      // Check if client has a folder, create if not
+      let clientFolderId = clientProfile.google_drive_folder_id;
+
+      if (!clientFolderId) {
+        // Create folder for client using their deal code
+        const { data: folderData, error: folderError } = await supabase.functions.invoke('google-drive', {
+          body: {
+            action: 'createFolder',
+            folderName: clientProfile.deal_code,
+            parentFolderId: rootFolderId,
+          },
         });
+
+        if (folderError) throw folderError;
+        clientFolderId = folderData.id;
+
+        // Save folder ID to profile
+        await supabase
+          .from('profiles')
+          .update({ google_drive_folder_id: clientFolderId })
+          .eq('id', dealInfo.user_id);
+      }
+
+      // Convert file to ArrayBuffer for upload
+      const arrayBuffer = await file.arrayBuffer();
+
+      // Upload file to Google Drive
+      const { data: uploadData, error: uploadError } = await supabase.functions.invoke('google-drive', {
+        body: {
+          action: 'uploadBinary',
+          fileName: file.name,
+          fileData: Array.from(new Uint8Array(arrayBuffer)),
+          mimeType: file.type,
+          folderId: clientFolderId,
+        },
+      });
 
       if (uploadError) throw uploadError;
 
@@ -311,11 +365,12 @@ export function RequirementsManager({ dealId, canManage = false }: RequirementsM
           requirement_id: requirementId,
           deal_id: dealId,
           file_name: file.name,
-          file_path: fileName,
+          file_path: `google-drive://${uploadData.id}`, // Store with prefix to indicate Google Drive
           file_size: file.size,
           mime_type: file.type,
           uploaded_by: user.id,
-        });
+          google_drive_file_id: uploadData.id,
+        } as any);
 
       if (dbError) throw dbError;
 
@@ -327,12 +382,13 @@ export function RequirementsManager({ dealId, canManage = false }: RequirementsM
         details: {
           requirement_id: requirementId,
           file_name: file.name,
+          storage: 'google_drive',
         },
       });
 
       toast({
         title: "Success",
-        description: `${file.name} uploaded successfully`,
+        description: `${file.name} uploaded to Google Drive successfully`,
       });
     } catch (error: any) {
       console.error("Upload error:", error);
@@ -346,14 +402,31 @@ export function RequirementsManager({ dealId, canManage = false }: RequirementsM
     }
   };
 
-  const handleFileDelete = async (documentId: string, filePath: string) => {
+  const handleFileDelete = async (documentId: string, filePath: string, googleDriveFileId?: string) => {
     try {
-      // Delete from storage
-      const { error: storageError } = await supabase.storage
-        .from('requirement-documents')
-        .remove([filePath]);
+      // Delete from Google Drive if it's a Google Drive file
+      if (googleDriveFileId) {
+        const { error: driveError } = await supabase.functions.invoke('google-drive', {
+          body: {
+            action: 'delete',
+            fileId: googleDriveFileId,
+          },
+        });
 
-      if (storageError) throw storageError;
+        if (driveError) {
+          console.error('Failed to delete from Google Drive:', driveError);
+          // Continue with database deletion even if Drive deletion fails
+        }
+      } else if (!filePath.startsWith('google-drive://')) {
+        // Delete from Supabase storage if it's a storage file
+        const { error: storageError } = await supabase.storage
+          .from('requirement-documents')
+          .remove([filePath]);
+
+        if (storageError) {
+          console.error('Failed to delete from storage:', storageError);
+        }
+      }
 
       // Delete from database
       const { error: dbError } = await supabase
@@ -377,16 +450,33 @@ export function RequirementsManager({ dealId, canManage = false }: RequirementsM
     }
   };
 
-  const handleFileDownload = async (filePath: string, fileName: string) => {
+  const handleFileDownload = async (filePath: string, fileName: string, googleDriveFileId?: string) => {
     try {
-      const { data, error } = await supabase.storage
-        .from('requirement-documents')
-        .download(filePath);
+      let blob;
 
-      if (error) throw error;
+      if (googleDriveFileId) {
+        // Download from Google Drive
+        const { data, error } = await supabase.functions.invoke('google-drive', {
+          body: {
+            action: 'download',
+            fileId: googleDriveFileId,
+          },
+        });
+
+        if (error) throw error;
+        blob = data;
+      } else {
+        // Download from Supabase storage
+        const { data, error } = await supabase.storage
+          .from('requirement-documents')
+          .download(filePath);
+
+        if (error) throw error;
+        blob = data;
+      }
 
       // Create download link
-      const url = URL.createObjectURL(data);
+      const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
       a.download = fileName;
@@ -589,7 +679,7 @@ export function RequirementsManager({ dealId, canManage = false }: RequirementsM
                                   variant="ghost"
                                   size="sm"
                                   className="h-6 w-6 p-0"
-                                  onClick={() => handleFileDownload(doc.file_path, doc.file_name)}
+                                  onClick={() => handleFileDownload(doc.file_path, doc.file_name, (doc as any).google_drive_file_id)}
                                 >
                                   <Download className="w-3 h-3" />
                                 </Button>
@@ -598,7 +688,7 @@ export function RequirementsManager({ dealId, canManage = false }: RequirementsM
                                     variant="ghost"
                                     size="sm"
                                     className="h-6 w-6 p-0 text-destructive hover:text-destructive"
-                                    onClick={() => handleFileDelete(doc.id, doc.file_path)}
+                                    onClick={() => handleFileDelete(doc.id, doc.file_path, (doc as any).google_drive_file_id)}
                                   >
                                     <X className="w-3 h-3" />
                                   </Button>
