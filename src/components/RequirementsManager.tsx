@@ -144,7 +144,7 @@ export function RequirementsManager({ dealId, canManage = false }: RequirementsM
 
   const fetchDocuments = async () => {
     const { data, error } = await supabase
-      .from("requirement_documents")
+      .from("requirement_documents" as any)
       .select("*")
       .eq("deal_id", dealId)
       .order("uploaded_at", { ascending: false });
@@ -308,7 +308,7 @@ export function RequirementsManager({ dealId, canManage = false }: RequirementsM
 
       // Get root folder ID from system settings
       const { data: settings } = await supabase
-        .from('system_settings')
+        .from('system_settings' as any)
         .select('setting_value')
         .eq('setting_key', 'google_drive_root_folder_id')
         .single();
@@ -338,7 +338,7 @@ export function RequirementsManager({ dealId, canManage = false }: RequirementsM
         // Save folder ID to profile
         await supabase
           .from('profiles')
-          .update({ google_drive_folder_id: clientFolderId })
+          .update({ google_drive_folder_id: clientFolderId } as any)
           .eq('id', dealInfo.user_id);
       }
 
@@ -360,7 +360,7 @@ export function RequirementsManager({ dealId, canManage = false }: RequirementsM
 
       // Create document record
       const { error: dbError } = await supabase
-        .from('requirement_documents')
+        .from('requirement_documents' as any)
         .insert({
           requirement_id: requirementId,
           deal_id: dealId,
@@ -370,7 +370,7 @@ export function RequirementsManager({ dealId, canManage = false }: RequirementsM
           mime_type: file.type,
           uploaded_by: user.id,
           google_drive_file_id: uploadData.id,
-        } as any);
+        });
 
       if (dbError) throw dbError;
 
@@ -430,7 +430,7 @@ export function RequirementsManager({ dealId, canManage = false }: RequirementsM
 
       // Delete from database
       const { error: dbError } = await supabase
-        .from('requirement_documents')
+        .from('requirement_documents' as any)
         .delete()
         .eq('id', documentId);
 

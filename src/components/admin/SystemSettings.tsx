@@ -19,7 +19,7 @@ export function SystemSettings() {
 
   const fetchSettings = async () => {
     const { data, error } = await supabase
-      .from("system_settings")
+      .from("system_settings" as any)
       .select("*")
       .eq("setting_key", "google_drive_root_folder_id")
       .single();
@@ -36,7 +36,7 @@ export function SystemSettings() {
     setSaving(true);
 
     const { error } = await supabase
-      .from("system_settings")
+      .from("system_settings" as any)
       .update({ setting_value: googleDriveFolderId.trim() })
       .eq("setting_key", "google_drive_root_folder_id");
 
