@@ -96,7 +96,7 @@ export const ClientManagement = () => {
   const resendInvitationMutation = useMutation({
     mutationFn: async (invitation: any) => {
       // Check rate limit (5 minutes)
-      const lastSent = new Date(invitation.last_email_sent_at);
+      const lastSent = new Date((invitation as any).last_email_sent_at || invitation.created_at);
       const now = new Date();
       const minutesSinceLastSend = (now.getTime() - lastSent.getTime()) / 1000 / 60;
 
@@ -124,7 +124,7 @@ export const ClientManagement = () => {
       // Update last_email_sent_at
       const { error: updateError } = await supabase
         .from("team_invitations")
-        .update({ last_email_sent_at: now.toISOString() })
+        .update({ last_email_sent_at: now.toISOString() } as any)
         .eq("id", invitation.id);
 
       if (updateError) throw updateError;
@@ -242,14 +242,16 @@ export const ClientManagement = () => {
     createClientMutation.mutate();
   };
 
-  const canResend = (lastSentAt: string) => {
+  const canResend = (lastSentAt: string | null | undefined) => {
+    if (!lastSentAt) return true;
     const lastSent = new Date(lastSentAt);
     const now = new Date();
     const minutesSinceLastSend = (now.getTime() - lastSent.getTime()) / 1000 / 60;
     return minutesSinceLastSend >= 5;
   };
 
-  const getResendCooldownText = (lastSentAt: string) => {
+  const getResendCooldownText = (lastSentAt: string | null | undefined) => {
+    if (!lastSentAt) return "Resend";
     const lastSent = new Date(lastSentAt);
     const now = new Date();
     const minutesSinceLastSend = (now.getTime() - lastSent.getTime()) / 1000 / 60;
@@ -430,16 +432,16 @@ export const ClientManagement = () => {
                       <Button
                         variant="ghost"
                         size="sm"
-                        disabled={!canResend(invitation.last_email_sent_at) || resendInvitationMutation.isPending}
+                        disabled={!canResend((invitation as any).last_email_sent_at) || resendInvitationMutation.isPending}
                         onClick={() => resendInvitationMutation.mutate(invitation)}
-                        title={canResend(invitation.last_email_sent_at) ? "Resend invitation email" : "Rate limited - wait 5 minutes between resends"}
+                        title={canResend((invitation as any).last_email_sent_at) ? "Resend invitation email" : "Rate limited - wait 5 minutes between resends"}
                       >
                         {resendInvitationMutation.isPending ? (
                           <Loader2 className="h-4 w-4 animate-spin" />
                         ) : (
                           <>
                             <Mail className="h-4 w-4 mr-1" />
-                            {getResendCooldownText(invitation.last_email_sent_at)}
+                            {getResendCooldownText((invitation as any).last_email_sent_at)}
                           </>
                         )}
                       </Button>
