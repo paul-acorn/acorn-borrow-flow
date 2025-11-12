@@ -40,8 +40,23 @@ export const ClientManagement = () => {
   const [newClientEmail, setNewClientEmail] = useState("");
   const [newClientFirstName, setNewClientFirstName] = useState("");
   const [newClientLastName, setNewClientLastName] = useState("");
-  const [brokerInitials, setBrokerInitials] = useState("");
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
+
+  // Fetch broker's profile to get initials
+  const { data: brokerProfile } = useQuery({
+    queryKey: ["broker-profile", user?.id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("first_name, last_name")
+        .eq("id", user?.id)
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!user?.id,
+  });
 
   // Fetch broker's registered clients
   const { data: clients, isLoading } = useQuery({
@@ -80,9 +95,15 @@ export const ClientManagement = () => {
   // Create client invitation mutation
   const createClientMutation = useMutation({
     mutationFn: async () => {
-      if (!brokerInitials.trim()) {
-        throw new Error("Broker initials are required");
+      // Auto-generate broker initials from profile
+      if (!brokerProfile?.first_name || !brokerProfile?.last_name) {
+        throw new Error("Broker profile incomplete. Please update your profile with first and last name.");
       }
+
+      const brokerInitials = (
+        brokerProfile.first_name.charAt(0) + 
+        brokerProfile.last_name.charAt(0)
+      ).toUpperCase();
 
       // Generate invitation code
       const { data: invitationCode, error: invitationError } = await supabase.rpc(
@@ -94,7 +115,7 @@ export const ClientManagement = () => {
       // Generate deal code with new format (e.g., FL250001)
       const { data: dealCodeData, error: dealCodeError } = await supabase.rpc(
         "generate_deal_code",
-        { broker_initials: brokerInitials.toUpperCase() }
+        { broker_initials: brokerInitials }
       );
 
       if (dealCodeError) throw dealCodeError;
@@ -118,25 +139,45 @@ export const ClientManagement = () => {
 
       if (insertError) throw insertError;
 
+      // Send invitation email via edge function
+      const invitationUrl = `${window.location.origin}/welcome?code=${invitationCode}`;
+      
+      try {
+        await supabase.functions.invoke("send-client-invitation", {
+          body: {
+            email: newClientEmail,
+            firstName: newClientFirstName,
+            lastName: newClientLastName,
+            invitationCode,
+            invitationUrl,
+            brokerName: `${brokerProfile.first_name} ${brokerProfile.last_name}`,
+          },
+        });
+      } catch (emailError) {
+        console.error("Failed to send invitation email:", emailError);
+        // Don't fail the whole operation if email fails
+      }
+
       return {
         invitationCode,
         dealCode: dealCodeData,
         email: newClientEmail,
         firstName: newClientFirstName,
         lastName: newClientLastName,
+        invitationUrl,
       };
     },
     onSuccess: (data) => {
       toast.success(
-        `Client invitation created! Share this code with ${data.firstName}: ${data.invitationCode}`,
-        { duration: 10000 }
+        `Invitation sent to ${data.firstName} ${data.lastName}!`,
+        { duration: 5000 }
       );
       queryClient.invalidateQueries({ queryKey: ["broker-clients"] });
+      queryClient.invalidateQueries({ queryKey: ["broker-invitations"] });
       setIsAddDialogOpen(false);
       setNewClientEmail("");
       setNewClientFirstName("");
       setNewClientLastName("");
-      setBrokerInitials("");
     },
     onError: (error: any) => {
       toast.error(error.message || "Failed to add client");
@@ -144,7 +185,7 @@ export const ClientManagement = () => {
   });
 
   const handleAddClient = () => {
-    if (!newClientEmail || !newClientFirstName || !newClientLastName || !brokerInitials) {
+    if (!newClientEmail || !newClientFirstName || !newClientLastName) {
       toast.error("All fields are required");
       return;
     }
@@ -189,24 +230,14 @@ export const ClientManagement = () => {
             </DialogTrigger>
             <DialogContent>
               <DialogHeader>
-                <DialogTitle>Add New Client</DialogTitle>
+                <DialogTitle>Invite New Client</DialogTitle>
                 <DialogDescription>
-                  Create a new client account with a unique deal code
+                  Send an invitation email with a unique registration link
                 </DialogDescription>
               </DialogHeader>
               <div className="space-y-4">
                 <div>
-                  <Label htmlFor="brokerInitials">Your Initials</Label>
-                  <Input
-                    id="brokerInitials"
-                    placeholder="e.g., JD"
-                    value={brokerInitials}
-                    onChange={(e) => setBrokerInitials(e.target.value)}
-                    maxLength={5}
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="firstName">First Name</Label>
+                  <Label htmlFor="firstName">Client First Name</Label>
                   <Input
                     id="firstName"
                     placeholder="John"
@@ -215,7 +246,7 @@ export const ClientManagement = () => {
                   />
                 </div>
                 <div>
-                  <Label htmlFor="lastName">Last Name</Label>
+                  <Label htmlFor="lastName">Client Last Name</Label>
                   <Input
                     id="lastName"
                     placeholder="Doe"
@@ -224,7 +255,7 @@ export const ClientManagement = () => {
                   />
                 </div>
                 <div>
-                  <Label htmlFor="email">Email</Label>
+                  <Label htmlFor="email">Client Email</Label>
                   <Input
                     id="email"
                     type="email"
@@ -242,7 +273,7 @@ export const ClientManagement = () => {
                   {createClientMutation.isPending && (
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   )}
-                  Add Client
+                  Send Invitation
                 </Button>
               </DialogFooter>
             </DialogContent>
@@ -306,40 +337,28 @@ export const ClientManagement = () => {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Invitation Code</TableHead>
-                  <TableHead>Created</TableHead>
+                  <TableHead>Client Name</TableHead>
+                  <TableHead>Email</TableHead>
+                  <TableHead>Deal Code</TableHead>
+                  <TableHead>Sent</TableHead>
                   <TableHead>Expires</TableHead>
-                  <TableHead>Status</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {pendingInvitations.map((invitation) => (
                   <TableRow key={invitation.id}>
                     <TableCell>
-                      <div className="flex items-center gap-2">
-                        <Badge className="font-mono">{invitation.invitation_code}</Badge>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="h-6 w-6 p-0"
-                          onClick={() => copyToClipboard(invitation.invitation_code, "Invitation code")}
-                        >
-                          {copiedCode === invitation.invitation_code ? (
-                            <Check className="h-3 w-3 text-green-600" />
-                          ) : (
-                            <Copy className="h-3 w-3" />
-                          )}
-                        </Button>
-                      </div>
+                      {invitation.client_first_name} {invitation.client_last_name}
+                    </TableCell>
+                    <TableCell>{invitation.client_email}</TableCell>
+                    <TableCell>
+                      <Badge variant="outline">{invitation.deal_code}</Badge>
                     </TableCell>
                     <TableCell>
                       {new Date(invitation.created_at).toLocaleDateString()}
                     </TableCell>
                     <TableCell>
                       {new Date(invitation.expires_at).toLocaleDateString()}
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant="secondary">Pending</Badge>
                     </TableCell>
                   </TableRow>
                 ))}

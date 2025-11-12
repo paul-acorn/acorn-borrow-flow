@@ -4,6 +4,7 @@ import { Users, Briefcase } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { UserManagement } from "./admin/UserManagement";
 import { AllDealsView } from "./admin/AllDealsView";
+import { ClientManagement } from "./broker/ClientManagement";
 import { UserProfileMenu } from "@/components/UserProfileMenu";
 
 export function AdminDashboard({ hideHeader = false }: { hideHeader?: boolean }) {
