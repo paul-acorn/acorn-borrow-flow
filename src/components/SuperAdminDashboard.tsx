@@ -25,11 +25,11 @@ export const SuperAdminDashboard = () => {
                 <TabsList>
                   <TabsTrigger value="admin" className="flex items-center gap-2">
                     <Users className="w-4 h-4" />
-                    Admin Dashboard
+                    Admin
                   </TabsTrigger>
                   <TabsTrigger value="deals" className="flex items-center gap-2">
                     <Briefcase className="w-4 h-4" />
-                    Deals Dashboard
+                    Broker
                   </TabsTrigger>
                 </TabsList>
               </Tabs>
