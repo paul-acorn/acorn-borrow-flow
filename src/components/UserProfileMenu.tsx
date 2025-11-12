@@ -22,6 +22,14 @@ export const UserProfileMenu = () => {
   const [showSecurityModal, setShowSecurityModal] = useState(false);
 
   const getInitials = () => {
+    // Try to get from user metadata first
+    const firstName = user?.user_metadata?.first_name;
+    const lastName = user?.user_metadata?.last_name;
+    
+    if (firstName && lastName) {
+      return `${firstName[0]}${lastName[0]}`.toUpperCase();
+    }
+    
     if (!user?.email) return "U";
     return user.email.substring(0, 2).toUpperCase();
   };

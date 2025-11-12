@@ -38,7 +38,7 @@ export function TermsPrivacyModal({ open, onOpenChange, onAccept }: TermsPrivacy
         <div className="space-y-6">
           <div className="space-y-4">
             <div className="p-4 border rounded-lg bg-muted/50">
-              <h4 className="font-medium mb-2">Terms and Conditions</h4>
+              <h4 className="font-medium mb-2">Terms and Conditions Summary</h4>
               <div className="text-sm text-muted-foreground space-y-2">
                 <p>By proceeding, you agree to our terms and conditions including:</p>
                 <ul className="list-disc list-inside space-y-1 ml-4">
@@ -51,7 +51,7 @@ export function TermsPrivacyModal({ open, onOpenChange, onAccept }: TermsPrivacy
             </div>
 
             <div className="p-4 border rounded-lg bg-muted/50">
-              <h4 className="font-medium mb-2">Privacy Policy</h4>
+              <h4 className="font-medium mb-2">Privacy Policy Summary</h4>
               <div className="text-sm text-muted-foreground space-y-2">
                 <p>We are committed to protecting your privacy:</p>
                 <ul className="list-disc list-inside space-y-1 ml-4">
@@ -59,7 +59,18 @@ export function TermsPrivacyModal({ open, onOpenChange, onAccept }: TermsPrivacy
                   <li>Information is only shared with relevant lenders</li>
                   <li>You can request data deletion at any time</li>
                   <li>We comply with GDPR and UK data protection laws</li>
+                  <li>FCA regulated - your data is protected</li>
                 </ul>
+                <p className="mt-2">
+                  <a 
+                    href="https://acorn.finance/privacy-policy-how-acorn-finance-protects-your-data-fca-regulated" 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="text-primary hover:underline font-medium"
+                  >
+                    Read full Privacy Policy →
+                  </a>
+                </p>
               </div>
             </div>
 

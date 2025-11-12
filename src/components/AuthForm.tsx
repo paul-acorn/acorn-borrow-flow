@@ -9,6 +9,7 @@ import { TermsPrivacyModal } from "@/components/TermsPrivacyModal";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import { z } from "zod";
+import { supabase } from "@/integrations/supabase/client";
 
 const emailSchema = z.string().email("Invalid email address");
 const passwordSchema = z.string().min(6, "Password must be at least 6 characters");
@@ -33,6 +34,7 @@ export function AuthForm({ onBack }: AuthFormProps) {
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [invitationCode, setInvitationCode] = useState("");
+  const [isCheckingInvitation, setIsCheckingInvitation] = useState(false);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -121,6 +123,36 @@ export function AuthForm({ onBack }: AuthFormProps) {
   const handleTermsAccept = (terms: boolean, privacy: boolean) => {
     setTermsAccepted(terms);
     setPrivacyAccepted(privacy);
+  };
+
+  // Fetch invitation details when code is entered
+  const handleInvitationCodeChange = async (code: string) => {
+    const upperCode = code.toUpperCase();
+    setInvitationCode(upperCode);
+    
+    if (upperCode.length >= 8) {
+      setIsCheckingInvitation(true);
+      try {
+        const { data: invitation, error } = await supabase
+          .from('team_invitations')
+          .select('client_first_name, client_last_name, client_email')
+          .eq('invitation_code', upperCode)
+          .is('used_at', null)
+          .gt('expires_at', new Date().toISOString())
+          .maybeSingle();
+
+        if (!error && invitation) {
+          if (invitation.client_first_name) setFirstName(invitation.client_first_name);
+          if (invitation.client_last_name) setLastName(invitation.client_last_name);
+          if (invitation.client_email) setRegisterEmail(invitation.client_email);
+          toast.success("Invitation found! Details pre-populated.");
+        }
+      } catch (err) {
+        console.error('Error fetching invitation:', err);
+      } finally {
+        setIsCheckingInvitation(false);
+      }
+    }
   };
 
   return (
@@ -262,9 +294,13 @@ export function AuthForm({ onBack }: AuthFormProps) {
                       type="text"
                       placeholder="Enter code if you have one"
                       value={invitationCode}
-                      onChange={(e) => setInvitationCode(e.target.value.toUpperCase())}
+                      onChange={(e) => handleInvitationCodeChange(e.target.value)}
                       className="h-11"
+                      disabled={isCheckingInvitation}
                     />
+                    {isCheckingInvitation && (
+                      <p className="text-xs text-muted-foreground">Checking invitation...</p>
+                    )}
                   </div>
 
                   <div className="space-y-2">

@@ -500,9 +500,57 @@ export function UserManagement() {
                 id="editDealCode"
                 value={editDealCode}
                 onChange={(e) => setEditDealCode(e.target.value.toUpperCase())}
-                placeholder="JD01"
+                placeholder="FL250001"
               />
             </div>
+            {isSuperAdmin && (
+              <div className="space-y-2">
+                <Label htmlFor="assignBroker">Assign Broker</Label>
+                <Select 
+                  value={selectedUser?.assigned_broker || "unassigned"} 
+                  onValueChange={async (value) => {
+                    if (!selectedUser) return;
+                    const brokerId = value === "unassigned" ? null : value;
+                    try {
+                      const { error } = await supabase
+                        .from('profiles')
+                        .update({ assigned_broker: brokerId })
+                        .eq('id', selectedUser.id);
+                      
+                      if (error) throw error;
+                      
+                      toast({
+                        title: "Broker Updated",
+                        description: "Client has been assigned to broker successfully",
+                      });
+                      
+                      queryClient.invalidateQueries({ queryKey: ['admin-users'] });
+                      setSelectedUser({ ...selectedUser, assigned_broker: brokerId });
+                    } catch (error: any) {
+                      toast({
+                        title: "Error",
+                        description: "Failed to assign broker",
+                        variant: "destructive"
+                      });
+                    }
+                  }}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select broker" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="unassigned">No Broker</SelectItem>
+                    {users
+                      .filter(u => userRoles[u.id]?.includes('broker'))
+                      .map(broker => (
+                        <SelectItem key={broker.id} value={broker.id}>
+                          {broker.first_name} {broker.last_name} ({broker.email})
+                        </SelectItem>
+                      ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowEditUserDialog(false)}>

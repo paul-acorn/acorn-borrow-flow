@@ -1,12 +1,14 @@
-import { useState } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { useState, useEffect } from "react";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
-import { toast } from "sonner";
+import { useAuth } from "@/hooks/useAuth";
+import { useToast } from "@/hooks/use-toast";
 import { useQueryClient } from "@tanstack/react-query";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Camera } from "lucide-react";
 
 interface ProfileEditModalProps {
   open: boolean;
@@ -15,29 +17,35 @@ interface ProfileEditModalProps {
 
 export const ProfileEditModal = ({ open, onOpenChange }: ProfileEditModalProps) => {
   const { user } = useAuth();
+  const { toast } = useToast();
   const queryClient = useQueryClient();
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [initials, setInitials] = useState("");
 
   // Load current profile data when modal opens
-  useState(() => {
+  useEffect(() => {
     if (open && user) {
       supabase
         .from("profiles")
         .select("*")
         .eq("id", user.id)
         .single()
-        .then(({ data }) => {
-          if (data) {
-            setFirstName(data.first_name || "");
-            setLastName(data.last_name || "");
-            setEmail(data.email || user.email || "");
+        .then(({ data: profile }) => {
+          if (profile) {
+            setFirstName(profile.first_name || "");
+            setLastName(profile.last_name || "");
+            setEmail(profile.email || "");
+            
+            // Set initials from first and last name
+            const userInitials = `${profile.first_name?.[0] || ""}${profile.last_name?.[0] || ""}`.toUpperCase();
+            setInitials(userInitials || profile.email?.substring(0, 2).toUpperCase() || "U");
           }
         });
     }
-  });
+  }, [open, user]);
 
   const handleSave = async () => {
     if (!user) return;
@@ -55,12 +63,17 @@ export const ProfileEditModal = ({ open, onOpenChange }: ProfileEditModalProps) 
 
       if (error) throw error;
 
-      toast.success("Profile updated successfully");
+      toast({
+        title: "Profile Updated",
+        description: "Your profile has been updated successfully"
+      });
       queryClient.invalidateQueries({ queryKey: ["profile", user.id] });
       onOpenChange(false);
     } catch (error: any) {
-      toast.error("Failed to update profile", {
-        description: error.message,
+      toast({
+        title: "Error",
+        description: error.message || "Failed to update profile",
+        variant: "destructive"
       });
     } finally {
       setIsLoading(false);
@@ -72,8 +85,32 @@ export const ProfileEditModal = ({ open, onOpenChange }: ProfileEditModalProps) 
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Edit Profile</DialogTitle>
+          <DialogDescription>
+            Update your personal information and profile picture
+          </DialogDescription>
         </DialogHeader>
         <div className="space-y-4 py-4">
+          <div className="flex justify-center mb-4">
+            <div className="relative">
+              <Avatar className="h-24 w-24">
+                <AvatarFallback className="bg-primary text-primary-foreground text-2xl">
+                  {initials}
+                </AvatarFallback>
+              </Avatar>
+              <Button
+                variant="secondary"
+                size="sm"
+                className="absolute bottom-0 right-0 rounded-full h-8 w-8 p-0"
+                title="Upload photo (coming soon)"
+                disabled
+              >
+                <Camera className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+          <div className="text-center text-xs text-muted-foreground mb-4">
+            Your avatar displays your initials: {initials}
+          </div>
           <div className="space-y-2">
             <Label htmlFor="firstName">First Name</Label>
             <Input
@@ -103,14 +140,14 @@ export const ProfileEditModal = ({ open, onOpenChange }: ProfileEditModalProps) 
             />
           </div>
         </div>
-        <div className="flex justify-end gap-3">
+        <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Cancel
           </Button>
           <Button onClick={handleSave} disabled={isLoading}>
             {isLoading ? "Saving..." : "Save Changes"}
           </Button>
-        </div>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );

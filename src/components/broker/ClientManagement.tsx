@@ -91,7 +91,7 @@ export const ClientManagement = () => {
 
       if (invitationError) throw invitationError;
 
-      // Generate deal code
+      // Generate deal code with new format (e.g., FL250001)
       const { data: dealCodeData, error: dealCodeError } = await supabase.rpc(
         "generate_deal_code",
         { broker_initials: brokerInitials.toUpperCase() }
@@ -99,7 +99,7 @@ export const ClientManagement = () => {
 
       if (dealCodeError) throw dealCodeError;
 
-      // Create invitation with client role
+      // Create invitation with client details for pre-population
       const expiresAt = new Date();
       expiresAt.setDate(expiresAt.getDate() + 7); // 7 day expiry
 
@@ -110,11 +110,14 @@ export const ClientManagement = () => {
           role: "client",
           created_by: user?.id,
           expires_at: expiresAt.toISOString(),
+          client_first_name: newClientFirstName,
+          client_last_name: newClientLastName,
+          client_email: newClientEmail,
+          deal_code: dealCodeData,
         });
 
       if (insertError) throw insertError;
 
-      // Send invitation email (for now, just return the code)
       return {
         invitationCode,
         dealCode: dealCodeData,

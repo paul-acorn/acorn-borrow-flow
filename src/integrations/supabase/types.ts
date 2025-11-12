@@ -157,33 +157,42 @@ export type Database = {
       }
       profiles: {
         Row: {
+          account_status: string | null
           assigned_broker: string | null
+          avatar_url: string | null
           created_at: string
           deal_code: string | null
           email: string
           first_name: string | null
           id: string
           last_name: string | null
+          phone_number: string | null
           updated_at: string
         }
         Insert: {
+          account_status?: string | null
           assigned_broker?: string | null
+          avatar_url?: string | null
           created_at?: string
           deal_code?: string | null
           email: string
           first_name?: string | null
           id: string
           last_name?: string | null
+          phone_number?: string | null
           updated_at?: string
         }
         Update: {
+          account_status?: string | null
           assigned_broker?: string | null
+          avatar_url?: string | null
           created_at?: string
           deal_code?: string | null
           email?: string
           first_name?: string | null
           id?: string
           last_name?: string | null
+          phone_number?: string | null
           updated_at?: string
         }
         Relationships: []
@@ -234,8 +243,12 @@ export type Database = {
       }
       team_invitations: {
         Row: {
+          client_email: string | null
+          client_first_name: string | null
+          client_last_name: string | null
           created_at: string
           created_by: string
+          deal_code: string | null
           expires_at: string
           id: string
           invitation_code: string
@@ -244,8 +257,12 @@ export type Database = {
           used_by_user_id: string | null
         }
         Insert: {
+          client_email?: string | null
+          client_first_name?: string | null
+          client_last_name?: string | null
           created_at?: string
           created_by: string
+          deal_code?: string | null
           expires_at: string
           id?: string
           invitation_code: string
@@ -254,8 +271,12 @@ export type Database = {
           used_by_user_id?: string | null
         }
         Update: {
+          client_email?: string | null
+          client_first_name?: string | null
+          client_last_name?: string | null
           created_at?: string
           created_by?: string
+          deal_code?: string | null
           expires_at?: string
           id?: string
           invitation_code?: string
