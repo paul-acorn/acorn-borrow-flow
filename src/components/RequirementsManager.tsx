@@ -272,6 +272,151 @@ export function RequirementsManager({ dealId, canManage = false }: RequirementsM
     });
   };
 
+  const handleFileUpload = async (requirementId: string, file: File) => {
+    if (!user) return;
+
+    // Validate file
+    try {
+      fileSchema.parse({ size: file.size, type: file.type });
+    } catch (error: any) {
+      toast({
+        title: "Invalid File",
+        description: error.errors?.[0]?.message || "Invalid file",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setUploadingFile(requirementId);
+
+    try {
+      // Create unique file path
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${user.id}/${requirementId}/${Date.now()}.${fileExt}`;
+
+      // Upload to storage
+      const { error: uploadError } = await supabase.storage
+        .from('requirement-documents')
+        .upload(fileName, file, {
+          cacheControl: '3600',
+          upsert: false
+        });
+
+      if (uploadError) throw uploadError;
+
+      // Create document record
+      const { error: dbError } = await supabase
+        .from('requirement_documents')
+        .insert({
+          requirement_id: requirementId,
+          deal_id: dealId,
+          file_name: file.name,
+          file_path: fileName,
+          file_size: file.size,
+          mime_type: file.type,
+          uploaded_by: user.id,
+        });
+
+      if (dbError) throw dbError;
+
+      // Log activity
+      await supabase.from("deal_activity_logs").insert({
+        deal_id: dealId,
+        user_id: user.id,
+        action: "document_uploaded",
+        details: {
+          requirement_id: requirementId,
+          file_name: file.name,
+        },
+      });
+
+      toast({
+        title: "Success",
+        description: `${file.name} uploaded successfully`,
+      });
+    } catch (error: any) {
+      console.error("Upload error:", error);
+      toast({
+        title: "Upload Failed",
+        description: error.message || "Failed to upload file",
+        variant: "destructive",
+      });
+    } finally {
+      setUploadingFile(null);
+    }
+  };
+
+  const handleFileDelete = async (documentId: string, filePath: string) => {
+    try {
+      // Delete from storage
+      const { error: storageError } = await supabase.storage
+        .from('requirement-documents')
+        .remove([filePath]);
+
+      if (storageError) throw storageError;
+
+      // Delete from database
+      const { error: dbError } = await supabase
+        .from('requirement_documents')
+        .delete()
+        .eq('id', documentId);
+
+      if (dbError) throw dbError;
+
+      toast({
+        title: "Success",
+        description: "Document deleted successfully",
+      });
+    } catch (error: any) {
+      console.error("Delete error:", error);
+      toast({
+        title: "Delete Failed",
+        description: error.message || "Failed to delete file",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleFileDownload = async (filePath: string, fileName: string) => {
+    try {
+      const { data, error } = await supabase.storage
+        .from('requirement-documents')
+        .download(filePath);
+
+      if (error) throw error;
+
+      // Create download link
+      const url = URL.createObjectURL(data);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = fileName;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+
+      toast({
+        title: "Success",
+        description: `${fileName} downloaded`,
+      });
+    } catch (error: any) {
+      console.error("Download error:", error);
+      toast({
+        title: "Download Failed",
+        description: error.message || "Failed to download file",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const formatFileSize = (bytes: number) => {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
+  };
+
   const getStatusIcon = (status: string) => {
     switch (status) {
       case "completed":
@@ -421,6 +566,86 @@ export function RequirementsManager({ dealId, canManage = false }: RequirementsM
                         Due: {new Date(req.due_date).toLocaleDateString()}
                       </div>
                     )}
+
+                    {/* Uploaded Documents */}
+                    {documents[req.id] && documents[req.id].length > 0 && (
+                      <div className="mt-3 space-y-2">
+                        <p className="text-xs font-medium text-muted-foreground">Uploaded Documents:</p>
+                        <div className="space-y-1">
+                          {documents[req.id].map((doc) => (
+                            <div
+                              key={doc.id}
+                              className="flex items-center justify-between p-2 bg-muted rounded text-xs"
+                            >
+                              <div className="flex items-center gap-2 flex-1 min-w-0">
+                                <FileText className="w-4 h-4 flex-shrink-0" />
+                                <span className="truncate">{doc.file_name}</span>
+                                <span className="text-muted-foreground flex-shrink-0">
+                                  ({formatFileSize(doc.file_size)})
+                                </span>
+                              </div>
+                              <div className="flex items-center gap-1 flex-shrink-0">
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="h-6 w-6 p-0"
+                                  onClick={() => handleFileDownload(doc.file_path, doc.file_name)}
+                                >
+                                  <Download className="w-3 h-3" />
+                                </Button>
+                                {(user?.id === doc.uploaded_by || canManage) && (
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className="h-6 w-6 p-0 text-destructive hover:text-destructive"
+                                    onClick={() => handleFileDelete(doc.id, doc.file_path)}
+                                  >
+                                    <X className="w-3 h-3" />
+                                  </Button>
+                                )}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Upload Button */}
+                    <div className="mt-3">
+                      <label htmlFor={`file-upload-${req.id}`}>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="gap-2"
+                          disabled={uploadingFile === req.id}
+                          asChild
+                        >
+                          <span>
+                            {uploadingFile === req.id ? (
+                              <>Uploading...</>
+                            ) : (
+                              <>
+                                <Upload className="w-4 h-4" />
+                                Upload Document
+                              </>
+                            )}
+                          </span>
+                        </Button>
+                      </label>
+                      <input
+                        id={`file-upload-${req.id}`}
+                        type="file"
+                        className="hidden"
+                        accept=".pdf,.jpg,.jpeg,.png,.doc,.docx,.xls,.xlsx"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) {
+                            handleFileUpload(req.id, file);
+                            e.target.value = '';
+                          }
+                        }}
+                      />
+                    </div>
                   </div>
 
                   {canManage && (
