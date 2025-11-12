@@ -197,6 +197,57 @@ export type Database = {
         }
         Relationships: []
       }
+      requirement_documents: {
+        Row: {
+          deal_id: string
+          file_name: string
+          file_path: string
+          file_size: number
+          id: string
+          mime_type: string
+          requirement_id: string
+          uploaded_at: string
+          uploaded_by: string
+        }
+        Insert: {
+          deal_id: string
+          file_name: string
+          file_path: string
+          file_size: number
+          id?: string
+          mime_type: string
+          requirement_id: string
+          uploaded_at?: string
+          uploaded_by: string
+        }
+        Update: {
+          deal_id?: string
+          file_name?: string
+          file_path?: string
+          file_size?: number
+          id?: string
+          mime_type?: string
+          requirement_id?: string
+          uploaded_at?: string
+          uploaded_by?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "requirement_documents_deal_id_fkey"
+            columns: ["deal_id"]
+            isOneToOne: false
+            referencedRelation: "deals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "requirement_documents_requirement_id_fkey"
+            columns: ["requirement_id"]
+            isOneToOne: false
+            referencedRelation: "requirements"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       requirements: {
         Row: {
           created_at: string
@@ -252,6 +303,7 @@ export type Database = {
           expires_at: string
           id: string
           invitation_code: string
+          last_email_sent_at: string | null
           role: Database["public"]["Enums"]["app_role"]
           used_at: string | null
           used_by_user_id: string | null
@@ -266,6 +318,7 @@ export type Database = {
           expires_at: string
           id?: string
           invitation_code: string
+          last_email_sent_at?: string | null
           role?: Database["public"]["Enums"]["app_role"]
           used_at?: string | null
           used_by_user_id?: string | null
@@ -280,6 +333,7 @@ export type Database = {
           expires_at?: string
           id?: string
           invitation_code?: string
+          last_email_sent_at?: string | null
           role?: Database["public"]["Enums"]["app_role"]
           used_at?: string | null
           used_by_user_id?: string | null
