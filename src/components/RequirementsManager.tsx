@@ -153,7 +153,7 @@ export function RequirementsManager({ dealId, canManage = false }: RequirementsM
       console.error("Failed to load documents:", error);
     } else {
       // Group documents by requirement_id
-      const typed Data = (data || []) as any[];
+      const typedData = (data || []) as any[];
       const grouped = typedData.reduce((acc, doc) => {
         if (!acc[doc.requirement_id]) {
           acc[doc.requirement_id] = [];
