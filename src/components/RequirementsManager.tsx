@@ -153,7 +153,8 @@ export function RequirementsManager({ dealId, canManage = false }: RequirementsM
       console.error("Failed to load documents:", error);
     } else {
       // Group documents by requirement_id
-      const grouped = (data || []).reduce((acc, doc) => {
+      const typed Data = (data || []) as any[];
+      const grouped = typedData.reduce((acc, doc) => {
         if (!acc[doc.requirement_id]) {
           acc[doc.requirement_id] = [];
         }
@@ -307,13 +308,13 @@ export function RequirementsManager({ dealId, canManage = false }: RequirementsM
       }
 
       // Get root folder ID from system settings
-      const { data: settings } = await supabase
+      const { data: settings, error: settingsError } = await supabase
         .from('system_settings' as any)
         .select('setting_value')
         .eq('setting_key', 'google_drive_root_folder_id')
         .single();
 
-      const rootFolderId = settings?.setting_value;
+      const rootFolderId = (settings as any)?.setting_value;
 
       if (!rootFolderId) {
         throw new Error('Google Drive root folder not configured. Please contact your administrator.');

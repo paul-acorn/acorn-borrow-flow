@@ -27,7 +27,7 @@ export function SystemSettings() {
     if (error && error.code !== 'PGRST116') {
       console.error("Failed to load settings:", error);
     } else if (data) {
-      setGoogleDriveFolderId(data.setting_value || "");
+      setGoogleDriveFolderId((data as any).setting_value || "");
     }
     setLoading(false);
   };
