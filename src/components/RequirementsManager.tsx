@@ -15,7 +15,8 @@ import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { Plus, Calendar, AlertCircle, CheckCircle, Clock } from "lucide-react";
+import { Plus, Calendar, AlertCircle, CheckCircle, Clock, Upload, FileText, X, Download } from "lucide-react";
+import { z } from "zod";
 
 interface Requirement {
   id: string;
@@ -28,6 +29,35 @@ interface Requirement {
   updated_at: string;
 }
 
+interface RequirementDocument {
+  id: string;
+  requirement_id: string;
+  file_name: string;
+  file_path: string;
+  file_size: number;
+  mime_type: string;
+  uploaded_by: string;
+  uploaded_at: string;
+}
+
+// File validation schema
+const fileSchema = z.object({
+  size: z.number().max(10 * 1024 * 1024, "File size must be less than 10MB"),
+  type: z.string().refine(
+    (type) => [
+      'application/pdf',
+      'image/jpeg',
+      'image/png',
+      'image/jpg',
+      'application/msword',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      'application/vnd.ms-excel',
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    ].includes(type),
+    "File type must be PDF, JPG, PNG, DOC, DOCX, XLS, or XLSX"
+  ),
+});
+
 interface RequirementsManagerProps {
   dealId: string;
   canManage?: boolean;
@@ -35,7 +65,9 @@ interface RequirementsManagerProps {
 
 export function RequirementsManager({ dealId, canManage = false }: RequirementsManagerProps) {
   const [requirements, setRequirements] = useState<Requirement[]>([]);
+  const [documents, setDocuments] = useState<Record<string, RequirementDocument[]>>({});
   const [loading, setLoading] = useState(true);
+  const [uploadingFile, setUploadingFile] = useState<string | null>(null);
   const [showAddForm, setShowAddForm] = useState(false);
   const [newRequirement, setNewRequirement] = useState({
     title: "",
@@ -49,9 +81,10 @@ export function RequirementsManager({ dealId, canManage = false }: RequirementsM
   useEffect(() => {
     if (!dealId) return;
     fetchRequirements();
+    fetchDocuments();
 
-    // Subscribe to real-time updates
-    const channel = supabase
+    // Subscribe to real-time updates for requirements
+    const requirementsChannel = supabase
       .channel(`requirements-${dealId}`)
       .on(
         "postgres_changes",
@@ -67,8 +100,26 @@ export function RequirementsManager({ dealId, canManage = false }: RequirementsM
       )
       .subscribe();
 
+    // Subscribe to real-time updates for documents
+    const documentsChannel = supabase
+      .channel(`requirement-documents-${dealId}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "requirement_documents",
+          filter: `deal_id=eq.${dealId}`,
+        },
+        () => {
+          fetchDocuments();
+        }
+      )
+      .subscribe();
+
     return () => {
-      supabase.removeChannel(channel);
+      supabase.removeChannel(requirementsChannel);
+      supabase.removeChannel(documentsChannel);
     };
   }, [dealId]);
 
@@ -89,6 +140,28 @@ export function RequirementsManager({ dealId, canManage = false }: RequirementsM
       setRequirements(data || []);
     }
     setLoading(false);
+  };
+
+  const fetchDocuments = async () => {
+    const { data, error } = await supabase
+      .from("requirement_documents")
+      .select("*")
+      .eq("deal_id", dealId)
+      .order("uploaded_at", { ascending: false });
+
+    if (error) {
+      console.error("Failed to load documents:", error);
+    } else {
+      // Group documents by requirement_id
+      const grouped = (data || []).reduce((acc, doc) => {
+        if (!acc[doc.requirement_id]) {
+          acc[doc.requirement_id] = [];
+        }
+        acc[doc.requirement_id].push(doc);
+        return acc;
+      }, {} as Record<string, RequirementDocument[]>);
+      setDocuments(grouped);
+    }
   };
 
   const handleAddRequirement = async () => {
@@ -197,6 +270,151 @@ export function RequirementsManager({ dealId, canManage = false }: RequirementsM
       title: "Success",
       description: "Requirement priority updated",
     });
+  };
+
+  const handleFileUpload = async (requirementId: string, file: File) => {
+    if (!user) return;
+
+    // Validate file
+    try {
+      fileSchema.parse({ size: file.size, type: file.type });
+    } catch (error: any) {
+      toast({
+        title: "Invalid File",
+        description: error.errors?.[0]?.message || "Invalid file",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setUploadingFile(requirementId);
+
+    try {
+      // Create unique file path
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${user.id}/${requirementId}/${Date.now()}.${fileExt}`;
+
+      // Upload to storage
+      const { error: uploadError } = await supabase.storage
+        .from('requirement-documents')
+        .upload(fileName, file, {
+          cacheControl: '3600',
+          upsert: false
+        });
+
+      if (uploadError) throw uploadError;
+
+      // Create document record
+      const { error: dbError } = await supabase
+        .from('requirement_documents')
+        .insert({
+          requirement_id: requirementId,
+          deal_id: dealId,
+          file_name: file.name,
+          file_path: fileName,
+          file_size: file.size,
+          mime_type: file.type,
+          uploaded_by: user.id,
+        });
+
+      if (dbError) throw dbError;
+
+      // Log activity
+      await supabase.from("deal_activity_logs").insert({
+        deal_id: dealId,
+        user_id: user.id,
+        action: "document_uploaded",
+        details: {
+          requirement_id: requirementId,
+          file_name: file.name,
+        },
+      });
+
+      toast({
+        title: "Success",
+        description: `${file.name} uploaded successfully`,
+      });
+    } catch (error: any) {
+      console.error("Upload error:", error);
+      toast({
+        title: "Upload Failed",
+        description: error.message || "Failed to upload file",
+        variant: "destructive",
+      });
+    } finally {
+      setUploadingFile(null);
+    }
+  };
+
+  const handleFileDelete = async (documentId: string, filePath: string) => {
+    try {
+      // Delete from storage
+      const { error: storageError } = await supabase.storage
+        .from('requirement-documents')
+        .remove([filePath]);
+
+      if (storageError) throw storageError;
+
+      // Delete from database
+      const { error: dbError } = await supabase
+        .from('requirement_documents')
+        .delete()
+        .eq('id', documentId);
+
+      if (dbError) throw dbError;
+
+      toast({
+        title: "Success",
+        description: "Document deleted successfully",
+      });
+    } catch (error: any) {
+      console.error("Delete error:", error);
+      toast({
+        title: "Delete Failed",
+        description: error.message || "Failed to delete file",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleFileDownload = async (filePath: string, fileName: string) => {
+    try {
+      const { data, error } = await supabase.storage
+        .from('requirement-documents')
+        .download(filePath);
+
+      if (error) throw error;
+
+      // Create download link
+      const url = URL.createObjectURL(data);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = fileName;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+
+      toast({
+        title: "Success",
+        description: `${fileName} downloaded`,
+      });
+    } catch (error: any) {
+      console.error("Download error:", error);
+      toast({
+        title: "Download Failed",
+        description: error.message || "Failed to download file",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const formatFileSize = (bytes: number) => {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
   };
 
   const getStatusIcon = (status: string) => {
@@ -348,6 +566,86 @@ export function RequirementsManager({ dealId, canManage = false }: RequirementsM
                         Due: {new Date(req.due_date).toLocaleDateString()}
                       </div>
                     )}
+
+                    {/* Uploaded Documents */}
+                    {documents[req.id] && documents[req.id].length > 0 && (
+                      <div className="mt-3 space-y-2">
+                        <p className="text-xs font-medium text-muted-foreground">Uploaded Documents:</p>
+                        <div className="space-y-1">
+                          {documents[req.id].map((doc) => (
+                            <div
+                              key={doc.id}
+                              className="flex items-center justify-between p-2 bg-muted rounded text-xs"
+                            >
+                              <div className="flex items-center gap-2 flex-1 min-w-0">
+                                <FileText className="w-4 h-4 flex-shrink-0" />
+                                <span className="truncate">{doc.file_name}</span>
+                                <span className="text-muted-foreground flex-shrink-0">
+                                  ({formatFileSize(doc.file_size)})
+                                </span>
+                              </div>
+                              <div className="flex items-center gap-1 flex-shrink-0">
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="h-6 w-6 p-0"
+                                  onClick={() => handleFileDownload(doc.file_path, doc.file_name)}
+                                >
+                                  <Download className="w-3 h-3" />
+                                </Button>
+                                {(user?.id === doc.uploaded_by || canManage) && (
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className="h-6 w-6 p-0 text-destructive hover:text-destructive"
+                                    onClick={() => handleFileDelete(doc.id, doc.file_path)}
+                                  >
+                                    <X className="w-3 h-3" />
+                                  </Button>
+                                )}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Upload Button */}
+                    <div className="mt-3">
+                      <label htmlFor={`file-upload-${req.id}`}>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="gap-2"
+                          disabled={uploadingFile === req.id}
+                          asChild
+                        >
+                          <span>
+                            {uploadingFile === req.id ? (
+                              <>Uploading...</>
+                            ) : (
+                              <>
+                                <Upload className="w-4 h-4" />
+                                Upload Document
+                              </>
+                            )}
+                          </span>
+                        </Button>
+                      </label>
+                      <input
+                        id={`file-upload-${req.id}`}
+                        type="file"
+                        className="hidden"
+                        accept=".pdf,.jpg,.jpeg,.png,.doc,.docx,.xls,.xlsx"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) {
+                            handleFileUpload(req.id, file);
+                            e.target.value = '';
+                          }
+                        }}
+                      />
+                    </div>
                   </div>
 
                   {canManage && (
