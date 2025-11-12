@@ -242,6 +242,21 @@ export const ClientManagement = () => {
     createClientMutation.mutate();
   };
 
+  const canResend = (lastSentAt: string) => {
+    const lastSent = new Date(lastSentAt);
+    const now = new Date();
+    const minutesSinceLastSend = (now.getTime() - lastSent.getTime()) / 1000 / 60;
+    return minutesSinceLastSend >= 5;
+  };
+
+  const getResendCooldownText = (lastSentAt: string) => {
+    const lastSent = new Date(lastSentAt);
+    const now = new Date();
+    const minutesSinceLastSend = (now.getTime() - lastSent.getTime()) / 1000 / 60;
+    const minutesRemaining = Math.ceil(5 - minutesSinceLastSend);
+    return minutesRemaining > 0 ? `Wait ${minutesRemaining}m` : "Resend";
+  };
+
   const copyToClipboard = async (text: string, label: string) => {
     try {
       await navigator.clipboard.writeText(text);
