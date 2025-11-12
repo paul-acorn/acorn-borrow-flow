@@ -10,6 +10,7 @@ import { useToast } from "@/hooks/use-toast";
 import { MessageCircle, Send, FileText, AlertCircle, CheckCircle, Clock } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { RequirementsManager } from "@/components/RequirementsManager";
 
 interface MessagingModalProps {
   open: boolean;
