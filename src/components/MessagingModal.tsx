@@ -4,10 +4,9 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useToast } from "@/hooks/use-toast";
-import { MessageCircle, Send, FileText, AlertCircle, CheckCircle, Clock } from "lucide-react";
+import { MessageCircle, Send } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { RequirementsManager } from "@/components/RequirementsManager";
@@ -26,15 +25,6 @@ interface Message {
   content: string;
   created_at: string;
   type: string;
-}
-
-interface Requirement {
-  id: string;
-  title: string;
-  description: string | null;
-  status: string;
-  due_date: string | null;
-  priority: string;
 }
 
 export function MessagingModal({ open, onOpenChange, dealId, dealName, onSave }: MessagingModalProps) {
@@ -158,43 +148,6 @@ export function MessagingModal({ open, onOpenChange, dealId, dealName, onSave }:
 
   const handleCancel = () => {
     onOpenChange(false);
-  };
-
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case 'approved':
-        return <CheckCircle className="w-4 h-4 text-green-600" />;
-      case 'submitted':
-        return <Clock className="w-4 h-4 text-yellow-600" />;
-      case 'rejected':
-        return <AlertCircle className="w-4 h-4 text-red-600" />;
-      default:
-        return <FileText className="w-4 h-4 text-gray-600" />;
-    }
-  };
-
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case 'approved':
-        return <Badge variant="secondary" className="bg-green-100 text-green-700">Approved</Badge>;
-      case 'submitted':
-        return <Badge variant="secondary" className="bg-yellow-100 text-yellow-700">Under Review</Badge>;
-      case 'rejected':
-        return <Badge variant="secondary" className="bg-red-100 text-red-700">Rejected</Badge>;
-      default:
-        return <Badge variant="secondary" className="bg-gray-100 text-gray-700">Pending</Badge>;
-    }
-  };
-
-  const getPriorityBadge = (priority: string) => {
-    switch (priority) {
-      case 'high':
-        return <Badge variant="destructive" className="text-xs">High</Badge>;
-      case 'medium':
-        return <Badge variant="secondary" className="text-xs bg-yellow-100 text-yellow-700">Medium</Badge>;
-      default:
-        return <Badge variant="secondary" className="text-xs">Low</Badge>;
-    }
   };
 
   return (
