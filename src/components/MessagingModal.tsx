@@ -9,6 +9,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { useToast } from "@/hooks/use-toast";
 import { MessageCircle, Send, FileText, AlertCircle, CheckCircle, Clock } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
 
 interface MessagingModalProps {
   open: boolean;
@@ -41,6 +42,15 @@ export function MessagingModal({ open, onOpenChange, dealId, dealName, onSave }:
   const [newMessage, setNewMessage] = useState('');
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
+  const { user, hasRole } = useAuth();
+  
+  // Determine sender type based on user role
+  const getSenderType = () => {
+    if (hasRole('broker') || hasRole('admin') || hasRole('super_admin')) {
+      return 'broker';
+    }
+    return 'client';
+  };
 
   // Fetch messages and requirements
   useEffect(() => {
@@ -137,13 +147,15 @@ export function MessagingModal({ open, onOpenChange, dealId, dealName, onSave }:
   }, [open, dealId]);
 
   const sendMessage = async () => {
-    if (!newMessage.trim()) return;
+    if (!newMessage.trim() || !user) return;
 
+    const senderType = getSenderType();
+    
     const { error } = await supabase
       .from('messages')
       .insert({
         deal_id: dealId,
-        sender: 'client',
+        sender: senderType,
         content: newMessage,
         type: 'message',
       });
@@ -155,13 +167,29 @@ export function MessagingModal({ open, onOpenChange, dealId, dealName, onSave }:
         description: "Failed to send message. Please try again.",
         variant: "destructive",
       });
-    } else {
-      setNewMessage('');
-      toast({
-        title: "Message Sent",
-        description: "Your message has been sent to your broker team.",
-      });
+      return;
     }
+
+    // Log activity
+    await supabase
+      .from('deal_activity_logs')
+      .insert({
+        deal_id: dealId,
+        user_id: user.id,
+        action: 'message_sent',
+        details: {
+          message_preview: newMessage.substring(0, 100),
+          sender_type: senderType
+        }
+      });
+
+    setNewMessage('');
+    toast({
+      title: "Message Sent",
+      description: senderType === 'broker' 
+        ? "Your message has been sent to the client." 
+        : "Your message has been sent to your broker team.",
+    });
   };
 
   const handleSave = () => {
