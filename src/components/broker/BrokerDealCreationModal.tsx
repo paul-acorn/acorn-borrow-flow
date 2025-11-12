@@ -113,6 +113,48 @@ export function BrokerDealCreationModal({ open, onOpenChange }: BrokerDealCreati
         throw new Error("Please fill all required fields");
       }
 
+      console.log('Creating deal with:', {
+        selectedClientId,
+        selectedType,
+        dealName,
+        amount,
+        brokerId: user?.id
+      });
+
+      // Verify broker-client relationship
+      const { data: clientProfile, error: profileError } = await supabase
+        .from('profiles')
+        .select('assigned_broker, deal_code')
+        .eq('id', selectedClientId)
+        .single();
+
+      console.log('Client profile:', clientProfile, 'Error:', profileError);
+
+      if (profileError) {
+        throw new Error(`Failed to verify client: ${profileError.message}`);
+      }
+
+      if (clientProfile.assigned_broker !== user?.id) {
+        throw new Error('You are not assigned to this client');
+      }
+
+      // Verify broker has broker role
+      const { data: brokerRoles, error: rolesError } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', user?.id);
+
+      console.log('Broker roles:', brokerRoles, 'Error:', rolesError);
+
+      if (rolesError) {
+        throw new Error(`Failed to verify broker role: ${rolesError.message}`);
+      }
+
+      const hasBrokerRole = brokerRoles?.some(r => r.role === 'broker' || r.role === 'super_admin');
+      if (!hasBrokerRole) {
+        throw new Error('You do not have broker permissions');
+      }
+
       // Create the deal
       const { data: dealData, error: dealError } = await supabase
         .from("deals")
@@ -127,7 +169,11 @@ export function BrokerDealCreationModal({ open, onOpenChange }: BrokerDealCreati
         .select()
         .single();
 
-      if (dealError) throw dealError;
+      console.log('Deal creation result:', dealData, 'Error:', dealError);
+
+      if (dealError) {
+        throw new Error(`Failed to create deal: ${dealError.message}`);
+      }
 
       // Add broker as participant
       const { error: participantError } = await supabase
@@ -139,7 +185,11 @@ export function BrokerDealCreationModal({ open, onOpenChange }: BrokerDealCreati
           role: "broker",
         });
 
-      if (participantError) throw participantError;
+      console.log('Broker participant error:', participantError);
+
+      if (participantError) {
+        throw new Error(`Failed to add broker as participant: ${participantError.message}`);
+      }
 
       // Add client as participant
       const { error: clientParticipantError } = await supabase
@@ -151,8 +201,13 @@ export function BrokerDealCreationModal({ open, onOpenChange }: BrokerDealCreati
           role: "client",
         });
 
-      if (clientParticipantError) throw clientParticipantError;
+      console.log('Client participant error:', clientParticipantError);
 
+      if (clientParticipantError) {
+        throw new Error(`Failed to add client as participant: ${clientParticipantError.message}`);
+      }
+
+      console.log('Deal created successfully:', dealData);
       return dealData;
     },
     onSuccess: () => {

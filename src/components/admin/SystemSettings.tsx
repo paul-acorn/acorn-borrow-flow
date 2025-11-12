@@ -19,7 +19,7 @@ export function SystemSettings() {
 
   const fetchSettings = async () => {
     const { data, error } = await supabase
-      .from("system_settings")
+      .from("system_settings" as any)
       .select("*")
       .eq("setting_key", "google_drive_root_folder_id")
       .single();
@@ -27,7 +27,7 @@ export function SystemSettings() {
     if (error && error.code !== 'PGRST116') {
       console.error("Failed to load settings:", error);
     } else if (data) {
-      setGoogleDriveFolderId(data.setting_value || "");
+      setGoogleDriveFolderId((data as any).setting_value || "");
     }
     setLoading(false);
   };
@@ -36,7 +36,7 @@ export function SystemSettings() {
     setSaving(true);
 
     const { error } = await supabase
-      .from("system_settings")
+      .from("system_settings" as any)
       .update({ setting_value: googleDriveFolderId.trim() })
       .eq("setting_key", "google_drive_root_folder_id");
 
