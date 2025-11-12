@@ -30,7 +30,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { UserPlus, Loader2, Copy, Check } from "lucide-react";
+import { UserPlus, Loader2, Copy, Check, Mail } from "lucide-react";
 import { toast } from "sonner";
 
 export const ClientManagement = () => {
@@ -90,6 +90,56 @@ export const ClientManagement = () => {
       return data;
     },
     enabled: !!user?.id,
+  });
+
+  // Resend invitation email mutation
+  const resendInvitationMutation = useMutation({
+    mutationFn: async (invitation: any) => {
+      // Check rate limit (5 minutes)
+      const lastSent = new Date(invitation.last_email_sent_at);
+      const now = new Date();
+      const minutesSinceLastSend = (now.getTime() - lastSent.getTime()) / 1000 / 60;
+
+      if (minutesSinceLastSend < 5) {
+        const minutesRemaining = Math.ceil(5 - minutesSinceLastSend);
+        throw new Error(`Please wait ${minutesRemaining} minute(s) before resending`);
+      }
+
+      // Send invitation email via edge function
+      const invitationUrl = `${window.location.origin}/welcome?code=${invitation.invitation_code}`;
+      
+      const { error: emailError } = await supabase.functions.invoke("send-client-invitation", {
+        body: {
+          email: invitation.client_email,
+          firstName: invitation.client_first_name,
+          lastName: invitation.client_last_name,
+          invitationCode: invitation.invitation_code,
+          invitationUrl,
+          brokerName: `${brokerProfile?.first_name} ${brokerProfile?.last_name}`,
+        },
+      });
+
+      if (emailError) throw emailError;
+
+      // Update last_email_sent_at
+      const { error: updateError } = await supabase
+        .from("team_invitations")
+        .update({ last_email_sent_at: now.toISOString() })
+        .eq("id", invitation.id);
+
+      if (updateError) throw updateError;
+
+      return invitation;
+    },
+    onSuccess: (invitation) => {
+      toast.success(
+        `Invitation resent to ${invitation.client_first_name} ${invitation.client_last_name}!`
+      );
+      queryClient.invalidateQueries({ queryKey: ["broker-invitations"] });
+    },
+    onError: (error: any) => {
+      toast.error(error.message || "Failed to resend invitation");
+    },
   });
 
   // Create client invitation mutation
@@ -342,6 +392,7 @@ export const ClientManagement = () => {
                   <TableHead>Deal Code</TableHead>
                   <TableHead>Sent</TableHead>
                   <TableHead>Expires</TableHead>
+                  <TableHead>Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -359,6 +410,24 @@ export const ClientManagement = () => {
                     </TableCell>
                     <TableCell>
                       {new Date(invitation.expires_at).toLocaleDateString()}
+                    </TableCell>
+                    <TableCell>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        disabled={!canResend(invitation.last_email_sent_at) || resendInvitationMutation.isPending}
+                        onClick={() => resendInvitationMutation.mutate(invitation)}
+                        title={canResend(invitation.last_email_sent_at) ? "Resend invitation email" : "Rate limited - wait 5 minutes between resends"}
+                      >
+                        {resendInvitationMutation.isPending ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <>
+                            <Mail className="h-4 w-4 mr-1" />
+                            {getResendCooldownText(invitation.last_email_sent_at)}
+                          </>
+                        )}
+                      </Button>
                     </TableCell>
                   </TableRow>
                 ))}
