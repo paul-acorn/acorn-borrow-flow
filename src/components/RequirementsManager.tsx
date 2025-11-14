@@ -145,7 +145,13 @@ export function RequirementsManager({ dealId, canManage = false }: RequirementsM
   const fetchDocuments = async () => {
     const { data, error } = await supabase
       .from("requirement_documents" as any)
-      .select("*")
+      .select(`
+        *,
+        profiles:uploaded_by (
+          first_name,
+          last_name
+        )
+      `)
       .eq("deal_id", dealId)
       .order("uploaded_at", { ascending: false });
 
@@ -670,42 +676,69 @@ export function RequirementsManager({ dealId, canManage = false }: RequirementsM
                     {/* Uploaded Documents */}
                     {documents[req.id] && documents[req.id].length > 0 && (
                       <div className="mt-3 space-y-2">
-                        <p className="text-xs font-medium text-muted-foreground">Uploaded Documents:</p>
-                        <div className="space-y-1">
-                          {documents[req.id].map((doc) => (
-                            <div
-                              key={doc.id}
-                              className="flex items-center justify-between p-2 bg-muted rounded text-xs"
-                            >
-                              <div className="flex items-center gap-2 flex-1 min-w-0">
-                                <FileText className="w-4 h-4 flex-shrink-0" />
-                                <span className="truncate">{doc.file_name}</span>
-                                <span className="text-muted-foreground flex-shrink-0">
-                                  ({formatFileSize(doc.file_size)})
-                                </span>
+                        <p className="text-xs font-medium text-muted-foreground">
+                          Uploaded Documents ({documents[req.id].length}):
+                        </p>
+                        <div className="space-y-2">
+                          {documents[req.id].map((doc) => {
+                            const docWithProfile = doc as any;
+                            const uploaderName = docWithProfile.profiles 
+                              ? `${docWithProfile.profiles.first_name || ''} ${docWithProfile.profiles.last_name || ''}`.trim()
+                              : 'Unknown';
+                            const uploadDate = new Date(doc.uploaded_at).toLocaleDateString('en-US', {
+                              month: 'short',
+                              day: 'numeric',
+                              year: 'numeric',
+                              hour: '2-digit',
+                              minute: '2-digit'
+                            });
+
+                            return (
+                              <div
+                                key={doc.id}
+                                className="p-3 bg-muted rounded-lg space-y-2"
+                              >
+                                <div className="flex items-start justify-between gap-2">
+                                  <div className="flex items-start gap-2 flex-1 min-w-0">
+                                    <FileText className="w-4 h-4 flex-shrink-0 mt-0.5" />
+                                    <div className="flex-1 min-w-0">
+                                      <p className="text-sm font-medium truncate">{doc.file_name}</p>
+                                      <div className="flex items-center gap-2 text-xs text-muted-foreground mt-1">
+                                        <span>{formatFileSize(doc.file_size)}</span>
+                                        <span>•</span>
+                                        <span>{uploadDate}</span>
+                                      </div>
+                                      <p className="text-xs text-muted-foreground mt-1">
+                                        Uploaded by {uploaderName}
+                                      </p>
+                                    </div>
+                                  </div>
+                                  <div className="flex items-center gap-1 flex-shrink-0">
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      className="h-8 w-8 p-0"
+                                      onClick={() => handleFileDownload(doc.file_path, doc.file_name, docWithProfile.google_drive_file_id)}
+                                      title="Download"
+                                    >
+                                      <Download className="w-4 h-4" />
+                                    </Button>
+                                    {(user?.id === doc.uploaded_by || canManage) && (
+                                      <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        className="h-8 w-8 p-0 text-destructive hover:text-destructive"
+                                        onClick={() => handleFileDelete(doc.id, doc.file_path, docWithProfile.google_drive_file_id)}
+                                        title="Delete"
+                                      >
+                                        <X className="w-4 h-4" />
+                                      </Button>
+                                    )}
+                                  </div>
+                                </div>
                               </div>
-                              <div className="flex items-center gap-1 flex-shrink-0">
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  className="h-6 w-6 p-0"
-                                  onClick={() => handleFileDownload(doc.file_path, doc.file_name, (doc as any).google_drive_file_id)}
-                                >
-                                  <Download className="w-3 h-3" />
-                                </Button>
-                                {(user?.id === doc.uploaded_by || canManage) && (
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    className="h-6 w-6 p-0 text-destructive hover:text-destructive"
-                                    onClick={() => handleFileDelete(doc.id, doc.file_path, (doc as any).google_drive_file_id)}
-                                  >
-                                    <X className="w-3 h-3" />
-                                  </Button>
-                                )}
-                              </div>
-                            </div>
-                          ))}
+                            );
+                          })}
                         </div>
                       </div>
                     )}
