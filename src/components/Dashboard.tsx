@@ -55,7 +55,7 @@ const loanTypeIcons = {
   equity: PiggyBank,
 };
 
-export function Dashboard() {
+export function Dashboard({ hideBackgroundDetails = false }: { hideBackgroundDetails?: boolean }) {
   const [showBackgroundModal, setShowBackgroundModal] = useState(false);
   const [backgroundInitialStep, setBackgroundInitialStep] = useState<string | undefined>(undefined);
   const [showDealModal, setShowDealModal] = useState(false);
@@ -375,57 +375,59 @@ export function Dashboard() {
 
       <div className="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8 space-y-8">
         {/* Background Details Section */}
-        <Card className="shadow-lg border-0">
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <div>
-                <CardTitle className="text-xl text-navy">Background Details</CardTitle>
-                <p className="text-muted-foreground mt-1">
-                  Complete your profile to access all features
-                </p>
+        {!hideBackgroundDetails && (
+          <Card className="shadow-lg border-0">
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle className="text-xl text-navy">Background Details</CardTitle>
+                  <p className="text-muted-foreground mt-1">
+                    Complete your profile to access all features
+                  </p>
+                </div>
+                {isBackgroundComplete && (
+                  <Badge variant="default" className="bg-success text-white">
+                    Complete
+                  </Badge>
+                )}
               </div>
-              {isBackgroundComplete && (
-                <Badge variant="default" className="bg-success text-white">
-                  Complete
-                </Badge>
-              )}
-            </div>
-          </CardHeader>
-          
-          <CardContent>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              {backgroundStepConfig.map((step) => {
-                const IconComponent = step.icon;
-                const isComplete = backgroundSteps[step.key as keyof typeof backgroundSteps];
-                
-                return (
-                  <Button
-                    key={step.key}
-                    variant="outline"
-                    className={`h-auto p-4 flex flex-col items-center text-center space-y-2 border-2 transition-all ${
-                      isComplete 
-                        ? 'border-success bg-success/5 text-success hover:bg-success/10' 
-                        : 'border-border hover:border-primary/50'
-                    }`}
-                    onClick={() => {
-                      setBackgroundInitialStep(step.key);
-                      setShowBackgroundModal(true);
-                    }}
-                  >
-                    <IconComponent className={`w-6 h-6 ${isComplete ? 'text-success' : 'text-muted-foreground'}`} />
-                    <div>
-                      <div className="font-medium text-sm">{step.label}</div>
-                      <div className="text-xs text-muted-foreground">{step.description}</div>
-                    </div>
-                    {isComplete && (
-                      <FileCheck className="w-4 h-4 text-success" />
-                    )}
-                  </Button>
-                );
-              })}
-            </div>
-          </CardContent>
-        </Card>
+            </CardHeader>
+            
+            <CardContent>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                {backgroundStepConfig.map((step) => {
+                  const IconComponent = step.icon;
+                  const isComplete = backgroundSteps[step.key as keyof typeof backgroundSteps];
+                  
+                  return (
+                    <Button
+                      key={step.key}
+                      variant="outline"
+                      className={`h-auto p-4 flex flex-col items-center text-center space-y-2 border-2 transition-all ${
+                        isComplete 
+                          ? 'border-success bg-success/5 text-success hover:bg-success/10' 
+                          : 'border-border hover:border-primary/50'
+                      }`}
+                      onClick={() => {
+                        setBackgroundInitialStep(step.key);
+                        setShowBackgroundModal(true);
+                      }}
+                    >
+                      <IconComponent className={`w-6 h-6 ${isComplete ? 'text-success' : 'text-muted-foreground'}`} />
+                      <div>
+                        <div className="font-medium text-sm">{step.label}</div>
+                        <div className="text-xs text-muted-foreground">{step.description}</div>
+                      </div>
+                      {isComplete && (
+                        <FileCheck className="w-4 h-4 text-success" />
+                      )}
+                    </Button>
+                  );
+                })}
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Deals Section */}
         <div className="space-y-6">

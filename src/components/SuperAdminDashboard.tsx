@@ -46,7 +46,7 @@ export const SuperAdminDashboard = () => {
             <AdminDashboard hideHeader />
           </div>
         ) : (
-          <Dashboard />
+          <Dashboard hideBackgroundDetails />
         )}
       </div>
     </div>
