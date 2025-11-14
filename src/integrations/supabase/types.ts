@@ -164,6 +164,7 @@ export type Database = {
           deal_code: string | null
           email: string
           first_name: string | null
+          google_drive_folder_id: string | null
           id: string
           last_name: string | null
           phone_number: string | null
@@ -177,6 +178,7 @@ export type Database = {
           deal_code?: string | null
           email: string
           first_name?: string | null
+          google_drive_folder_id?: string | null
           id: string
           last_name?: string | null
           phone_number?: string | null
@@ -190,12 +192,67 @@ export type Database = {
           deal_code?: string | null
           email?: string
           first_name?: string | null
+          google_drive_folder_id?: string | null
           id?: string
           last_name?: string | null
           phone_number?: string | null
           updated_at?: string
         }
         Relationships: []
+      }
+      requirement_documents: {
+        Row: {
+          deal_id: string
+          file_name: string
+          file_path: string
+          file_size: number
+          google_drive_file_id: string | null
+          id: string
+          mime_type: string
+          requirement_id: string
+          uploaded_at: string
+          uploaded_by: string
+        }
+        Insert: {
+          deal_id: string
+          file_name: string
+          file_path: string
+          file_size: number
+          google_drive_file_id?: string | null
+          id?: string
+          mime_type: string
+          requirement_id: string
+          uploaded_at?: string
+          uploaded_by: string
+        }
+        Update: {
+          deal_id?: string
+          file_name?: string
+          file_path?: string
+          file_size?: number
+          google_drive_file_id?: string | null
+          id?: string
+          mime_type?: string
+          requirement_id?: string
+          uploaded_at?: string
+          uploaded_by?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "requirement_documents_deal_id_fkey"
+            columns: ["deal_id"]
+            isOneToOne: false
+            referencedRelation: "deals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "requirement_documents_requirement_id_fkey"
+            columns: ["requirement_id"]
+            isOneToOne: false
+            referencedRelation: "requirements"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       requirements: {
         Row: {
@@ -241,6 +298,36 @@ export type Database = {
           },
         ]
       }
+      system_settings: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          setting_key: string
+          setting_value: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          setting_key: string
+          setting_value: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          setting_key?: string
+          setting_value?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
       team_invitations: {
         Row: {
           client_email: string | null
@@ -252,6 +339,7 @@ export type Database = {
           expires_at: string
           id: string
           invitation_code: string
+          last_email_sent_at: string | null
           role: Database["public"]["Enums"]["app_role"]
           used_at: string | null
           used_by_user_id: string | null
@@ -266,6 +354,7 @@ export type Database = {
           expires_at: string
           id?: string
           invitation_code: string
+          last_email_sent_at?: string | null
           role?: Database["public"]["Enums"]["app_role"]
           used_at?: string | null
           used_by_user_id?: string | null
@@ -280,6 +369,7 @@ export type Database = {
           expires_at?: string
           id?: string
           invitation_code?: string
+          last_email_sent_at?: string | null
           role?: Database["public"]["Enums"]["app_role"]
           used_at?: string | null
           used_by_user_id?: string | null

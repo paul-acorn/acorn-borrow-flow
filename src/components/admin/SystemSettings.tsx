@@ -5,16 +5,28 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { Save, ExternalLink } from "lucide-react";
+import { Save, ExternalLink, FolderPlus, CheckCircle } from "lucide-react";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+
+interface ClientProfile {
+  id: string;
+  deal_code: string;
+  first_name: string;
+  last_name: string;
+  google_drive_folder_id: string | null;
+}
 
 export function SystemSettings() {
   const [googleDriveFolderId, setGoogleDriveFolderId] = useState("");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [clients, setClients] = useState<ClientProfile[]>([]);
+  const [creatingFolders, setCreatingFolders] = useState<Set<string>>(new Set());
   const { toast } = useToast();
 
   useEffect(() => {
     fetchSettings();
+    fetchClients();
   }, []);
 
   const fetchSettings = async () => {
@@ -22,7 +34,7 @@ export function SystemSettings() {
       .from("system_settings" as any)
       .select("*")
       .eq("setting_key", "google_drive_root_folder_id")
-      .single();
+      .maybeSingle();
 
     if (error && error.code !== 'PGRST116') {
       console.error("Failed to load settings:", error);
@@ -30,6 +42,20 @@ export function SystemSettings() {
       setGoogleDriveFolderId((data as any).setting_value || "");
     }
     setLoading(false);
+  };
+
+  const fetchClients = async () => {
+    const { data, error } = await supabase
+      .from("profiles")
+      .select("id, deal_code, first_name, last_name, google_drive_folder_id")
+      .not("deal_code", "is", null)
+      .order("deal_code");
+
+    if (error) {
+      console.error("Failed to load clients:", error);
+    } else {
+      setClients((data || []) as ClientProfile[]);
+    }
   };
 
   const handleSave = async () => {
@@ -56,11 +82,68 @@ export function SystemSettings() {
     setSaving(false);
   };
 
+  const createClientFolder = async (client: ClientProfile) => {
+    if (!googleDriveFolderId) {
+      toast({
+        title: "Error",
+        description: "Please set the root folder ID first",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setCreatingFolders(prev => new Set(prev).add(client.id));
+
+    try {
+      const { data, error } = await supabase.functions.invoke("google-drive", {
+        body: {
+          action: "createFolder",
+          folderName: client.deal_code,
+          parentFolderId: googleDriveFolderId,
+        },
+      });
+
+      if (error) throw error;
+
+      const folderId = data.folderId;
+
+      // Update profile with folder ID
+      const { error: updateError } = await supabase
+        .from("profiles")
+        .update({ google_drive_folder_id: folderId } as any)
+        .eq("id", client.id);
+
+      if (updateError) throw updateError;
+
+      toast({
+        title: "Success",
+        description: `Folder created for ${client.deal_code}`,
+      });
+
+      // Refresh clients list
+      await fetchClients();
+    } catch (error: any) {
+      console.error("Failed to create folder:", error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to create folder",
+        variant: "destructive",
+      });
+    } finally {
+      setCreatingFolders(prev => {
+        const next = new Set(prev);
+        next.delete(client.id);
+        return next;
+      });
+    }
+  };
+
   if (loading) {
     return <div className="text-center py-4">Loading settings...</div>;
   }
 
   return (
+    <>
     <Card>
       <CardHeader>
         <CardTitle>System Settings</CardTitle>
@@ -118,13 +201,73 @@ export function SystemSettings() {
         <div className="pt-4 border-t space-y-2">
           <h4 className="font-medium text-sm">How it works:</h4>
           <ul className="text-sm text-muted-foreground space-y-1 list-disc list-inside">
-            <li>Each client will automatically get their own folder created in the root folder</li>
-            <li>Client folders are named using their deal code (e.g., "FL250001")</li>
+            <li>Set the root folder ID above</li>
+            <li>Create individual folders for each client using their deal code below</li>
             <li>When clients upload requirement documents, they go directly to their Google Drive folder</li>
             <li>Brokers and admins can access all client folders for file management</li>
           </ul>
         </div>
       </CardContent>
     </Card>
+
+    <Card className="mt-6">
+      <CardHeader>
+        <CardTitle>Client Folders</CardTitle>
+        <CardDescription>
+          Create and manage Google Drive folders for each client
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        {clients.length === 0 ? (
+          <p className="text-sm text-muted-foreground">No clients with deal codes found</p>
+        ) : (
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Deal Code</TableHead>
+                <TableHead>Client Name</TableHead>
+                <TableHead>Folder Status</TableHead>
+                <TableHead className="text-right">Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {clients.map((client) => (
+                <TableRow key={client.id}>
+                  <TableCell className="font-mono">{client.deal_code}</TableCell>
+                  <TableCell>
+                    {client.first_name} {client.last_name}
+                  </TableCell>
+                  <TableCell>
+                    {client.google_drive_folder_id ? (
+                      <span className="flex items-center gap-2 text-sm text-green-600">
+                        <CheckCircle className="w-4 h-4" />
+                        Folder Created
+                      </span>
+                    ) : (
+                      <span className="text-sm text-muted-foreground">No Folder</span>
+                    )}
+                  </TableCell>
+                  <TableCell className="text-right">
+                    {!client.google_drive_folder_id && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => createClientFolder(client)}
+                        disabled={creatingFolders.has(client.id) || !googleDriveFolderId}
+                        className="gap-2"
+                      >
+                        <FolderPlus className="w-4 h-4" />
+                        {creatingFolders.has(client.id) ? "Creating..." : "Create Folder"}
+                      </Button>
+                    )}
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        )}
+      </CardContent>
+    </Card>
+    </>
   );
 }
