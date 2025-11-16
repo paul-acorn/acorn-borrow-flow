@@ -14,6 +14,492 @@ export type Database = {
   }
   public: {
     Tables: {
+      client_addresses: {
+        Row: {
+          city: string | null
+          created_at: string
+          date_moved_in: string | null
+          date_moved_out: string | null
+          id: string
+          is_current: boolean | null
+          postcode: string | null
+          property_number: string | null
+          street: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          city?: string | null
+          created_at?: string
+          date_moved_in?: string | null
+          date_moved_out?: string | null
+          id?: string
+          is_current?: boolean | null
+          postcode?: string | null
+          property_number?: string | null
+          street?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          city?: string | null
+          created_at?: string
+          date_moved_in?: string | null
+          date_moved_out?: string | null
+          id?: string
+          is_current?: boolean | null
+          postcode?: string | null
+          property_number?: string | null
+          street?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      client_car_leases: {
+        Row: {
+          created_at: string
+          end_date: string | null
+          id: string
+          monthly_payment: number | null
+          provider: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          end_date?: string | null
+          id?: string
+          monthly_payment?: number | null
+          provider?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          end_date?: string | null
+          id?: string
+          monthly_payment?: number | null
+          provider?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      client_credit_cards: {
+        Row: {
+          balance: number | null
+          created_at: string
+          credit_limit: number | null
+          id: string
+          monthly_payment: number | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          balance?: number | null
+          created_at?: string
+          credit_limit?: number | null
+          id?: string
+          monthly_payment?: number | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          balance?: number | null
+          created_at?: string
+          credit_limit?: number | null
+          id?: string
+          monthly_payment?: number | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      client_credit_history: {
+        Row: {
+          additional_notes: string | null
+          arrears_details: string | null
+          bankruptcy_date: string | null
+          bankruptcy_discharge_date: string | null
+          bankruptcy_discharged: boolean | null
+          ccj_count: number | null
+          ccj_details: string | null
+          ccj_total_value: number | null
+          created_at: string
+          credit_report_date: string | null
+          credit_score: number | null
+          default_count: number | null
+          default_details: string | null
+          has_bankruptcy: boolean | null
+          has_ccjs: boolean | null
+          has_defaults: boolean | null
+          has_iva: boolean | null
+          has_mortgage_arrears: boolean | null
+          has_repossession: boolean | null
+          id: string
+          iva_completed: boolean | null
+          iva_completion_date: string | null
+          iva_date: string | null
+          repossession_date: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          additional_notes?: string | null
+          arrears_details?: string | null
+          bankruptcy_date?: string | null
+          bankruptcy_discharge_date?: string | null
+          bankruptcy_discharged?: boolean | null
+          ccj_count?: number | null
+          ccj_details?: string | null
+          ccj_total_value?: number | null
+          created_at?: string
+          credit_report_date?: string | null
+          credit_score?: number | null
+          default_count?: number | null
+          default_details?: string | null
+          has_bankruptcy?: boolean | null
+          has_ccjs?: boolean | null
+          has_defaults?: boolean | null
+          has_iva?: boolean | null
+          has_mortgage_arrears?: boolean | null
+          has_repossession?: boolean | null
+          id?: string
+          iva_completed?: boolean | null
+          iva_completion_date?: string | null
+          iva_date?: string | null
+          repossession_date?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          additional_notes?: string | null
+          arrears_details?: string | null
+          bankruptcy_date?: string | null
+          bankruptcy_discharge_date?: string | null
+          bankruptcy_discharged?: boolean | null
+          ccj_count?: number | null
+          ccj_details?: string | null
+          ccj_total_value?: number | null
+          created_at?: string
+          credit_report_date?: string | null
+          credit_score?: number | null
+          default_count?: number | null
+          default_details?: string | null
+          has_bankruptcy?: boolean | null
+          has_ccjs?: boolean | null
+          has_defaults?: boolean | null
+          has_iva?: boolean | null
+          has_mortgage_arrears?: boolean | null
+          has_repossession?: boolean | null
+          id?: string
+          iva_completed?: boolean | null
+          iva_completion_date?: string | null
+          iva_date?: string | null
+          repossession_date?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      client_financial_assets: {
+        Row: {
+          bank_accounts: number | null
+          created_at: string
+          id: string
+          investments: number | null
+          other_assets: number | null
+          pension_value: number | null
+          property_value: number | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          bank_accounts?: number | null
+          created_at?: string
+          id?: string
+          investments?: number | null
+          other_assets?: number | null
+          pension_value?: number | null
+          property_value?: number | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          bank_accounts?: number | null
+          created_at?: string
+          id?: string
+          investments?: number | null
+          other_assets?: number | null
+          pension_value?: number | null
+          property_value?: number | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      client_income_streams: {
+        Row: {
+          annual_gross: number | null
+          annual_income: number | null
+          average_overtime: number | null
+          benefit_amount: number | null
+          benefit_type: string | null
+          bonus: number | null
+          business_address: string | null
+          business_name: string | null
+          business_type: string | null
+          business_url: string | null
+          contract_type: string | null
+          created_at: string
+          employer_address: string | null
+          employer_name: string | null
+          extras: number | null
+          id: string
+          income_type: string | null
+          monthly_net: number | null
+          other_amount: number | null
+          other_description: string | null
+          pension_amount: number | null
+          pension_provider: string | null
+          rental_income: number | null
+          rental_properties: number | null
+          start_date: string | null
+          trading_start_date: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          annual_gross?: number | null
+          annual_income?: number | null
+          average_overtime?: number | null
+          benefit_amount?: number | null
+          benefit_type?: string | null
+          bonus?: number | null
+          business_address?: string | null
+          business_name?: string | null
+          business_type?: string | null
+          business_url?: string | null
+          contract_type?: string | null
+          created_at?: string
+          employer_address?: string | null
+          employer_name?: string | null
+          extras?: number | null
+          id?: string
+          income_type?: string | null
+          monthly_net?: number | null
+          other_amount?: number | null
+          other_description?: string | null
+          pension_amount?: number | null
+          pension_provider?: string | null
+          rental_income?: number | null
+          rental_properties?: number | null
+          start_date?: string | null
+          trading_start_date?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          annual_gross?: number | null
+          annual_income?: number | null
+          average_overtime?: number | null
+          benefit_amount?: number | null
+          benefit_type?: string | null
+          bonus?: number | null
+          business_address?: string | null
+          business_name?: string | null
+          business_type?: string | null
+          business_url?: string | null
+          contract_type?: string | null
+          created_at?: string
+          employer_address?: string | null
+          employer_name?: string | null
+          extras?: number | null
+          id?: string
+          income_type?: string | null
+          monthly_net?: number | null
+          other_amount?: number | null
+          other_description?: string | null
+          pension_amount?: number | null
+          pension_provider?: string | null
+          rental_income?: number | null
+          rental_properties?: number | null
+          start_date?: string | null
+          trading_start_date?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      client_mortgages: {
+        Row: {
+          balance: number | null
+          created_at: string
+          end_of_deal: string | null
+          end_of_mortgage: string | null
+          id: string
+          interest_rate: number | null
+          lender: string | null
+          monthly_payment: number | null
+          rate_type: string | null
+          type: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          balance?: number | null
+          created_at?: string
+          end_of_deal?: string | null
+          end_of_mortgage?: string | null
+          id?: string
+          interest_rate?: number | null
+          lender?: string | null
+          monthly_payment?: number | null
+          rate_type?: string | null
+          type?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          balance?: number | null
+          created_at?: string
+          end_of_deal?: string | null
+          end_of_mortgage?: string | null
+          id?: string
+          interest_rate?: number | null
+          lender?: string | null
+          monthly_payment?: number | null
+          rate_type?: string | null
+          type?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      client_other_debts: {
+        Row: {
+          balance: number | null
+          created_at: string
+          debt_type: string | null
+          id: string
+          lender: string | null
+          monthly_payment: number | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          balance?: number | null
+          created_at?: string
+          debt_type?: string | null
+          id?: string
+          lender?: string | null
+          monthly_payment?: number | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          balance?: number | null
+          created_at?: string
+          debt_type?: string | null
+          id?: string
+          lender?: string | null
+          monthly_payment?: number | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      client_personal_details: {
+        Row: {
+          created_at: string
+          dependent_ages: string | null
+          dependents: number | null
+          dob: string | null
+          id: string
+          marital_status: string | null
+          nationality: string | null
+          ni_number: string | null
+          residence: string | null
+          title: string | null
+          updated_at: string
+          user_id: string
+          visa_expiry: string | null
+          visa_type: string | null
+        }
+        Insert: {
+          created_at?: string
+          dependent_ages?: string | null
+          dependents?: number | null
+          dob?: string | null
+          id?: string
+          marital_status?: string | null
+          nationality?: string | null
+          ni_number?: string | null
+          residence?: string | null
+          title?: string | null
+          updated_at?: string
+          user_id: string
+          visa_expiry?: string | null
+          visa_type?: string | null
+        }
+        Update: {
+          created_at?: string
+          dependent_ages?: string | null
+          dependents?: number | null
+          dob?: string | null
+          id?: string
+          marital_status?: string | null
+          nationality?: string | null
+          ni_number?: string | null
+          residence?: string | null
+          title?: string | null
+          updated_at?: string
+          user_id?: string
+          visa_expiry?: string | null
+          visa_type?: string | null
+        }
+        Relationships: []
+      }
+      client_personal_loans: {
+        Row: {
+          balance: number | null
+          created_at: string
+          end_date: string | null
+          id: string
+          interest_rate: number | null
+          lender: string | null
+          monthly_payment: number | null
+          rate_type: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          balance?: number | null
+          created_at?: string
+          end_date?: string | null
+          id?: string
+          interest_rate?: number | null
+          lender?: string | null
+          monthly_payment?: number | null
+          rate_type?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          balance?: number | null
+          created_at?: string
+          end_date?: string | null
+          id?: string
+          interest_rate?: number | null
+          lender?: string | null
+          monthly_payment?: number | null
+          rate_type?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       deal_activity_logs: {
         Row: {
           action: string
