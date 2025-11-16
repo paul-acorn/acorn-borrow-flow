@@ -33,6 +33,68 @@ interface ClientProfile {
   deal_code: string | null;
 }
 
+interface ClientBackgroundDetails {
+  personal: {
+    title: string | null;
+    dob: string | null;
+    marital_status: string | null;
+    nationality: string | null;
+  } | null;
+  addresses: Array<{
+    id: string;
+    is_current: boolean;
+    property_number: string | null;
+    street: string | null;
+    city: string | null;
+    postcode: string | null;
+    date_moved_in: string | null;
+    date_moved_out: string | null;
+  }>;
+  financial: {
+    assets: {
+      bank_accounts: number;
+      property_value: number;
+      investments: number;
+      pension_value: number;
+      other_assets: number;
+    } | null;
+    mortgages: Array<{
+      type: string;
+      balance: number;
+      lender: string;
+      monthly_payment: number;
+    }>;
+    personal_loans: Array<{
+      balance: number;
+      lender: string;
+      monthly_payment: number;
+    }>;
+    credit_cards: Array<{
+      credit_limit: number;
+      balance: number;
+      monthly_payment: number;
+    }>;
+    income_streams: Array<{
+      income_type: string;
+      monthly_net: number | null;
+      annual_gross: number | null;
+      employer_name: string | null;
+      business_name: string | null;
+    }>;
+  };
+  credit: {
+    has_ccjs: boolean;
+    ccj_count: number;
+    ccj_total_value: number;
+    has_defaults: boolean;
+    default_count: number;
+    has_bankruptcy: boolean;
+    has_iva: boolean;
+    credit_score: number | null;
+    credit_report_date: string | null;
+  } | null;
+}
+
 interface DealWithClient {
   id: string;
   name: string;
@@ -42,6 +104,7 @@ interface DealWithClient {
   created_at: string;
   user_id: string;
   client: ClientProfile;
+  backgroundDetails?: ClientBackgroundDetails;
 }
 
 export const BrokerDealsView = () => {
@@ -75,7 +138,83 @@ export const BrokerDealsView = () => {
 
       if (dealsError) throw dealsError;
 
-      // Merge client data with deals
+      // Fetch background details for all clients
+      const backgroundDetailsPromises = clientIds.map(async (clientId) => {
+        // Fetch personal details
+        const { data: personal } = await supabase
+          .from("client_personal_details")
+          .select("title, dob, marital_status, nationality")
+          .eq("user_id", clientId)
+          .maybeSingle();
+
+        // Fetch addresses
+        const { data: addresses } = await supabase
+          .from("client_addresses")
+          .select("*")
+          .eq("user_id", clientId)
+          .order("date_moved_in", { ascending: false });
+
+        // Fetch financial assets
+        const { data: assets } = await supabase
+          .from("client_financial_assets")
+          .select("*")
+          .eq("user_id", clientId)
+          .maybeSingle();
+
+        // Fetch mortgages
+        const { data: mortgages } = await supabase
+          .from("client_mortgages")
+          .select("type, balance, lender, monthly_payment")
+          .eq("user_id", clientId);
+
+        // Fetch personal loans
+        const { data: personal_loans } = await supabase
+          .from("client_personal_loans")
+          .select("balance, lender, monthly_payment")
+          .eq("user_id", clientId);
+
+        // Fetch credit cards
+        const { data: credit_cards } = await supabase
+          .from("client_credit_cards")
+          .select("credit_limit, balance, monthly_payment")
+          .eq("user_id", clientId);
+
+        // Fetch income streams
+        const { data: income_streams } = await supabase
+          .from("client_income_streams")
+          .select("income_type, monthly_net, annual_gross, employer_name, business_name")
+          .eq("user_id", clientId);
+
+        // Fetch credit history
+        const { data: credit } = await supabase
+          .from("client_credit_history")
+          .select("has_ccjs, ccj_count, ccj_total_value, has_defaults, default_count, has_bankruptcy, has_iva, credit_score, credit_report_date")
+          .eq("user_id", clientId)
+          .maybeSingle();
+
+        return {
+          clientId,
+          details: {
+            personal,
+            addresses: addresses || [],
+            financial: {
+              assets,
+              mortgages: mortgages || [],
+              personal_loans: personal_loans || [],
+              credit_cards: credit_cards || [],
+              income_streams: income_streams || [],
+            },
+            credit,
+          },
+        };
+      });
+
+      const backgroundDetailsArray = await Promise.all(backgroundDetailsPromises);
+      const backgroundDetailsMap = new Map(
+        backgroundDetailsArray.map((item) => [item.clientId, item.details])
+      );
+
+      // Merge client data with deals and background details
       const dealsWithClients: DealWithClient[] = dealsData?.map((deal) => {
         const client = clients?.find((c) => c.id === deal.user_id);
         return {
@@ -88,6 +227,7 @@ export const BrokerDealsView = () => {
             phone_number: client?.phone_number || null,
             deal_code: client?.deal_code || null,
           },
+          backgroundDetails: backgroundDetailsMap.get(deal.user_id),
         };
       }) || [];
 
@@ -288,15 +428,33 @@ export const BrokerDealsView = () => {
                                 <div className="flex-1 min-w-0">
                                   <CardTitle className="text-sm">Address History</CardTitle>
                                   <CardDescription className="text-xs truncate">
-                                    3-year verification
+                                    {deal.backgroundDetails?.addresses?.length || 0} addresses recorded
                                   </CardDescription>
                                 </div>
                               </div>
                             </CardHeader>
-                            <CardContent className="p-4 pt-0">
-                              <p className="text-xs text-muted-foreground">
-                                View full address history in client profile
-                              </p>
+                            <CardContent className="p-4 pt-0 space-y-2">
+                              {deal.backgroundDetails?.addresses && deal.backgroundDetails.addresses.length > 0 ? (
+                                deal.backgroundDetails.addresses.slice(0, 2).map((addr, idx) => (
+                                  <div key={idx} className="text-xs">
+                                    <p className="font-medium">
+                                      {addr.is_current && <Badge variant="outline" className="mr-1 text-[10px] px-1 py-0">Current</Badge>}
+                                      {addr.property_number} {addr.street}
+                                    </p>
+                                    <p className="text-muted-foreground">
+                                      {addr.city}, {addr.postcode}
+                                    </p>
+                                    {addr.date_moved_in && (
+                                      <p className="text-muted-foreground text-[10px]">
+                                        From: {new Date(addr.date_moved_in).toLocaleDateString()}
+                                        {addr.date_moved_out && ` - ${new Date(addr.date_moved_out).toLocaleDateString()}`}
+                                      </p>
+                                    )}
+                                  </div>
+                                ))
+                              ) : (
+                                <p className="text-xs text-muted-foreground">No address history recorded</p>
+                              )}
                             </CardContent>
                           </Card>
 
@@ -310,15 +468,44 @@ export const BrokerDealsView = () => {
                                 <div className="flex-1 min-w-0">
                                   <CardTitle className="text-sm">Financial Details</CardTitle>
                                   <CardDescription className="text-xs truncate">
-                                    Assets & income
+                                    Assets & liabilities
                                   </CardDescription>
                                 </div>
                               </div>
                             </CardHeader>
-                            <CardContent className="p-4 pt-0">
-                              <p className="text-xs text-muted-foreground">
-                                View financial information in client profile
-                              </p>
+                            <CardContent className="p-4 pt-0 space-y-2">
+                              {deal.backgroundDetails?.financial?.assets ? (
+                                <>
+                                  <div>
+                                    <p className="text-xs text-muted-foreground">Total Assets</p>
+                                    <p className="text-sm font-medium">
+                                      {formatCurrency(
+                                        Number(deal.backgroundDetails.financial.assets.bank_accounts || 0) +
+                                        Number(deal.backgroundDetails.financial.assets.property_value || 0) +
+                                        Number(deal.backgroundDetails.financial.assets.investments || 0) +
+                                        Number(deal.backgroundDetails.financial.assets.pension_value || 0) +
+                                        Number(deal.backgroundDetails.financial.assets.other_assets || 0)
+                                      )}
+                                    </p>
+                                  </div>
+                                  <div>
+                                    <p className="text-xs text-muted-foreground">Liabilities</p>
+                                    <p className="text-[10px]">
+                                      {deal.backgroundDetails.financial.mortgages.length} mortgages, {" "}
+                                      {deal.backgroundDetails.financial.personal_loans.length} loans, {" "}
+                                      {deal.backgroundDetails.financial.credit_cards.length} credit cards
+                                    </p>
+                                  </div>
+                                  <div>
+                                    <p className="text-xs text-muted-foreground">Income Streams</p>
+                                    <p className="text-[10px]">
+                                      {deal.backgroundDetails.financial.income_streams.length} income sources
+                                    </p>
+                                  </div>
+                                </>
+                              ) : (
+                                <p className="text-xs text-muted-foreground">No financial details recorded</p>
+                              )}
                             </CardContent>
                           </Card>
 
@@ -337,10 +524,48 @@ export const BrokerDealsView = () => {
                                 </div>
                               </div>
                             </CardHeader>
-                            <CardContent className="p-4 pt-0">
-                              <p className="text-xs text-muted-foreground">
-                                View credit information in client profile
-                              </p>
+                            <CardContent className="p-4 pt-0 space-y-2">
+                              {deal.backgroundDetails?.credit ? (
+                                <>
+                                  {deal.backgroundDetails.credit.credit_score && (
+                                    <div>
+                                      <p className="text-xs text-muted-foreground">Credit Score</p>
+                                      <p className="text-sm font-medium">{deal.backgroundDetails.credit.credit_score}</p>
+                                      {deal.backgroundDetails.credit.credit_report_date && (
+                                        <p className="text-[10px] text-muted-foreground">
+                                          As of {new Date(deal.backgroundDetails.credit.credit_report_date).toLocaleDateString()}
+                                        </p>
+                                      )}
+                                    </div>
+                                  )}
+                                  <div className="space-y-1">
+                                    {deal.backgroundDetails.credit.has_ccjs && (
+                                      <p className="text-[10px] text-destructive">
+                                        {deal.backgroundDetails.credit.ccj_count} CCJ(s) - {formatCurrency(deal.backgroundDetails.credit.ccj_total_value)}
+                                      </p>
+                                    )}
+                                    {deal.backgroundDetails.credit.has_defaults && (
+                                      <p className="text-[10px] text-destructive">
+                                        {deal.backgroundDetails.credit.default_count} Default(s)
+                                      </p>
+                                    )}
+                                    {deal.backgroundDetails.credit.has_bankruptcy && (
+                                      <p className="text-[10px] text-destructive">Bankruptcy recorded</p>
+                                    )}
+                                    {deal.backgroundDetails.credit.has_iva && (
+                                      <p className="text-[10px] text-destructive">IVA recorded</p>
+                                    )}
+                                    {!deal.backgroundDetails.credit.has_ccjs && 
+                                     !deal.backgroundDetails.credit.has_defaults && 
+                                     !deal.backgroundDetails.credit.has_bankruptcy && 
+                                     !deal.backgroundDetails.credit.has_iva && (
+                                      <p className="text-[10px] text-green-600">No adverse credit recorded</p>
+                                    )}
+                                  </div>
+                                </>
+                              ) : (
+                                <p className="text-xs text-muted-foreground">No credit history recorded</p>
+                              )}
                             </CardContent>
                           </Card>
                         </div>
