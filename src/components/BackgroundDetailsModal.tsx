@@ -10,7 +10,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
-import { CheckCircle, Upload, User, MapPin, CreditCard, FileCheck, Shield, Plus, Trash2 } from "lucide-react";
+import { CheckCircle, Upload, User, MapPin, CreditCard, FileCheck, Shield, Plus, Trash2, Loader2 } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
 
 interface BackgroundDetailsModalProps {
   open: boolean;
@@ -26,7 +28,17 @@ interface BackgroundDetailsModalProps {
 }
 
 export function BackgroundDetailsModal({ open, onOpenChange, steps, onStepComplete, initialStep }: BackgroundDetailsModalProps) {
+  const { user } = useAuth();
   const [activeTab, setActiveTab] = useState("personal");
+  const [isSaving, setIsSaving] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+
+  // Load existing data when modal opens
+  useEffect(() => {
+    if (open && user?.id) {
+      loadExistingData();
+    }
+  }, [open, user?.id]);
 
   // Navigate to initial step when modal opens
   useEffect(() => {
@@ -34,6 +46,107 @@ export function BackgroundDetailsModal({ open, onOpenChange, steps, onStepComple
       setActiveTab(initialStep);
     }
   }, [open, initialStep]);
+
+  const loadExistingData = async () => {
+    setIsLoading(true);
+    try {
+      // Load personal details
+      const { data: personal } = await supabase
+        .from('client_personal_details')
+        .select('*')
+        .eq('user_id', user!.id)
+        .maybeSingle();
+
+      if (personal) {
+        setFormData(prev => ({
+          ...prev,
+          title: personal.title || '',
+          dob: personal.dob || '',
+          maritalStatus: personal.marital_status || '',
+          dependents: String(personal.dependents || 0),
+          dependentAges: personal.dependent_ages || '',
+          niNumber: personal.ni_number || '',
+          nationality: personal.nationality || '',
+          residence: personal.residence || '',
+          visaType: personal.visa_type || '',
+          visaExpiry: personal.visa_expiry || '',
+        }));
+      }
+
+      // Load addresses
+      const { data: addresses } = await supabase
+        .from('client_addresses')
+        .select('*')
+        .eq('user_id', user!.id)
+        .order('date_moved_in', { ascending: false });
+
+      if (addresses && addresses.length > 0) {
+        const current = addresses.find(a => a.is_current);
+        const previous = addresses.filter(a => !a.is_current);
+
+        setFormData(prev => ({
+          ...prev,
+          currentAddress: current ? {
+            propertyNumber: current.property_number || '',
+            street: current.street || '',
+            city: current.city || '',
+            postcode: current.postcode || '',
+            dateMovedIn: current.date_moved_in || '',
+          } : prev.currentAddress,
+          previousAddresses: previous.map(addr => ({
+            propertyNumber: addr.property_number || '',
+            street: addr.street || '',
+            city: addr.city || '',
+            postcode: addr.postcode || '',
+            dateFrom: addr.date_moved_in || '',
+            dateTo: addr.date_moved_out || '',
+          })),
+        }));
+      }
+
+      // Load financial assets
+      const { data: assets } = await supabase
+        .from('client_financial_assets')
+        .select('*')
+        .eq('user_id', user!.id)
+        .maybeSingle();
+
+      if (assets) {
+        setFormData(prev => ({
+          ...prev,
+          bankAccounts: String(assets.bank_accounts || 0),
+          propertyValue: String(assets.property_value || 0),
+          investments: String(assets.investments || 0),
+          pensionValue: String(assets.pension_value || 0),
+          otherAssets: String(assets.other_assets || 0),
+        }));
+      }
+
+      // Load credit history
+      const { data: credit } = await supabase
+        .from('client_credit_history')
+        .select('*')
+        .eq('user_id', user!.id)
+        .maybeSingle();
+
+      if (credit) {
+        setFormData(prev => ({
+          ...prev,
+          creditIssues: {
+            defaults: credit.has_defaults || false,
+            ccjs: credit.has_ccjs || false,
+            bankruptcy: credit.has_bankruptcy || false,
+            iva: credit.has_iva || false,
+            missedPayments: credit.has_mortgage_arrears || false,
+          },
+        }));
+      }
+    } catch (error) {
+      console.error('Error loading existing data:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
   const [formData, setFormData] = useState({
     // Personal
     title: '',
@@ -170,12 +283,308 @@ export function BackgroundDetailsModal({ open, onOpenChange, steps, onStepComple
   
   const { toast } = useToast();
 
-  const handleStepComplete = (step: string) => {
-    onStepComplete(step);
-    toast({
-      title: "Section Completed",
-      description: "Your information has been saved successfully.",
-    });
+  const handleStepComplete = async (step: string) => {
+    if (!user?.id) {
+      toast({
+        title: "Error",
+        description: "You must be logged in to save your information.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsSaving(true);
+
+    try {
+      switch (step) {
+        case 'personal':
+          await savePersonalDetails();
+          break;
+        case 'address':
+          await saveAddressDetails();
+          break;
+        case 'financial':
+          await saveFinancialDetails();
+          break;
+        case 'credit':
+          await saveCreditHistory();
+          break;
+      }
+
+      onStepComplete(step);
+      toast({
+        title: "Section Completed",
+        description: "Your information has been saved successfully.",
+      });
+    } catch (error) {
+      console.error('Error saving data:', error);
+      toast({
+        title: "Error",
+        description: "Failed to save your information. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const savePersonalDetails = async () => {
+    const { error } = await supabase
+      .from('client_personal_details')
+      .upsert({
+        user_id: user!.id,
+        title: formData.title || null,
+        dob: formData.dob || null,
+        marital_status: formData.maritalStatus || null,
+        dependents: parseInt(formData.dependents) || 0,
+        dependent_ages: formData.dependentAges || null,
+        ni_number: formData.niNumber || null,
+        nationality: formData.nationality || null,
+        residence: formData.residence || null,
+        visa_type: formData.visaType || null,
+        visa_expiry: formData.visaExpiry || null,
+      }, {
+        onConflict: 'user_id'
+      });
+
+    if (error) throw error;
+  };
+
+  const saveAddressDetails = async () => {
+    // Delete existing addresses for this user
+    await supabase
+      .from('client_addresses')
+      .delete()
+      .eq('user_id', user!.id);
+
+    // Insert current address
+    if (formData.currentAddress.street) {
+      const { error: currentError } = await supabase
+        .from('client_addresses')
+        .insert({
+          user_id: user!.id,
+          is_current: true,
+          property_number: formData.currentAddress.propertyNumber || null,
+          street: formData.currentAddress.street,
+          city: formData.currentAddress.city || null,
+          postcode: formData.currentAddress.postcode || null,
+          date_moved_in: formData.currentAddress.dateMovedIn || null,
+        });
+
+      if (currentError) throw currentError;
+    }
+
+    // Insert previous addresses
+    if (formData.previousAddresses.length > 0) {
+      const previousAddressData = formData.previousAddresses
+        .filter(addr => addr.street)
+        .map(addr => ({
+          user_id: user!.id,
+          is_current: false,
+          property_number: addr.propertyNumber || null,
+          street: addr.street,
+          city: addr.city || null,
+          postcode: addr.postcode || null,
+          date_moved_in: addr.dateFrom || null,
+          date_moved_out: addr.dateTo || null,
+        }));
+
+      if (previousAddressData.length > 0) {
+        const { error: prevError } = await supabase
+          .from('client_addresses')
+          .insert(previousAddressData);
+
+        if (prevError) throw prevError;
+      }
+    }
+  };
+
+  const saveFinancialDetails = async () => {
+    // Save financial assets
+    const { error: assetsError } = await supabase
+      .from('client_financial_assets')
+      .upsert({
+        user_id: user!.id,
+        bank_accounts: parseFloat(formData.bankAccounts) || 0,
+        property_value: parseFloat(formData.propertyValue) || 0,
+        investments: parseFloat(formData.investments) || 0,
+        pension_value: parseFloat(formData.pensionValue) || 0,
+        other_assets: parseFloat(formData.otherAssets) || 0,
+      }, {
+        onConflict: 'user_id'
+      });
+
+    if (assetsError) throw assetsError;
+
+    // Delete existing liabilities for this user
+    await Promise.all([
+      supabase.from('client_mortgages').delete().eq('user_id', user!.id),
+      supabase.from('client_personal_loans').delete().eq('user_id', user!.id),
+      supabase.from('client_credit_cards').delete().eq('user_id', user!.id),
+      supabase.from('client_other_debts').delete().eq('user_id', user!.id),
+      supabase.from('client_car_leases').delete().eq('user_id', user!.id),
+      supabase.from('client_income_streams').delete().eq('user_id', user!.id),
+    ]);
+
+    // Insert mortgages
+    if (formData.mortgages.length > 0) {
+      const mortgageData = formData.mortgages
+        .filter(m => m.lender)
+        .map(m => ({
+          user_id: user!.id,
+          type: m.type,
+          balance: parseFloat(m.balance) || null,
+          lender: m.lender,
+          interest_rate: parseFloat(m.interestRate) || null,
+          rate_type: m.rateType || null,
+          end_of_deal: m.endOfDeal || null,
+          end_of_mortgage: m.endOfMortgage || null,
+          monthly_payment: parseFloat(m.monthlyPayment) || null,
+        }));
+
+      if (mortgageData.length > 0) {
+        const { error } = await supabase.from('client_mortgages').insert(mortgageData);
+        if (error) throw error;
+      }
+    }
+
+    // Insert personal loans
+    if (formData.personalLoans.length > 0) {
+      const loanData = formData.personalLoans
+        .filter(l => l.lender)
+        .map(l => ({
+          user_id: user!.id,
+          balance: parseFloat(l.balance) || null,
+          lender: l.lender,
+          interest_rate: parseFloat(l.interestRate) || null,
+          rate_type: l.rateType || null,
+          end_date: l.endDate || null,
+          monthly_payment: parseFloat(l.monthlyPayment) || null,
+        }));
+
+      if (loanData.length > 0) {
+        const { error } = await supabase.from('client_personal_loans').insert(loanData);
+        if (error) throw error;
+      }
+    }
+
+    // Insert credit cards
+    if (formData.creditCards.length > 0) {
+      const cardData = formData.creditCards
+        .filter(c => parseFloat(c.limit) > 0)
+        .map(c => ({
+          user_id: user!.id,
+          credit_limit: parseFloat(c.limit) || null,
+          balance: parseFloat(c.balance) || null,
+          monthly_payment: parseFloat(c.monthlyPayment) || null,
+        }));
+
+      if (cardData.length > 0) {
+        const { error } = await supabase.from('client_credit_cards').insert(cardData);
+        if (error) throw error;
+      }
+    }
+
+    // Insert other debts
+    if (formData.otherDebts.length > 0) {
+      const debtData = formData.otherDebts
+        .filter(d => d.type)
+        .map(d => ({
+          user_id: user!.id,
+          debt_type: d.type,
+          balance: parseFloat(d.balance) || null,
+          lender: d.lender || null,
+          monthly_payment: parseFloat(d.monthlyPayment) || null,
+        }));
+
+      if (debtData.length > 0) {
+        const { error } = await supabase.from('client_other_debts').insert(debtData);
+        if (error) throw error;
+      }
+    }
+
+    // Insert car leases
+    if (formData.carLeases.length > 0) {
+      const leaseData = formData.carLeases
+        .filter(l => l.provider)
+        .map(l => ({
+          user_id: user!.id,
+          monthly_payment: parseFloat(l.monthlyPayment) || null,
+          end_date: l.endDate || null,
+          provider: l.provider,
+        }));
+
+      if (leaseData.length > 0) {
+        const { error } = await supabase.from('client_car_leases').insert(leaseData);
+        if (error) throw error;
+      }
+    }
+
+    // Insert income streams
+    if (formData.incomeStreams.length > 0) {
+      const incomeData = formData.incomeStreams.map(stream => ({
+        user_id: user!.id,
+        income_type: stream.type,
+        monthly_net: stream.monthlyNet ? parseFloat(stream.monthlyNet) : null,
+        average_overtime: stream.averageOvertime ? parseFloat(stream.averageOvertime) : null,
+        bonus: stream.bonus ? parseFloat(stream.bonus) : null,
+        extras: stream.extras ? parseFloat(stream.extras) : null,
+        annual_gross: stream.annualGross ? parseFloat(stream.annualGross) : null,
+        employer_name: stream.employerName || null,
+        employer_address: stream.employerAddress || null,
+        start_date: stream.startDate || null,
+        contract_type: stream.contractType || null,
+        annual_income: stream.annualIncome ? parseFloat(stream.annualIncome) : null,
+        business_name: stream.businessName || null,
+        business_type: stream.businessType || null,
+        trading_start_date: stream.tradingStartDate || null,
+        business_address: stream.businessAddress || null,
+        business_url: stream.businessUrl || null,
+        benefit_type: stream.benefitType || null,
+        benefit_amount: (stream as any).benefitAmount ? parseFloat((stream as any).benefitAmount) : null,
+        pension_provider: (stream as any).pensionProvider || null,
+        pension_amount: (stream as any).pensionAmount ? parseFloat((stream as any).pensionAmount) : null,
+        rental_properties: (stream as any).rentProperty ? parseInt((stream as any).rentProperty) : null,
+        rental_income: (stream as any).rentIncome ? parseFloat((stream as any).rentIncome) : null,
+        other_description: (stream as any).otherDescription || null,
+        other_amount: (stream as any).otherAmount ? parseFloat((stream as any).otherAmount) : null,
+      }));
+
+      if (incomeData.length > 0) {
+        const { error } = await supabase.from('client_income_streams').insert(incomeData);
+        if (error) throw error;
+      }
+    }
+  };
+
+  const saveCreditHistory = async () => {
+    // Count CCJs and defaults from creditDetails
+    const ccjDetails = formData.creditDetails.filter(d => d.type === 'CCJ');
+    const defaultDetails = formData.creditDetails.filter(d => d.type === 'Default');
+    
+    const ccjTotalValue = ccjDetails.reduce((sum, ccj) => {
+      return sum + (parseFloat(ccj.amount) || 0);
+    }, 0);
+
+    const { error } = await supabase
+      .from('client_credit_history')
+      .upsert({
+        user_id: user!.id,
+        has_ccjs: formData.creditIssues.ccjs || false,
+        ccj_count: ccjDetails.length,
+        ccj_total_value: ccjTotalValue,
+        ccj_details: ccjDetails.length > 0 ? JSON.stringify(ccjDetails) : null,
+        has_defaults: formData.creditIssues.defaults || false,
+        default_count: defaultDetails.length,
+        default_details: defaultDetails.length > 0 ? JSON.stringify(defaultDetails) : null,
+        has_bankruptcy: formData.creditIssues.bankruptcy || false,
+        has_iva: formData.creditIssues.iva || false,
+        has_mortgage_arrears: formData.creditIssues.missedPayments || false,
+      }, {
+        onConflict: 'user_id'
+      });
+
+    if (error) throw error;
   };
 
   const updateFormData = (path: string, value: any) => {
@@ -459,8 +868,16 @@ export function BackgroundDetailsModal({ open, onOpenChange, steps, onStepComple
                 <Button 
                   onClick={() => handleStepComplete('personal')}
                   className="w-full bg-gradient-primary hover:opacity-90"
+                  disabled={isSaving}
                 >
-                  Save Personal Information
+                  {isSaving ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      Saving...
+                    </>
+                  ) : (
+                    "Save Personal Information"
+                  )}
                 </Button>
               </CardContent>
             </Card>
@@ -609,8 +1026,16 @@ export function BackgroundDetailsModal({ open, onOpenChange, steps, onStepComple
                 <Button 
                   onClick={() => handleStepComplete('address')}
                   className="w-full bg-gradient-primary hover:opacity-90"
+                  disabled={isSaving}
                 >
-                  Save Address Information
+                  {isSaving ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      Saving...
+                    </>
+                  ) : (
+                    "Save Address Information"
+                  )}
                 </Button>
               </CardContent>
             </Card>
@@ -1582,8 +2007,16 @@ export function BackgroundDetailsModal({ open, onOpenChange, steps, onStepComple
                 <Button 
                   onClick={() => handleStepComplete('financial')}
                   className="w-full bg-gradient-primary hover:opacity-90"
+                  disabled={isSaving}
                 >
-                  Save Financial Information
+                  {isSaving ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      Saving...
+                    </>
+                  ) : (
+                    "Save Financial Information"
+                  )}
                 </Button>
               </CardContent>
             </Card>
@@ -1740,8 +2173,16 @@ export function BackgroundDetailsModal({ open, onOpenChange, steps, onStepComple
                 <Button 
                   onClick={() => handleStepComplete('credit')}
                   className="w-full bg-gradient-primary hover:opacity-90"
+                  disabled={isSaving}
                 >
-                  Save Credit Information
+                  {isSaving ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      Saving...
+                    </>
+                  ) : (
+                    "Save Credit Information"
+                  )}
                 </Button>
               </CardContent>
             </Card>
