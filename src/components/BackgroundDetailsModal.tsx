@@ -22,9 +22,20 @@ interface BackgroundDetailsModalProps {
     address: boolean;
     financial: boolean;
     credit: boolean;
+    documents: boolean;
   };
   onStepComplete: (step: string) => void;
   initialStep?: string;
+}
+
+interface UploadedDocument {
+  id: string;
+  file_name: string;
+  file_path: string;
+  file_size: number;
+  mime_type: string;
+  uploaded_at: string;
+  verified: boolean;
 }
 
 export function BackgroundDetailsModal({ open, onOpenChange, steps, onStepComplete, initialStep }: BackgroundDetailsModalProps) {
@@ -32,11 +43,22 @@ export function BackgroundDetailsModal({ open, onOpenChange, steps, onStepComple
   const [activeTab, setActiveTab] = useState("personal");
   const [isSaving, setIsSaving] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [uploadedDocuments, setUploadedDocuments] = useState<{
+    identity: UploadedDocument[];
+    proof_of_address: UploadedDocument[];
+    bank_statement: UploadedDocument[];
+  }>({
+    identity: [],
+    proof_of_address: [],
+    bank_statement: []
+  });
+  const [uploading, setUploading] = useState(false);
 
   // Load existing data when modal opens
   useEffect(() => {
     if (open && user?.id) {
       loadExistingData();
+      loadDocuments();
     }
   }, [open, user?.id]);
 
@@ -587,6 +609,92 @@ export function BackgroundDetailsModal({ open, onOpenChange, steps, onStepComple
     if (error) throw error;
   };
 
+  const loadDocuments = async () => {
+    const { data } = await supabase
+      .from('client_documents')
+      .select('*')
+      .eq('user_id', user!.id);
+
+    if (data) {
+      const grouped = {
+        identity: data.filter(d => d.document_type === 'identity'),
+        proof_of_address: data.filter(d => d.document_type === 'proof_of_address'),
+        bank_statement: data.filter(d => d.document_type === 'bank_statement')
+      };
+      setUploadedDocuments(grouped);
+    }
+  };
+
+  const handleFileUpload = async (file: File, documentType: string) => {
+    if (!user?.id) return;
+    
+    setUploading(true);
+    try {
+      const fileExt = file.name.split('.').pop();
+      const filePath = `${user.id}/${documentType}_${Date.now()}.${fileExt}`;
+      
+      const { error: uploadError } = await supabase.storage
+        .from('client-documents')
+        .upload(filePath, file);
+
+      if (uploadError) throw uploadError;
+
+      const { error: dbError } = await supabase
+        .from('client_documents')
+        .insert({
+          user_id: user.id,
+          document_type: documentType,
+          file_name: file.name,
+          file_path: filePath,
+          file_size: file.size,
+          mime_type: file.type
+        });
+
+      if (dbError) throw dbError;
+
+      await loadDocuments();
+      toast({
+        title: "Upload Successful",
+        description: `${file.name} has been uploaded.`,
+      });
+    } catch (error) {
+      console.error('Upload error:', error);
+      toast({
+        title: "Upload Failed",
+        description: "Failed to upload document. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const handleDeleteDocument = async (documentId: string, filePath: string) => {
+    try {
+      await supabase.storage
+        .from('client-documents')
+        .remove([filePath]);
+
+      await supabase
+        .from('client_documents')
+        .delete()
+        .eq('id', documentId);
+
+      await loadDocuments();
+      toast({
+        title: "Document Deleted",
+        description: "The document has been removed.",
+      });
+    } catch (error) {
+      console.error('Delete error:', error);
+      toast({
+        title: "Delete Failed",
+        description: "Failed to delete document. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
   const updateFormData = (path: string, value: any) => {
     setFormData(prev => {
       const keys = path.split('.');
@@ -643,6 +751,7 @@ export function BackgroundDetailsModal({ open, onOpenChange, steps, onStepComple
     { key: 'address', label: 'Address', icon: MapPin },
     { key: 'financial', label: 'Financial', icon: CreditCard },
     { key: 'credit', label: 'Credit', icon: FileCheck },
+    { key: 'documents', label: 'Documents', icon: Upload },
   ];
 
   return (
@@ -653,7 +762,7 @@ export function BackgroundDetailsModal({ open, onOpenChange, steps, onStepComple
         </DialogHeader>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid grid-cols-4 bg-secondary">
+          <TabsList className="grid grid-cols-5 bg-secondary">
             {stepConfig.map((step) => {
               const IconComponent = step.icon;
               const isComplete = steps[step.key as keyof typeof steps];
@@ -2183,6 +2292,189 @@ export function BackgroundDetailsModal({ open, onOpenChange, steps, onStepComple
                   ) : (
                     "Save Credit Information"
                   )}
+                </Button>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Documents Tab */}
+          <TabsContent value="documents" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center space-x-2">
+                  <Upload className="w-5 h-5" />
+                  <span>Identity & Supporting Documents</span>
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                {/* Identity Documents */}
+                <div className="space-y-4">
+                  <div className="flex justify-between items-center">
+                    <div>
+                      <h4 className="font-medium">Identity Documents</h4>
+                      <p className="text-sm text-muted-foreground">Passport, Driver's License, or National ID</p>
+                    </div>
+                    <label className="cursor-pointer">
+                      <input
+                        type="file"
+                        accept="image/*,application/pdf"
+                        className="hidden"
+                        onChange={(e) => e.target.files?.[0] && handleFileUpload(e.target.files[0], 'identity')}
+                        disabled={uploading}
+                      />
+                      <Button variant="outline" size="sm" disabled={uploading} asChild>
+                        <span>
+                          <Upload className="w-4 h-4 mr-2" />
+                          Upload
+                        </span>
+                      </Button>
+                    </label>
+                  </div>
+                  {uploadedDocuments.identity.length > 0 && (
+                    <div className="space-y-2">
+                      {uploadedDocuments.identity.map((doc) => (
+                        <div key={doc.id} className="flex items-center justify-between p-3 border rounded-md">
+                          <div className="flex items-center space-x-3">
+                            <FileCheck className={`w-5 h-5 ${doc.verified ? 'text-success' : 'text-muted-foreground'}`} />
+                            <div>
+                              <p className="text-sm font-medium">{doc.file_name}</p>
+                              <p className="text-xs text-muted-foreground">
+                                {(doc.file_size / 1024 / 1024).toFixed(2)} MB • {new Date(doc.uploaded_at).toLocaleDateString()}
+                              </p>
+                            </div>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            {doc.verified && (
+                              <span className="text-xs bg-success/10 text-success px-2 py-1 rounded">Verified</span>
+                            )}
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleDeleteDocument(doc.id, doc.file_path)}
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* Proof of Address */}
+                <div className="space-y-4">
+                  <div className="flex justify-between items-center">
+                    <div>
+                      <h4 className="font-medium">Proof of Address</h4>
+                      <p className="text-sm text-muted-foreground">Utility bill, Council Tax, or Bank Statement (within 3 months)</p>
+                    </div>
+                    <label className="cursor-pointer">
+                      <input
+                        type="file"
+                        accept="image/*,application/pdf"
+                        className="hidden"
+                        onChange={(e) => e.target.files?.[0] && handleFileUpload(e.target.files[0], 'proof_of_address')}
+                        disabled={uploading}
+                      />
+                      <Button variant="outline" size="sm" disabled={uploading} asChild>
+                        <span>
+                          <Upload className="w-4 h-4 mr-2" />
+                          Upload
+                        </span>
+                      </Button>
+                    </label>
+                  </div>
+                  {uploadedDocuments.proof_of_address.length > 0 && (
+                    <div className="space-y-2">
+                      {uploadedDocuments.proof_of_address.map((doc) => (
+                        <div key={doc.id} className="flex items-center justify-between p-3 border rounded-md">
+                          <div className="flex items-center space-x-3">
+                            <FileCheck className={`w-5 h-5 ${doc.verified ? 'text-success' : 'text-muted-foreground'}`} />
+                            <div>
+                              <p className="text-sm font-medium">{doc.file_name}</p>
+                              <p className="text-xs text-muted-foreground">
+                                {(doc.file_size / 1024 / 1024).toFixed(2)} MB • {new Date(doc.uploaded_at).toLocaleDateString()}
+                              </p>
+                            </div>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            {doc.verified && (
+                              <span className="text-xs bg-success/10 text-success px-2 py-1 rounded">Verified</span>
+                            )}
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleDeleteDocument(doc.id, doc.file_path)}
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* Bank Statements */}
+                <div className="space-y-4">
+                  <div className="flex justify-between items-center">
+                    <div>
+                      <h4 className="font-medium">Bank Statements</h4>
+                      <p className="text-sm text-muted-foreground">Last 3-6 months of bank statements</p>
+                    </div>
+                    <label className="cursor-pointer">
+                      <input
+                        type="file"
+                        accept="image/*,application/pdf"
+                        className="hidden"
+                        onChange={(e) => e.target.files?.[0] && handleFileUpload(e.target.files[0], 'bank_statement')}
+                        disabled={uploading}
+                      />
+                      <Button variant="outline" size="sm" disabled={uploading} asChild>
+                        <span>
+                          <Upload className="w-4 h-4 mr-2" />
+                          Upload
+                        </span>
+                      </Button>
+                    </label>
+                  </div>
+                  {uploadedDocuments.bank_statement.length > 0 && (
+                    <div className="space-y-2">
+                      {uploadedDocuments.bank_statement.map((doc) => (
+                        <div key={doc.id} className="flex items-center justify-between p-3 border rounded-md">
+                          <div className="flex items-center space-x-3">
+                            <FileCheck className={`w-5 h-5 ${doc.verified ? 'text-success' : 'text-muted-foreground'}`} />
+                            <div>
+                              <p className="text-sm font-medium">{doc.file_name}</p>
+                              <p className="text-xs text-muted-foreground">
+                                {(doc.file_size / 1024 / 1024).toFixed(2)} MB • {new Date(doc.uploaded_at).toLocaleDateString()}
+                              </p>
+                            </div>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            {doc.verified && (
+                              <span className="text-xs bg-success/10 text-success px-2 py-1 rounded">Verified</span>
+                            )}
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleDeleteDocument(doc.id, doc.file_path)}
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                <Button 
+                  onClick={() => handleStepComplete('documents')}
+                  className="w-full bg-gradient-primary hover:opacity-90"
+                  disabled={uploadedDocuments.identity.length === 0 || uploadedDocuments.proof_of_address.length === 0}
+                >
+                  Complete Document Upload
                 </Button>
               </CardContent>
             </Card>

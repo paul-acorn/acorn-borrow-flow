@@ -203,6 +203,51 @@ export type Database = {
         }
         Relationships: []
       }
+      client_documents: {
+        Row: {
+          created_at: string
+          document_type: string
+          file_name: string
+          file_path: string
+          file_size: number
+          id: string
+          mime_type: string
+          updated_at: string
+          uploaded_at: string
+          user_id: string
+          verification_notes: string | null
+          verified: boolean | null
+        }
+        Insert: {
+          created_at?: string
+          document_type: string
+          file_name: string
+          file_path: string
+          file_size: number
+          id?: string
+          mime_type: string
+          updated_at?: string
+          uploaded_at?: string
+          user_id: string
+          verification_notes?: string | null
+          verified?: boolean | null
+        }
+        Update: {
+          created_at?: string
+          document_type?: string
+          file_name?: string
+          file_path?: string
+          file_size?: number
+          id?: string
+          mime_type?: string
+          updated_at?: string
+          uploaded_at?: string
+          user_id?: string
+          verification_notes?: string | null
+          verified?: boolean | null
+        }
+        Relationships: []
+      }
       client_financial_assets: {
         Row: {
           bank_accounts: number | null

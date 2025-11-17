@@ -71,6 +71,7 @@ export function Dashboard({ hideBackgroundDetails = false }: { hideBackgroundDet
     address: false,
     financial: false,
     credit: false,
+    documents: false,
   });
   const { toast } = useToast();
   const { user, signOut } = useAuth();
