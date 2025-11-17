@@ -8,3 +8,9 @@ verify_jwt = true
 
 [functions.hubspot]
 verify_jwt = true
+
+[functions.verify-document]
+verify_jwt = true
+
+[functions.send-client-invitation]
+verify_jwt = true

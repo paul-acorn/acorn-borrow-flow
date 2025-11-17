@@ -1,12 +1,13 @@
 import { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Users, Briefcase, Settings } from "lucide-react";
+import { Users, Briefcase, Settings, FileCheck } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { UserManagement } from "./admin/UserManagement";
 import { AllDealsView } from "./admin/AllDealsView";
 import { ClientManagement } from "./broker/ClientManagement";
 import { UserProfileMenu } from "@/components/UserProfileMenu";
 import { SystemSettings } from "./admin/SystemSettings";
+import { DocumentReviewDashboard } from "./admin/DocumentReviewDashboard";
 
 export function AdminDashboard({ hideHeader = false }: { hideHeader?: boolean }) {
   const { signOut, hasRole } = useAuth();
@@ -33,7 +34,7 @@ export function AdminDashboard({ hideHeader = false }: { hideHeader?: boolean })
 
       <div className="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-3 lg:w-[600px]">
+          <TabsList className="grid w-full grid-cols-4 lg:w-[800px]">
             <TabsTrigger value="users" className="flex items-center gap-2">
               <Users className="w-4 h-4" />
               Users & Roles
@@ -41,6 +42,10 @@ export function AdminDashboard({ hideHeader = false }: { hideHeader?: boolean })
             <TabsTrigger value="deals" className="flex items-center gap-2">
               <Briefcase className="w-4 h-4" />
               All Deals
+            </TabsTrigger>
+            <TabsTrigger value="documents" className="flex items-center gap-2">
+              <FileCheck className="w-4 h-4" />
+              Documents
             </TabsTrigger>
             {isSuperAdmin && (
               <TabsTrigger value="settings" className="flex items-center gap-2">
@@ -56,6 +61,10 @@ export function AdminDashboard({ hideHeader = false }: { hideHeader?: boolean })
 
           <TabsContent value="deals" className="space-y-4">
             <AllDealsView />
+          </TabsContent>
+
+          <TabsContent value="documents" className="space-y-4">
+            <DocumentReviewDashboard />
           </TabsContent>
 
           {isSuperAdmin && (

@@ -655,7 +655,7 @@ export function BackgroundDetailsModal({ open, onOpenChange, steps, onStepComple
       await loadDocuments();
       toast({
         title: "Upload Successful",
-        description: `${file.name} has been uploaded.`,
+        description: `${file.name} has been uploaded and will be reviewed by our team.`,
       });
     } catch (error) {
       console.error('Upload error:', error);
