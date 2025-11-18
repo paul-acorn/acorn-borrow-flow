@@ -9,10 +9,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
-import { Briefcase, Search, FileText, User, UserPlus, History, Download } from "lucide-react";
+import { Briefcase, Search, FileText, User, UserPlus, History, Download, LayoutGrid, TableIcon } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { SalesPipelineView } from "./SalesPipelineView";
 
 interface Deal {
   id: string;
@@ -53,6 +54,7 @@ export function AllDealsView() {
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
   const [selectedBrokerId, setSelectedBrokerId] = useState<string>("");
   const [isSyncing, setIsSyncing] = useState(false);
+  const [viewMode, setViewMode] = useState<"table" | "pipeline">("table");
   const queryClient = useQueryClient();
 
   // Fetch all deals
@@ -308,15 +310,33 @@ export function AllDealsView() {
               <CardDescription>View and manage all deals across the platform</CardDescription>
             </div>
           </div>
-          <Button 
-            onClick={handleSyncToGoogleSheets}
-            disabled={isSyncing}
-            variant="outline"
-            className="gap-2"
-          >
-            <Download className="w-4 h-4" />
-            {isSyncing ? 'Syncing...' : 'Export to Google Sheets'}
-          </Button>
+          <div className="flex gap-2">
+            <div className="flex items-center gap-1 border rounded-md p-1">
+              <Button
+                variant={viewMode === "table" ? "secondary" : "ghost"}
+                size="sm"
+                onClick={() => setViewMode("table")}
+              >
+                <TableIcon className="h-4 w-4" />
+              </Button>
+              <Button
+                variant={viewMode === "pipeline" ? "secondary" : "ghost"}
+                size="sm"
+                onClick={() => setViewMode("pipeline")}
+              >
+                <LayoutGrid className="h-4 w-4" />
+              </Button>
+            </div>
+            <Button 
+              onClick={handleSyncToGoogleSheets}
+              disabled={isSyncing}
+              variant="outline"
+              className="gap-2"
+            >
+              <Download className="w-4 h-4" />
+              {isSyncing ? 'Syncing...' : 'Export to Google Sheets'}
+            </Button>
+          </div>
         </div>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -362,6 +382,13 @@ export function AllDealsView() {
           <div className="text-center p-8">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
           </div>
+        ) : viewMode === "pipeline" ? (
+          <SalesPipelineView
+            deals={deals}
+            profiles={profiles}
+            searchTerm={searchTerm}
+            filterType={filterType}
+          />
         ) : (
           <div className="border rounded-lg">
             <Table>
