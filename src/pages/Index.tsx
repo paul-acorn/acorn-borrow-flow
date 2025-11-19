@@ -1,6 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Building2 } from "lucide-react";
+import acornLogo from "@/assets/acorn-icon-blue.png";
 
 const Index = () => {
   const navigate = useNavigate();
@@ -9,9 +9,7 @@ const Index = () => {
     <div className="min-h-screen bg-gradient-surface flex items-center justify-center p-4">
       <div className="text-center space-y-6 max-w-2xl">
         <div className="flex justify-center mb-6">
-          <div className="bg-white p-4 rounded-2xl shadow-lg">
-            <Building2 className="w-16 h-16 text-premium" />
-          </div>
+          <img src={acornLogo} alt="Acorn Finance" className="w-24 h-24" />
         </div>
         
         <h1 className="text-5xl font-bold text-navy mb-4">

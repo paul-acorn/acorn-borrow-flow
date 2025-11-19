@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import acornLogo from "@/assets/acorn-logo.png";
+import acornLogo from "@/assets/acorn-icon-blue.png";
 
 interface SplashScreenProps {
   onComplete: () => void;
