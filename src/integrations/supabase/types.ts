@@ -74,6 +74,137 @@ export type Database = {
           },
         ]
       }
+      campaign_executions: {
+        Row: {
+          campaign_id: string
+          completed_at: string | null
+          created_at: string
+          current_step: number
+          deal_id: string
+          id: string
+          started_at: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          campaign_id: string
+          completed_at?: string | null
+          created_at?: string
+          current_step?: number
+          deal_id: string
+          id?: string
+          started_at?: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          campaign_id?: string
+          completed_at?: string | null
+          created_at?: string
+          current_step?: number
+          deal_id?: string
+          id?: string
+          started_at?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "campaign_executions_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "campaign_sequences"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "campaign_executions_deal_id_fkey"
+            columns: ["deal_id"]
+            isOneToOne: false
+            referencedRelation: "deals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      campaign_sequences: {
+        Row: {
+          created_at: string
+          created_by: string
+          description: string | null
+          id: string
+          is_active: boolean
+          name: string
+          trigger_conditions: Json
+          trigger_type: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          name: string
+          trigger_conditions: Json
+          trigger_type: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          trigger_conditions?: Json
+          trigger_type?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      campaign_steps: {
+        Row: {
+          campaign_id: string
+          channel: string
+          content: string
+          created_at: string
+          delay_days: number
+          id: string
+          step_order: number
+          subject: string | null
+          updated_at: string
+        }
+        Insert: {
+          campaign_id: string
+          channel: string
+          content: string
+          created_at?: string
+          delay_days?: number
+          id?: string
+          step_order: number
+          subject?: string | null
+          updated_at?: string
+        }
+        Update: {
+          campaign_id?: string
+          channel?: string
+          content?: string
+          created_at?: string
+          delay_days?: number
+          id?: string
+          step_order?: number
+          subject?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "campaign_steps_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "campaign_sequences"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       client_addresses: {
         Row: {
           city: string | null
@@ -604,6 +735,62 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      communication_logs: {
+        Row: {
+          communication_type: string
+          content: string | null
+          created_at: string
+          deal_id: string
+          direction: string
+          duration_seconds: number | null
+          email_address: string | null
+          id: string
+          phone_number: string | null
+          status: string | null
+          subject: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          communication_type: string
+          content?: string | null
+          created_at?: string
+          deal_id: string
+          direction: string
+          duration_seconds?: number | null
+          email_address?: string | null
+          id?: string
+          phone_number?: string | null
+          status?: string | null
+          subject?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          communication_type?: string
+          content?: string | null
+          created_at?: string
+          deal_id?: string
+          direction?: string
+          duration_seconds?: number | null
+          email_address?: string | null
+          id?: string
+          phone_number?: string | null
+          status?: string | null
+          subject?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "communication_logs_deal_id_fkey"
+            columns: ["deal_id"]
+            isOneToOne: false
+            referencedRelation: "deals"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       deal_activity_logs: {
         Row: {

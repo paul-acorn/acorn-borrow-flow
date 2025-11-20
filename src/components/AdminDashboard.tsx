@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Users, Briefcase, Settings, FileCheck, BarChart3, Zap } from "lucide-react";
+import { Users, Briefcase, Settings, FileCheck, BarChart3, Zap, MessageSquare, Send } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { UserManagement } from "./admin/UserManagement";
 import { AllDealsView } from "./admin/AllDealsView";
@@ -10,6 +10,8 @@ import { SystemSettings } from "./admin/SystemSettings";
 import { DocumentReviewDashboard } from "./admin/DocumentReviewDashboard";
 import { AnalyticsDashboard } from "./admin/AnalyticsDashboard";
 import { WorkflowAutomation } from "./admin/WorkflowAutomation";
+import { UnifiedInbox } from "@/components/UnifiedInbox";
+import { CampaignSequences } from "./admin/CampaignSequences";
 
 export function AdminDashboard({ hideHeader = false }: { hideHeader?: boolean }) {
   const { signOut, hasRole } = useAuth();
@@ -36,7 +38,7 @@ export function AdminDashboard({ hideHeader = false }: { hideHeader?: boolean })
 
       <div className="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-6 lg:w-[1200px]">
+          <TabsList className="grid w-full grid-cols-4 lg:grid-cols-8 lg:w-full">
             <TabsTrigger value="analytics" className="flex items-center gap-2">
               <BarChart3 className="w-4 h-4" />
               Analytics
@@ -44,6 +46,14 @@ export function AdminDashboard({ hideHeader = false }: { hideHeader?: boolean })
             <TabsTrigger value="workflows" className="flex items-center gap-2">
               <Zap className="w-4 h-4" />
               Workflows
+            </TabsTrigger>
+            <TabsTrigger value="communications" className="flex items-center gap-2">
+              <MessageSquare className="w-4 h-4" />
+              Inbox
+            </TabsTrigger>
+            <TabsTrigger value="campaigns" className="flex items-center gap-2">
+              <Send className="w-4 h-4" />
+              Campaigns
             </TabsTrigger>
             <TabsTrigger value="users" className="flex items-center gap-2">
               <Users className="w-4 h-4" />
@@ -71,6 +81,14 @@ export function AdminDashboard({ hideHeader = false }: { hideHeader?: boolean })
 
           <TabsContent value="workflows" className="space-y-4">
             <WorkflowAutomation />
+          </TabsContent>
+
+          <TabsContent value="communications" className="space-y-4">
+            <UnifiedInbox />
+          </TabsContent>
+
+          <TabsContent value="campaigns" className="space-y-4">
+            <CampaignSequences />
           </TabsContent>
 
           <TabsContent value="users" className="space-y-4">
