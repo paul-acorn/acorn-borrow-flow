@@ -41,7 +41,7 @@ interface Deal {
   name: string;
   amount: number;
   type: 'bridging' | 'mortgage' | 'development' | 'business' | 'factoring' | 'asset' | 'mca' | 'equity';
-  status: 'draft' | 'submitted' | 'approved' | 'declined';
+  status: 'new_case' | 'awaiting_dip' | 'dip_approved' | 'reports_instructed' | 'final_underwriting' | 'offered' | 'with_solicitors' | 'completed';
 }
 
 const loanTypeIcons = {
@@ -199,7 +199,7 @@ export function Dashboard({ hideBackgroundDetails = false }: { hideBackgroundDet
           name: dealData.name,
           amount: dealData.amount,
           type: dealData.type,
-          status: 'draft'
+          status: 'new_case'
         })
         .select()
         .single();
@@ -266,7 +266,7 @@ export function Dashboard({ hideBackgroundDetails = false }: { hideBackgroundDet
           name: refinanceData.name,
           amount: refinanceData.amount,
           type: 'mortgage',
-          status: 'draft'
+          status: 'new_case'
         })
         .select()
         .single();
@@ -533,10 +533,10 @@ export function Dashboard({ hideBackgroundDetails = false }: { hideBackgroundDet
                           </div>
                         </div>
                         <Badge 
-                          variant={deal.status === 'draft' ? 'secondary' : 'default'}
+                          variant={deal.status === 'new_case' ? 'secondary' : 'default'}
                           className="text-xs"
                         >
-                          {deal.status}
+                          {deal.status.replace(/_/g, ' ')}
                         </Badge>
                       </div>
                       
