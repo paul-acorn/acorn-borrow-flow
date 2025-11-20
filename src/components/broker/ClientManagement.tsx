@@ -30,8 +30,9 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { UserPlus, Loader2, Copy, Check, Mail } from "lucide-react";
+import { UserPlus, Loader2, Copy, Check, Mail, Phone } from "lucide-react";
 import { toast } from "sonner";
+import { CallLoggingModal } from "@/components/CallLoggingModal";
 
 export const ClientManagement = () => {
   const { user } = useAuth();
@@ -41,6 +42,8 @@ export const ClientManagement = () => {
   const [newClientFirstName, setNewClientFirstName] = useState("");
   const [newClientLastName, setNewClientLastName] = useState("");
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
+  const [callLoggingOpen, setCallLoggingOpen] = useState(false);
+  const [selectedClientForCall, setSelectedClientForCall] = useState<{ dealId?: string; phone?: string }>({});
 
   // Fetch broker's profile to get initials
   const { data: brokerProfile } = useQuery({
@@ -358,7 +361,9 @@ export const ClientManagement = () => {
                   <TableHead>Deal Code</TableHead>
                   <TableHead>Name</TableHead>
                   <TableHead>Email</TableHead>
+                  <TableHead>Phone</TableHead>
                   <TableHead>Registered</TableHead>
+                  <TableHead>Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -388,7 +393,35 @@ export const ClientManagement = () => {
                     </TableCell>
                     <TableCell>{client.email}</TableCell>
                     <TableCell>
+                      {client.phone_number ? (
+                        <a
+                          href={`tel:${client.phone_number}`}
+                          className="flex items-center gap-1 text-primary hover:underline"
+                        >
+                          <Phone className="h-3 w-3" />
+                          {client.phone_number}
+                        </a>
+                      ) : (
+                        <span className="text-muted-foreground">-</span>
+                      )}
+                    </TableCell>
+                    <TableCell>
                       {new Date(client.created_at).toLocaleDateString()}
+                    </TableCell>
+                    <TableCell>
+                      {client.phone_number && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            setSelectedClientForCall({ phone: client.phone_number || undefined });
+                            setCallLoggingOpen(true);
+                          }}
+                        >
+                          <Phone className="h-3 w-3 mr-1" />
+                          Log Call
+                        </Button>
+                      )}
                     </TableCell>
                   </TableRow>
                 ))}
@@ -459,6 +492,13 @@ export const ClientManagement = () => {
           </div>
         )}
       </CardContent>
+
+      <CallLoggingModal
+        open={callLoggingOpen}
+        onOpenChange={setCallLoggingOpen}
+        dealId={selectedClientForCall.dealId}
+        phoneNumber={selectedClientForCall.phone}
+      />
     </Card>
   );
 };
