@@ -1,9 +1,12 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.57.4';
+import { Resend } from 'npm:resend@2.0.0';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
+
+const resend = new Resend(Deno.env.get('RESEND_API_KEY'));
 
 interface WorkflowAction {
   type: 'create_task' | 'send_notification' | 'update_field' | 'assign_broker';
@@ -32,6 +35,9 @@ Deno.serve(async (req) => {
     const { dealId, oldStatus, newStatus, userId } = await req.json();
 
     console.log('Processing workflows for deal:', { dealId, oldStatus, newStatus });
+
+    // Send automatic status change notifications
+    await sendStatusChangeNotifications(supabase, dealId, oldStatus, newStatus);
 
     // Fetch active workflow rules for status changes
     const { data: rules, error: rulesError } = await supabase
@@ -192,4 +198,81 @@ async function executeAction(
     default:
       console.warn(`Unknown action type: ${action.type}`);
   }
+}
+
+async function sendStatusChangeNotifications(
+  supabase: any,
+  dealId: string,
+  oldStatus: string,
+  newStatus: string
+) {
+  try {
+    // Get deal and user details
+    const { data: deal, error: dealError } = await supabase
+      .from('deals')
+      .select(`
+        name,
+        user_id,
+        profiles:user_id(email, first_name, last_name, assigned_broker)
+      `)
+      .eq('id', dealId)
+      .single();
+
+    if (dealError || !deal) {
+      console.error('Error fetching deal:', dealError);
+      return;
+    }
+
+    // Check notification preferences
+    const { data: preferences } = await supabase
+      .from('notification_preferences')
+      .select('email_enabled, deal_status_updates')
+      .eq('user_id', deal.user_id)
+      .single();
+
+    // Create in-app notification
+    await supabase.from('notifications').insert({
+      user_id: deal.user_id,
+      title: 'Deal Status Updated',
+      message: `Your deal "${deal.name}" has moved to ${formatStatus(newStatus)}`,
+      type: 'info',
+      related_deal_id: dealId,
+    });
+
+    // Send email if preferences allow
+    if (preferences?.email_enabled && preferences?.deal_status_updates) {
+      const userEmail = deal.profiles?.email;
+      const userName = deal.profiles?.first_name || 'Client';
+
+      if (userEmail) {
+        try {
+          await resend.emails.send({
+            from: 'Acorn Finance <notifications@acorn.finance>',
+            to: [userEmail],
+            subject: `Deal Status Update: ${deal.name}`,
+            html: `
+              <h2>Hello ${userName},</h2>
+              <p>Your deal <strong>${deal.name}</strong> has been updated.</p>
+              <p><strong>Status:</strong> ${formatStatus(oldStatus)} → ${formatStatus(newStatus)}</p>
+              <p>Log in to your portal to view more details and track your progress.</p>
+              <br>
+              <p>Best regards,<br>The Acorn Finance Team</p>
+            `,
+          });
+          console.log(`Email sent to ${userEmail} for deal status change`);
+        } catch (emailError) {
+          console.error('Error sending email:', emailError);
+        }
+      }
+    }
+  } catch (error) {
+    console.error('Error in sendStatusChangeNotifications:', error);
+  }
+}
+
+function formatStatus(status: string): string {
+  return status
+    .split('_')
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ');
 }
