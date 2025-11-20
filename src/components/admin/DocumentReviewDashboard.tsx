@@ -58,7 +58,7 @@ interface VerificationDetails {
   reviewed_at?: string;
 }
 
-export function DocumentReviewDashboard() {
+export function DocumentReviewDashboard({ brokerFilter }: { brokerFilter?: string }) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [selectedDocument, setSelectedDocument] = useState<Document | null>(null);
@@ -69,7 +69,7 @@ export function DocumentReviewDashboard() {
 
   // Fetch documents
   const { data: documents = [], isLoading } = useQuery({
-    queryKey: ['client-documents', filterStatus, filterType],
+    queryKey: ['client-documents', filterStatus, filterType, brokerFilter],
     queryFn: async () => {
       let query = supabase
         .from('client_documents')
@@ -94,16 +94,21 @@ export function DocumentReviewDashboard() {
         (docs || []).map(async (doc) => {
           const { data: profile } = await supabase
             .from('profiles')
-            .select('first_name, last_name, email, deal_code')
+            .select('first_name, last_name, email, deal_code, assigned_broker')
             .eq('id', doc.user_id)
             .single();
 
           return {
             ...doc,
-            profiles: profile || { first_name: '', last_name: '', email: '', deal_code: '' }
+            profiles: profile || { first_name: '', last_name: '', email: '', deal_code: '', assigned_broker: null }
           };
         })
       );
+
+      // Filter by broker if brokerFilter is provided
+      if (brokerFilter) {
+        return docsWithProfiles.filter(doc => doc.profiles.assigned_broker === brokerFilter) as Document[];
+      }
 
       return docsWithProfiles as Document[];
     },
