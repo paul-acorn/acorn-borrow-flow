@@ -3,8 +3,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
-import { Sun, Moon, Bell, Mail, MessageSquare } from "lucide-react";
-import { getNotificationPreferences } from "./NotificationPreferences";
+import { Button } from "@/components/ui/button";
+import { Sun, Moon, Bell } from "lucide-react";
+import { NotificationPreferencesModal } from "./NotificationPreferences";
 
 interface SettingsModalProps {
   open: boolean;
@@ -13,7 +14,7 @@ interface SettingsModalProps {
 
 export const SettingsModal = ({ open, onOpenChange }: SettingsModalProps) => {
   const [theme, setTheme] = useState<"light" | "dark">("light");
-  const [notifications, setNotifications] = useState(getNotificationPreferences());
+  const [showNotificationPrefs, setShowNotificationPrefs] = useState(false);
 
   useEffect(() => {
     // Load theme from localStorage
@@ -27,12 +28,6 @@ export const SettingsModal = ({ open, onOpenChange }: SettingsModalProps) => {
     setTheme(newTheme);
     localStorage.setItem("theme", newTheme);
     document.documentElement.classList.toggle("dark", newTheme === "dark");
-  };
-
-  const updateNotificationPref = (key: keyof typeof notifications, value: boolean) => {
-    const updated = { ...notifications, [key]: value };
-    setNotifications(updated);
-    localStorage.setItem("notificationPreferences", JSON.stringify(updated));
   };
 
   return (
@@ -66,58 +61,32 @@ export const SettingsModal = ({ open, onOpenChange }: SettingsModalProps) => {
 
           {/* Notification Settings */}
           <div className="space-y-4">
-            <h3 className="text-sm font-medium">Notifications</h3>
-            
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Bell className="h-4 w-4 text-muted-foreground" />
-                <Label htmlFor="statusChanges">Status Changes</Label>
+              <div>
+                <h3 className="text-sm font-medium flex items-center gap-2">
+                  <Bell className="h-4 w-4 text-muted-foreground" />
+                  Notifications
+                </h3>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Manage your notification preferences
+                </p>
               </div>
-              <Switch
-                id="statusChanges"
-                checked={notifications.statusChanges}
-                onCheckedChange={(checked) => updateNotificationPref("statusChanges", checked)}
-              />
-            </div>
-
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <MessageSquare className="h-4 w-4 text-muted-foreground" />
-                <Label htmlFor="newMessages">New Messages</Label>
-              </div>
-              <Switch
-                id="newMessages"
-                checked={notifications.newMessages}
-                onCheckedChange={(checked) => updateNotificationPref("newMessages", checked)}
-              />
-            </div>
-
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Mail className="h-4 w-4 text-muted-foreground" />
-                <Label htmlFor="enableEmail">Email Notifications</Label>
-              </div>
-              <Switch
-                id="enableEmail"
-                checked={notifications.enableEmail}
-                onCheckedChange={(checked) => updateNotificationPref("enableEmail", checked)}
-              />
-            </div>
-
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Bell className="h-4 w-4 text-muted-foreground" />
-                <Label htmlFor="enableSounds">Notification Sounds</Label>
-              </div>
-              <Switch
-                id="enableSounds"
-                checked={notifications.enableSounds}
-                onCheckedChange={(checked) => updateNotificationPref("enableSounds", checked)}
-              />
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => setShowNotificationPrefs(true)}
+              >
+                Configure
+              </Button>
             </div>
           </div>
         </div>
       </DialogContent>
+
+      <NotificationPreferencesModal
+        open={showNotificationPrefs}
+        onOpenChange={setShowNotificationPrefs}
+      />
     </Dialog>
   );
 };

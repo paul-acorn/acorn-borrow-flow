@@ -933,6 +933,54 @@ export type Database = {
           },
         ]
       }
+      notification_preferences: {
+        Row: {
+          campaign_messages: boolean
+          created_at: string
+          deal_status_updates: boolean
+          document_requests: boolean
+          email_enabled: boolean
+          id: string
+          idle_deal_alerts: boolean
+          marketing_emails: boolean
+          sms_enabled: boolean
+          task_notifications: boolean
+          updated_at: string
+          user_id: string
+          workflow_notifications: boolean
+        }
+        Insert: {
+          campaign_messages?: boolean
+          created_at?: string
+          deal_status_updates?: boolean
+          document_requests?: boolean
+          email_enabled?: boolean
+          id?: string
+          idle_deal_alerts?: boolean
+          marketing_emails?: boolean
+          sms_enabled?: boolean
+          task_notifications?: boolean
+          updated_at?: string
+          user_id: string
+          workflow_notifications?: boolean
+        }
+        Update: {
+          campaign_messages?: boolean
+          created_at?: string
+          deal_status_updates?: boolean
+          document_requests?: boolean
+          email_enabled?: boolean
+          id?: string
+          idle_deal_alerts?: boolean
+          marketing_emails?: boolean
+          sms_enabled?: boolean
+          task_notifications?: boolean
+          updated_at?: string
+          user_id?: string
+          workflow_notifications?: boolean
+        }
+        Relationships: []
+      }
       notifications: {
         Row: {
           created_at: string | null
