@@ -26,7 +26,7 @@ interface CommunicationLog {
   };
 }
 
-export function UnifiedInbox() {
+export function UnifiedInbox({ brokerFilter }: { brokerFilter?: string }) {
   const [communications, setCommunications] = useState<CommunicationLog[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<string>("all");
@@ -54,7 +54,7 @@ export function UnifiedInbox() {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, []);
+  }, [brokerFilter]);
 
   const fetchCommunications = async () => {
     try {
@@ -64,14 +64,26 @@ export function UnifiedInbox() {
           *,
           deals (
             name,
-            user_id
+            user_id,
+            profiles:profiles!deals_user_id_fkey (
+              assigned_broker
+            )
           )
         `)
         .order("created_at", { ascending: false })
         .limit(100);
 
       if (error) throw error;
-      setCommunications(data || []);
+      
+      // Filter by broker if brokerFilter is provided
+      let filteredData = data || [];
+      if (brokerFilter) {
+        filteredData = filteredData.filter((comm: any) => 
+          comm.deals?.profiles?.assigned_broker === brokerFilter
+        );
+      }
+      
+      setCommunications(filteredData);
     } catch (error: any) {
       toast({
         title: "Error",

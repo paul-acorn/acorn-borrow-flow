@@ -15,7 +15,7 @@ type TimeRange = "today" | "week" | "month" | "quarter" | "year" | "custom";
 
 const COLORS = ['hsl(var(--premium))', 'hsl(var(--accent))', 'hsl(var(--success))', 'hsl(var(--warning))', 'hsl(var(--destructive))'];
 
-export const AnalyticsDashboard = () => {
+export const AnalyticsDashboard = ({ brokerFilter }: { brokerFilter?: string }) => {
   const [timeRange, setTimeRange] = useState<TimeRange>("month");
   const [selectedBroker, setSelectedBroker] = useState<string>("all");
   const [dateFrom, setDateFrom] = useState<Date | undefined>(startOfMonth(new Date()));
@@ -52,7 +52,7 @@ export const AnalyticsDashboard = () => {
 
   // Fetch deals data
   const { data: deals = [], isLoading: dealsLoading } = useQuery({
-    queryKey: ["analytics-deals", dateFrom, dateTo, selectedBroker],
+    queryKey: ["analytics-deals", dateFrom, dateTo, selectedBroker, brokerFilter],
     queryFn: async () => {
       let query = supabase
         .from("deals")
@@ -67,9 +67,11 @@ export const AnalyticsDashboard = () => {
       const { data, error } = await query;
       if (error) throw error;
 
-      // Filter by broker if selected
-      if (selectedBroker !== "all") {
-        return data?.filter((deal: any) => deal.client?.assigned_broker === selectedBroker) || [];
+      // Filter by broker - use brokerFilter if provided (broker view), otherwise use selectedBroker (admin view)
+      const activeBrokerFilter = brokerFilter || (selectedBroker !== "all" ? selectedBroker : null);
+      
+      if (activeBrokerFilter) {
+        return data?.filter((deal: any) => deal.client?.assigned_broker === activeBrokerFilter) || [];
       }
 
       return data || [];
@@ -204,19 +206,21 @@ export const AnalyticsDashboard = () => {
             </div>
           )}
 
-          <Select value={selectedBroker} onValueChange={setSelectedBroker}>
-            <SelectTrigger className="w-[180px]">
-              <SelectValue placeholder="All Brokers" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Brokers</SelectItem>
-              {brokers.map((broker) => (
-                <SelectItem key={broker.id} value={broker.id}>
-                  {broker.first_name} {broker.last_name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          {!brokerFilter && (
+            <Select value={selectedBroker} onValueChange={setSelectedBroker}>
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="All Brokers" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Brokers</SelectItem>
+                {brokers.map((broker) => (
+                  <SelectItem key={broker.id} value={broker.id}>
+                    {broker.first_name} {broker.last_name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
         </div>
       </div>
 

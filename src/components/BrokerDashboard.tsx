@@ -1,16 +1,29 @@
 import { useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
-import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Users, FileText, Plus } from "lucide-react";
+import { 
+  BarChart3, 
+  Workflow, 
+  Users, 
+  FileText, 
+  FileCheck, 
+  MessageSquare,
+  Plus
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { AnalyticsDashboard } from "@/components/admin/AnalyticsDashboard";
+import { WorkflowAutomation } from "@/components/admin/WorkflowAutomation";
 import { ClientManagement } from "@/components/broker/ClientManagement";
 import { BrokerDealsView } from "@/components/broker/BrokerDealsView";
+import { DocumentReviewDashboard } from "@/components/admin/DocumentReviewDashboard";
+import { UnifiedInbox } from "@/components/UnifiedInbox";
+import { CampaignSequences } from "@/components/admin/CampaignSequences";
 import { BrokerDealCreationModal } from "@/components/broker/BrokerDealCreationModal";
 import { UserProfileMenu } from "@/components/UserProfileMenu";
 
 export const BrokerDashboard = () => {
-  const { signOut, user } = useAuth();
-  const [activeTab, setActiveTab] = useState("clients");
+  const { user } = useAuth();
+  const [activeTab, setActiveTab] = useState("deals");
   const [isDealCreationOpen, setIsDealCreationOpen] = useState(false);
 
   return (
@@ -23,6 +36,10 @@ export const BrokerDashboard = () => {
               <p className="text-sm text-muted-foreground">{user?.email}</p>
             </div>
             <div className="flex items-center gap-3">
+              <Button onClick={() => setIsDealCreationOpen(true)}>
+                <Plus className="mr-2 h-4 w-4" />
+                Create Deal
+              </Button>
               <UserProfileMenu />
             </div>
           </div>
@@ -30,24 +47,45 @@ export const BrokerDashboard = () => {
       </header>
 
       <main className="container mx-auto px-4 py-8">
-        <div className="flex justify-end mb-6">
-          <Button onClick={() => setIsDealCreationOpen(true)}>
-            <Plus className="mr-2 h-4 w-4" />
-            Create Deal
-          </Button>
-        </div>
-
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full max-w-md grid-cols-2">
+          <TabsList className="grid w-full grid-cols-7 max-w-5xl">
+            <TabsTrigger value="analytics" className="flex items-center gap-2">
+              <BarChart3 className="h-4 w-4" />
+              <span className="hidden sm:inline">Analytics</span>
+            </TabsTrigger>
+            <TabsTrigger value="workflows" className="flex items-center gap-2">
+              <Workflow className="h-4 w-4" />
+              <span className="hidden sm:inline">Workflows</span>
+            </TabsTrigger>
             <TabsTrigger value="clients" className="flex items-center gap-2">
               <Users className="h-4 w-4" />
-              My Clients
+              <span className="hidden sm:inline">Clients</span>
             </TabsTrigger>
             <TabsTrigger value="deals" className="flex items-center gap-2">
               <FileText className="h-4 w-4" />
-              Client Deals
+              <span className="hidden sm:inline">Deals</span>
+            </TabsTrigger>
+            <TabsTrigger value="documents" className="flex items-center gap-2">
+              <FileCheck className="h-4 w-4" />
+              <span className="hidden sm:inline">Documents</span>
+            </TabsTrigger>
+            <TabsTrigger value="inbox" className="flex items-center gap-2">
+              <MessageSquare className="h-4 w-4" />
+              <span className="hidden sm:inline">Inbox</span>
+            </TabsTrigger>
+            <TabsTrigger value="campaigns" className="flex items-center gap-2">
+              <MessageSquare className="h-4 w-4" />
+              <span className="hidden sm:inline">Campaigns</span>
             </TabsTrigger>
           </TabsList>
+
+          <TabsContent value="analytics" className="mt-6">
+            <AnalyticsDashboard brokerFilter={user?.id} />
+          </TabsContent>
+
+          <TabsContent value="workflows" className="mt-6">
+            <WorkflowAutomation />
+          </TabsContent>
 
           <TabsContent value="clients" className="mt-6">
             <ClientManagement />
@@ -55,6 +93,18 @@ export const BrokerDashboard = () => {
 
           <TabsContent value="deals" className="mt-6">
             <BrokerDealsView />
+          </TabsContent>
+
+          <TabsContent value="documents" className="mt-6">
+            <DocumentReviewDashboard brokerFilter={user?.id} />
+          </TabsContent>
+
+          <TabsContent value="inbox" className="mt-6">
+            <UnifiedInbox brokerFilter={user?.id} />
+          </TabsContent>
+
+          <TabsContent value="campaigns" className="mt-6">
+            <CampaignSequences />
           </TabsContent>
         </Tabs>
 
