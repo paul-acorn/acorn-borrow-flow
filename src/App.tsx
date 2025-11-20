@@ -6,7 +6,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { SplashScreen } from "@/components/SplashScreen";
 import { AuthForm } from "@/components/AuthForm";
-import { Dashboard } from "@/components/Dashboard";
+import { ClientDashboard } from "@/components/ClientDashboard";
 import { AdminDashboard } from "@/components/AdminDashboard";
 import { SuperAdminDashboard } from "@/components/SuperAdminDashboard";
 import { BrokerDashboard } from "@/components/BrokerDashboard";
@@ -50,7 +50,7 @@ const AppContent = () => {
     if (isSuperAdmin) return <SuperAdminDashboard />;
     if (isAdmin) return <AdminDashboard />;
     if (isBroker) return <BrokerDashboard />;
-    return <Dashboard />;
+    return <ClientDashboard />;
   };
 
   return (

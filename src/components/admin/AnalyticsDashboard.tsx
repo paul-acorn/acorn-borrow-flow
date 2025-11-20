@@ -98,16 +98,19 @@ export const AnalyticsDashboard = ({ brokerFilter }: { brokerFilter?: string }) 
   const metrics = useMemo(() => {
     const totalDeals = deals.length;
     const totalRevenue = deals.reduce((sum, deal) => sum + (deal.amount || 0), 0);
-    const approvedDeals = deals.filter(d => d.status === "approved").length;
-    const conversionRate = totalDeals > 0 ? (approvedDeals / totalDeals) * 100 : 0;
+    const completedDeals = deals.filter(d => d.status === "completed").length;
+    const conversionRate = totalDeals > 0 ? (completedDeals / totalDeals) * 100 : 0;
 
     // Deal status breakdown
     const statusBreakdown = [
-      { name: "Draft", value: deals.filter(d => d.status === "draft").length },
-      { name: "In Progress", value: deals.filter(d => d.status === "in_progress").length },
-      { name: "Submitted", value: deals.filter(d => d.status === "submitted").length },
-      { name: "Approved", value: deals.filter(d => d.status === "approved").length },
-      { name: "Declined", value: deals.filter(d => d.status === "declined").length },
+      { name: "New Case", value: deals.filter(d => d.status === "new_case").length },
+      { name: "Awaiting DIP", value: deals.filter(d => d.status === "awaiting_dip").length },
+      { name: "DIP Approved", value: deals.filter(d => d.status === "dip_approved").length },
+      { name: "Reports Instructed", value: deals.filter(d => d.status === "reports_instructed").length },
+      { name: "Final Underwriting", value: deals.filter(d => d.status === "final_underwriting").length },
+      { name: "Offered", value: deals.filter(d => d.status === "offered").length },
+      { name: "With Solicitors", value: deals.filter(d => d.status === "with_solicitors").length },
+      { name: "Completed", value: deals.filter(d => d.status === "completed").length },
     ];
 
     // Revenue by deal type
@@ -146,7 +149,7 @@ export const AnalyticsDashboard = ({ brokerFilter }: { brokerFilter?: string }) 
     return {
       totalDeals,
       totalRevenue,
-      approvedDeals,
+      completedDeals,
       conversionRate,
       statusBreakdown,
       typeData,
@@ -234,7 +237,7 @@ export const AnalyticsDashboard = ({ brokerFilter }: { brokerFilter?: string }) 
           <CardContent>
             <div className="text-2xl font-bold">{metrics.totalDeals}</div>
             <p className="text-xs text-muted-foreground">
-              {metrics.approvedDeals} approved
+              {metrics.completedDeals} completed
             </p>
           </CardContent>
         </Card>
@@ -262,7 +265,7 @@ export const AnalyticsDashboard = ({ brokerFilter }: { brokerFilter?: string }) 
           <CardContent>
             <div className="text-2xl font-bold">{metrics.conversionRate.toFixed(1)}%</div>
             <p className="text-xs text-muted-foreground">
-              {metrics.approvedDeals} of {metrics.totalDeals} approved
+              {metrics.completedDeals} of {metrics.totalDeals} completed
             </p>
           </CardContent>
         </Card>

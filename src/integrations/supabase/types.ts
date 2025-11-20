@@ -1387,11 +1387,14 @@ export type Database = {
     Enums: {
       app_role: "client" | "team_member" | "admin" | "super_admin" | "broker"
       deal_status:
-        | "draft"
-        | "in_progress"
-        | "submitted"
-        | "approved"
-        | "declined"
+        | "new_case"
+        | "awaiting_dip"
+        | "dip_approved"
+        | "reports_instructed"
+        | "final_underwriting"
+        | "offered"
+        | "with_solicitors"
+        | "completed"
       loan_type:
         | "bridging"
         | "mortgage"
@@ -1530,11 +1533,14 @@ export const Constants = {
     Enums: {
       app_role: ["client", "team_member", "admin", "super_admin", "broker"],
       deal_status: [
-        "draft",
-        "in_progress",
-        "submitted",
-        "approved",
-        "declined",
+        "new_case",
+        "awaiting_dip",
+        "dip_approved",
+        "reports_instructed",
+        "final_underwriting",
+        "offered",
+        "with_solicitors",
+        "completed",
       ],
       loan_type: [
         "bridging",

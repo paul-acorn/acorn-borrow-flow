@@ -164,7 +164,7 @@ export function BrokerDealCreationModal({ open, onOpenChange }: BrokerDealCreati
           name: dealName,
           type: selectedType,
           amount: amount ? parseFloat(amount) : null,
-          status: "draft",
+          status: "new_case",
         })
         .select()
         .single();

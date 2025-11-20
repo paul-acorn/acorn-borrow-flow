@@ -30,11 +30,14 @@ interface Profile {
 }
 
 const DEAL_STAGES = [
-  { id: 'draft', label: 'Draft', color: 'bg-secondary' },
-  { id: 'in_progress', label: 'In Progress', color: 'bg-blue-500' },
-  { id: 'submitted', label: 'Submitted', color: 'bg-yellow-500' },
-  { id: 'approved', label: 'Approved', color: 'bg-green-500' },
-  { id: 'declined', label: 'Declined', color: 'bg-destructive' },
+  { id: 'new_case', label: 'New Case', color: 'bg-secondary' },
+  { id: 'awaiting_dip', label: 'Awaiting DIP', color: 'bg-blue-500' },
+  { id: 'dip_approved', label: 'DIP Approved', color: 'bg-indigo-500' },
+  { id: 'reports_instructed', label: 'Reports Instructed', color: 'bg-purple-500' },
+  { id: 'final_underwriting', label: 'Final Underwriting', color: 'bg-yellow-500' },
+  { id: 'offered', label: 'Offered', color: 'bg-amber-500' },
+  { id: 'with_solicitors', label: 'With Solicitors', color: 'bg-orange-500' },
+  { id: 'completed', label: 'Completed', color: 'bg-green-500' },
 ];
 
 interface SalesPipelineViewProps {
@@ -98,7 +101,7 @@ export function SalesPipelineView({ deals, profiles, searchTerm = "", filterType
       const { error } = await supabase
         .from('deals')
         .update({ 
-          status: newStatus as 'draft' | 'in_progress' | 'submitted' | 'approved' | 'declined', 
+          status: newStatus as 'new_case' | 'awaiting_dip' | 'dip_approved' | 'reports_instructed' | 'final_underwriting' | 'offered' | 'with_solicitors' | 'completed', 
           updated_at: new Date().toISOString() 
         })
         .eq('id', dealId);
