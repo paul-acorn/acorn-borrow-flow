@@ -5,7 +5,7 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { Save, ExternalLink, FolderPlus, CheckCircle } from "lucide-react";
+import { Save, ExternalLink, FolderPlus, CheckCircle, TestTube2 } from "lucide-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
 interface ClientProfile {
@@ -20,6 +20,7 @@ export function SystemSettings() {
   const [googleDriveFolderId, setGoogleDriveFolderId] = useState("");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [testingConnection, setTestingConnection] = useState(false);
   const [clients, setClients] = useState<ClientProfile[]>([]);
   const [creatingFolders, setCreatingFolders] = useState<Set<string>>(new Set());
   const { toast } = useToast();
@@ -80,6 +81,32 @@ export function SystemSettings() {
     }
 
     setSaving(false);
+  };
+
+  const testConnection = async () => {
+    setTestingConnection(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('google-drive', {
+        body: { action: 'list', pageSize: 1 }
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: "Google Drive connection is working correctly!",
+      });
+      console.log('Connection test result:', data);
+    } catch (error: any) {
+      console.error('Error testing connection:', error);
+      toast({
+        title: "Connection Failed",
+        description: error.message || "Unable to connect to Google Drive",
+        variant: "destructive",
+      });
+    } finally {
+      setTestingConnection(false);
+    }
   };
 
   const createClientFolder = async (client: ClientProfile) => {
@@ -192,10 +219,16 @@ export function SystemSettings() {
             </div>
           </div>
 
-          <Button onClick={handleSave} disabled={saving} className="gap-2">
-            <Save className="w-4 h-4" />
-            {saving ? "Saving..." : "Save Settings"}
-          </Button>
+          <div className="flex gap-2">
+            <Button onClick={testConnection} disabled={testingConnection} variant="outline" className="gap-2">
+              <TestTube2 className="w-4 h-4" />
+              {testingConnection ? "Testing..." : "Test Connection"}
+            </Button>
+            <Button onClick={handleSave} disabled={saving} className="gap-2">
+              <Save className="w-4 h-4" />
+              {saving ? "Saving..." : "Save Settings"}
+            </Button>
+          </div>
         </div>
 
         <div className="pt-4 border-t space-y-2">
