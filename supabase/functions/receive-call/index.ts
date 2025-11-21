@@ -34,14 +34,43 @@ Deno.serve(async (req) => {
 
     let profile = profiles?.find(p => p.phone_number?.replace(/\D/g, '').slice(-10) === cleanFrom);
 
+    // Handle unassigned callers (lenders, service providers, etc.)
     if (!profile || !profile.assigned_broker) {
-      console.log('No assigned broker found for caller');
+      console.log('Unassigned caller - presenting broker directory');
       
-      // Return TwiML to play a message
+      // Get all active brokers
+      const { data: brokers } = await supabase
+        .from('profiles')
+        .select('id, first_name, last_name, phone_number')
+        .not('phone_number', 'is', null)
+        .limit(10);
+
+      if (!brokers || brokers.length === 0) {
+        const twiml = `<?xml version="1.0" encoding="UTF-8"?>
+<Response>
+  <Say voice="alice">Thank you for calling. All representatives are currently unavailable. Please try again later.</Say>
+  <Hangup/>
+</Response>`;
+        return new Response(twiml, {
+          headers: { 'Content-Type': 'text/xml' },
+        });
+      }
+
+      // Create hunt group for unassigned callers - dial all brokers simultaneously
       const twiml = `<?xml version="1.0" encoding="UTF-8"?>
 <Response>
-  <Say voice="alice">Thank you for calling. Please contact your broker directly or visit our website for assistance.</Say>
-  <Hangup/>
+  <Say voice="alice">Thank you for calling. Connecting you to the next available representative.</Say>
+  <Dial 
+    timeout="20"
+    record="record-from-answer"
+    recordingStatusCallback="https://${supabaseUrl.replace('https://', '')}/functions/v1/call-status"
+    recordingStatusCallbackMethod="POST"
+    action="https://${supabaseUrl.replace('https://', '')}/functions/v1/call-status"
+    method="POST">
+    ${brokers.map(b => `<Number>${b.phone_number}</Number>`).join('\n    ')}
+  </Dial>
+  <Say voice="alice">All representatives are currently unavailable. Please leave a message after the tone.</Say>
+  <Record maxLength="120" transcribe="true" transcribeCallback="https://${supabaseUrl.replace('https://', '')}/functions/v1/call-status"/>
 </Response>`;
       
       return new Response(twiml, {
@@ -102,18 +131,39 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Forward call to broker with caller ID
+    // Get all brokers for hunt group fallback
+    const { data: allBrokers } = await supabase
+      .from('profiles')
+      .select('phone_number')
+      .not('phone_number', 'is', null)
+      .neq('id', profile.assigned_broker)
+      .limit(10);
+
+    // Forward call to assigned broker first, then hunt group if no answer
     const twiml = `<?xml version="1.0" encoding="UTF-8"?>
 <Response>
   <Say voice="alice">Connecting you to ${broker.first_name || 'your broker'}.</Say>
   <Dial 
     callerId="${from}"
-    timeout="30"
+    timeout="15"
+    record="record-from-answer"
+    recordingStatusCallback="https://${supabaseUrl.replace('https://', '')}/functions/v1/call-status"
+    recordingStatusCallbackMethod="POST"
     action="https://${supabaseUrl.replace('https://', '')}/functions/v1/call-status"
     method="POST">
     <Number>${broker.phone_number}</Number>
   </Dial>
-  <Say voice="alice">Your broker is not available. Please try again later or send a message.</Say>
+  ${allBrokers && allBrokers.length > 0 ? `
+  <Say voice="alice">Your broker is not available. Connecting you to the next available representative.</Say>
+  <Dial 
+    timeout="20"
+    record="record-from-answer"
+    recordingStatusCallback="https://${supabaseUrl.replace('https://', '')}/functions/v1/call-status"
+    recordingStatusCallbackMethod="POST">
+    ${allBrokers.map(b => `<Number>${b.phone_number}</Number>`).join('\n    ')}
+  </Dial>` : ''}
+  <Say voice="alice">All representatives are currently unavailable. Please leave a message after the tone.</Say>
+  <Record maxLength="120" transcribe="true" transcribeCallback="https://${supabaseUrl.replace('https://', '')}/functions/v1/call-status"/>
 </Response>`;
 
     return new Response(twiml, {
