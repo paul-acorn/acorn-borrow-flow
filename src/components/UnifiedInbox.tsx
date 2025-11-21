@@ -3,7 +3,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { Phone, Mail, MessageSquare, Clock, User } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import { Phone, Mail, MessageSquare, Clock, User, Reply } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -30,6 +32,9 @@ export function UnifiedInbox({ brokerFilter }: { brokerFilter?: string }) {
   const [communications, setCommunications] = useState<CommunicationLog[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<string>("all");
+  const [replyingTo, setReplyingTo] = useState<string | null>(null);
+  const [replyText, setReplyText] = useState<string>("");
+  const [sending, setSending] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -125,6 +130,50 @@ export function UnifiedInbox({ brokerFilter }: { brokerFilter?: string }) {
     }
   };
 
+  const handleReply = async (comm: CommunicationLog) => {
+    if (!replyText.trim()) {
+      toast({
+        title: "Error",
+        description: "Please enter a message",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setSending(true);
+    try {
+      const channel = comm.communication_type === 'whatsapp' ? 'whatsapp' : 'sms';
+      
+      const { error } = await supabase.functions.invoke('send-sms', {
+        body: {
+          to: comm.phone_number,
+          message: replyText,
+          dealId: comm.deal_id,
+          channel: channel,
+        },
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: `${channel.toUpperCase()} sent successfully`,
+      });
+
+      setReplyText("");
+      setReplyingTo(null);
+      fetchCommunications();
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setSending(false);
+    }
+  };
+
   const filteredCommunications = communications.filter((comm) => {
     if (filter === "all") return true;
     return comm.communication_type === filter;
@@ -204,6 +253,49 @@ export function UnifiedInbox({ brokerFilter }: { brokerFilter?: string }) {
                               </div>
                             </div>
                           </div>
+                          {(comm.communication_type === 'sms' || comm.communication_type === 'whatsapp') && 
+                           comm.phone_number && (
+                            <div className="mt-3">
+                              {replyingTo === comm.id ? (
+                                <div className="space-y-2">
+                                  <Textarea
+                                    placeholder="Type your reply..."
+                                    value={replyText}
+                                    onChange={(e) => setReplyText(e.target.value)}
+                                    rows={3}
+                                  />
+                                  <div className="flex gap-2">
+                                    <Button
+                                      size="sm"
+                                      onClick={() => handleReply(comm)}
+                                      disabled={sending}
+                                    >
+                                      {sending ? "Sending..." : "Send"}
+                                    </Button>
+                                    <Button
+                                      size="sm"
+                                      variant="outline"
+                                      onClick={() => {
+                                        setReplyingTo(null);
+                                        setReplyText("");
+                                      }}
+                                    >
+                                      Cancel
+                                    </Button>
+                                  </div>
+                                </div>
+                              ) : (
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => setReplyingTo(comm.id)}
+                                >
+                                  <Reply className="h-3 w-3 mr-1" />
+                                  Reply
+                                </Button>
+                              )}
+                            </div>
+                          )}
                         </div>
                       </CardContent>
                     </Card>
