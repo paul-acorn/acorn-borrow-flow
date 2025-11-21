@@ -17,6 +17,10 @@ Deno.serve(async (req) => {
       CallDuration: duration,
       CallStatus: status,
       DialCallStatus: dialStatus,
+      RecordingUrl: recordingUrl,
+      RecordingSid: recordingSid,
+      RecordingDuration: recordingDuration,
+      TranscriptionText: transcription,
     } = params;
 
     console.log('Call status update:', { from, duration, status, dialStatus });
@@ -33,23 +37,36 @@ Deno.serve(async (req) => {
     if (logs && logs.length > 0) {
       const log = logs[0];
       
-      // Update the call log with duration and final status
+      // Update the call log with duration, status, and recording details
+      const updateData: any = {
+        duration_seconds: parseInt(duration) || parseInt(recordingDuration) || 0,
+        status: dialStatus === 'completed' ? 'completed' : 'missed',
+      };
+
+      // Add recording and transcription details to content if available
+      if (recordingUrl || transcription) {
+        const recordingInfo = [];
+        if (recordingUrl) recordingInfo.push(`Recording: ${recordingUrl}`);
+        if (transcription) recordingInfo.push(`Transcription: ${transcription}`);
+        updateData.content = `${log.content}\n\n${recordingInfo.join('\n')}`;
+      }
+
       await supabase
         .from('communication_logs')
-        .update({
-          duration_seconds: parseInt(duration) || 0,
-          status: dialStatus === 'completed' ? 'completed' : 'missed',
-        })
+        .update(updateData)
         .eq('id', log.id);
 
-      // Log activity
+      // Log activity with recording details
       await supabase.from('deal_activity_logs').insert({
         deal_id: log.deal_id,
         user_id: log.user_id,
         action: `Call ${dialStatus === 'completed' ? 'completed' : 'ended'}`,
         details: {
-          duration: parseInt(duration) || 0,
+          duration: parseInt(duration) || parseInt(recordingDuration) || 0,
           status: dialStatus,
+          recorded: !!recordingUrl,
+          recording_url: recordingUrl || null,
+          transcription: transcription || null,
         },
       });
     }
