@@ -69,10 +69,7 @@ export function UnifiedInbox({ brokerFilter }: { brokerFilter?: string }) {
           *,
           deals (
             name,
-            user_id,
-            profiles:profiles!deals_user_id_fkey (
-              assigned_broker
-            )
+            user_id
           )
         `)
         .order("created_at", { ascending: false })
@@ -82,9 +79,22 @@ export function UnifiedInbox({ brokerFilter }: { brokerFilter?: string }) {
       
       // Filter by broker if brokerFilter is provided
       let filteredData = data || [];
-      if (brokerFilter) {
+      if (brokerFilter && filteredData.length > 0) {
+        // Get user IDs from deals
+        const userIds = [...new Set(filteredData.map((comm: any) => comm.deals?.user_id).filter(Boolean))];
+        
+        // Fetch profiles for these users to check assigned_broker
+        const { data: profiles } = await supabase
+          .from("profiles")
+          .select("id, assigned_broker")
+          .in("id", userIds);
+        
+        // Create a map of user_id to assigned_broker
+        const userBrokerMap = new Map(profiles?.map(p => [p.id, p.assigned_broker]) || []);
+        
+        // Filter communications based on assigned broker
         filteredData = filteredData.filter((comm: any) => 
-          comm.deals?.profiles?.assigned_broker === brokerFilter
+          userBrokerMap.get(comm.deals?.user_id) === brokerFilter
         );
       }
       
