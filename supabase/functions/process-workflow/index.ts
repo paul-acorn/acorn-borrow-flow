@@ -213,7 +213,7 @@ async function sendStatusChangeNotifications(
       .select(`
         name,
         user_id,
-        profiles:user_id(email, first_name, last_name, assigned_broker)
+        profiles:user_id(email, first_name, last_name, assigned_broker, phone_number)
       `)
       .eq('id', dealId)
       .single();
@@ -226,15 +226,18 @@ async function sendStatusChangeNotifications(
     // Check notification preferences
     const { data: preferences } = await supabase
       .from('notification_preferences')
-      .select('email_enabled, deal_status_updates')
+      .select('email_enabled, sms_enabled, deal_status_updates')
       .eq('user_id', deal.user_id)
       .single();
+
+    const userName = deal.profiles?.first_name || 'Client';
+    const statusMessage = `Your deal "${deal.name}" has moved to ${formatStatus(newStatus)}`;
 
     // Create in-app notification
     await supabase.from('notifications').insert({
       user_id: deal.user_id,
       title: 'Deal Status Updated',
-      message: `Your deal "${deal.name}" has moved to ${formatStatus(newStatus)}`,
+      message: statusMessage,
       type: 'info',
       related_deal_id: dealId,
     });
@@ -242,7 +245,6 @@ async function sendStatusChangeNotifications(
     // Send email if preferences allow
     if (preferences?.email_enabled && preferences?.deal_status_updates) {
       const userEmail = deal.profiles?.email;
-      const userName = deal.profiles?.first_name || 'Client';
 
       if (userEmail) {
         try {
@@ -265,9 +267,64 @@ async function sendStatusChangeNotifications(
         }
       }
     }
+
+    // Send SMS if preferences allow
+    if (preferences?.sms_enabled && preferences?.deal_status_updates) {
+      const userPhone = deal.profiles?.phone_number;
+
+      if (userPhone) {
+        try {
+          await sendSMS(userPhone, `Hi ${userName}, ${statusMessage}. Log in to view details.`);
+          console.log(`SMS sent to ${userPhone} for deal status change`);
+          
+          // Log the communication
+          await supabase.from('communication_logs').insert({
+            deal_id: dealId,
+            user_id: deal.user_id,
+            communication_type: 'sms',
+            direction: 'outbound',
+            phone_number: userPhone,
+            content: statusMessage,
+            status: 'sent',
+          });
+        } catch (smsError) {
+          console.error('Error sending SMS:', smsError);
+        }
+      }
+    }
   } catch (error) {
     console.error('Error in sendStatusChangeNotifications:', error);
   }
+}
+
+async function sendSMS(to: string, message: string) {
+  const TWILIO_ACCOUNT_SID = Deno.env.get('TWILIO_ACCOUNT_SID');
+  const TWILIO_AUTH_TOKEN = Deno.env.get('TWILIO_AUTH_TOKEN');
+  const TWILIO_PHONE_NUMBER = Deno.env.get('TWILIO_PHONE_NUMBER');
+
+  const twilioUrl = `https://api.twilio.com/2010-04-01/Accounts/${TWILIO_ACCOUNT_SID}/Messages.json`;
+  
+  const formData = new URLSearchParams({
+    To: to,
+    From: TWILIO_PHONE_NUMBER!,
+    Body: message,
+  });
+
+  const response = await fetch(twilioUrl, {
+    method: 'POST',
+    headers: {
+      'Authorization': 'Basic ' + btoa(`${TWILIO_ACCOUNT_SID}:${TWILIO_AUTH_TOKEN}`),
+      'Content-Type': 'application/x-www-form-urlencoded',
+    },
+    body: formData.toString(),
+  });
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(`Twilio error: ${error.message || 'Unknown error'}`);
+  }
+
+  return await response.json();
 }
 
 function formatStatus(status: string): string {

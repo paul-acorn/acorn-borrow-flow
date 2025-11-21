@@ -102,6 +102,8 @@ export function UnifiedInbox({ brokerFilter }: { brokerFilter?: string }) {
       case "email":
         return <Mail className="h-4 w-4" />;
       case "message":
+      case "sms":
+      case "whatsapp":
         return <MessageSquare className="h-4 w-4" />;
       default:
         return <MessageSquare className="h-4 w-4" />;
@@ -140,12 +142,14 @@ export function UnifiedInbox({ brokerFilter }: { brokerFilter?: string }) {
         </CardHeader>
         <CardContent>
           <Tabs value={filter} onValueChange={setFilter}>
-            <TabsList>
-              <TabsTrigger value="all">All</TabsTrigger>
-              <TabsTrigger value="call">Calls</TabsTrigger>
-              <TabsTrigger value="email">Emails</TabsTrigger>
-              <TabsTrigger value="message">Messages</TabsTrigger>
-            </TabsList>
+          <TabsList>
+            <TabsTrigger value="all">All</TabsTrigger>
+            <TabsTrigger value="call">Calls</TabsTrigger>
+            <TabsTrigger value="email">Emails</TabsTrigger>
+            <TabsTrigger value="message">Messages</TabsTrigger>
+            <TabsTrigger value="sms">SMS</TabsTrigger>
+            <TabsTrigger value="whatsapp">WhatsApp</TabsTrigger>
+          </TabsList>
 
             <TabsContent value={filter} className="mt-4">
               <ScrollArea className="h-[600px]">
