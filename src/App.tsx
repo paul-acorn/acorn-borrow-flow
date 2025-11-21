@@ -12,6 +12,7 @@ import { SuperAdminDashboard } from "@/components/SuperAdminDashboard";
 import { BrokerDashboard } from "@/components/BrokerDashboard";
 import { AuthProvider, useAuth } from "@/hooks/useAuth";
 import Index from "@/pages/Index";
+import OAuthCallback from "@/pages/OAuthCallback";
 
 const queryClient = new QueryClient();
 
@@ -58,6 +59,7 @@ const AppContent = () => {
       <Route path="/" element={user ? getDashboard() : <Navigate to="/welcome" replace />} />
       <Route path="/welcome" element={user ? <Navigate to="/" replace /> : <Index />} />
       <Route path="/auth" element={user ? <Navigate to="/" replace /> : <AuthForm onBack={() => window.history.back()} />} />
+      <Route path="/oauth-callback" element={<OAuthCallback />} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );
