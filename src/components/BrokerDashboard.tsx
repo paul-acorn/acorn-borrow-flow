@@ -8,7 +8,8 @@ import {
   FileText, 
   FileCheck, 
   MessageSquare,
-  Plus
+  Plus,
+  Calendar
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { AnalyticsDashboard } from "@/components/admin/AnalyticsDashboard";
@@ -20,6 +21,7 @@ import { UnifiedInbox } from "@/components/UnifiedInbox";
 import { CampaignSequences } from "@/components/admin/CampaignSequences";
 import { BrokerDealCreationModal } from "@/components/broker/BrokerDealCreationModal";
 import { UserProfileMenu } from "@/components/UserProfileMenu";
+import { ScheduledCallbacksView } from "@/components/ScheduledCallbacksView";
 
 export const BrokerDashboard = () => {
   const { user } = useAuth();
@@ -48,7 +50,7 @@ export const BrokerDashboard = () => {
 
       <main className="container mx-auto px-4 py-8">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-7 max-w-5xl">
+          <TabsList className="grid w-full grid-cols-8 max-w-6xl">
             <TabsTrigger value="analytics" className="flex items-center gap-2">
               <BarChart3 className="h-4 w-4" />
               <span className="hidden sm:inline">Analytics</span>
@@ -64,6 +66,10 @@ export const BrokerDashboard = () => {
             <TabsTrigger value="deals" className="flex items-center gap-2">
               <FileText className="h-4 w-4" />
               <span className="hidden sm:inline">Deals</span>
+            </TabsTrigger>
+            <TabsTrigger value="callbacks" className="flex items-center gap-2">
+              <Calendar className="h-4 w-4" />
+              <span className="hidden sm:inline">Callbacks</span>
             </TabsTrigger>
             <TabsTrigger value="documents" className="flex items-center gap-2">
               <FileCheck className="h-4 w-4" />
@@ -93,6 +99,10 @@ export const BrokerDashboard = () => {
 
           <TabsContent value="deals" className="mt-6">
             <BrokerDealsView />
+          </TabsContent>
+
+          <TabsContent value="callbacks" className="mt-6">
+            <ScheduledCallbacksView />
           </TabsContent>
 
           <TabsContent value="documents" className="mt-6">

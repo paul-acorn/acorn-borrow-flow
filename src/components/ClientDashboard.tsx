@@ -7,7 +7,8 @@ import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { MessagingModal } from "@/components/MessagingModal";
 import { RequirementsManager } from "@/components/RequirementsManager";
-import { MessageCircle, FileText, CheckCircle, Clock, TrendingUp } from "lucide-react";
+import { ScheduledCallbacksView } from "@/components/ScheduledCallbacksView";
+import { MessageCircle, FileText, CheckCircle, Clock, TrendingUp, Calendar } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
@@ -221,14 +222,19 @@ export function ClientDashboard() {
         <Card>
           <Tabs defaultValue="requirements" className="w-full">
             <CardHeader>
-              <TabsList className="grid w-full grid-cols-2">
+              <TabsList className="grid w-full grid-cols-3">
                 <TabsTrigger value="requirements">Required Documents</TabsTrigger>
+                <TabsTrigger value="callbacks">Scheduled Callbacks</TabsTrigger>
                 <TabsTrigger value="activity">Activity History</TabsTrigger>
               </TabsList>
             </CardHeader>
             <CardContent>
               <TabsContent value="requirements" className="space-y-4">
                 <RequirementsManager dealId={activeDeal.id} />
+              </TabsContent>
+
+              <TabsContent value="callbacks" className="space-y-4">
+                <ScheduledCallbacksView />
               </TabsContent>
 
               <TabsContent value="activity" className="space-y-4">

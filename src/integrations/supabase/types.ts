@@ -1178,6 +1178,56 @@ export type Database = {
           },
         ]
       }
+      scheduled_callbacks: {
+        Row: {
+          completed_at: string | null
+          created_at: string
+          deal_id: string | null
+          id: string
+          notes: string | null
+          scheduled_at: string
+          scheduled_by: string
+          scheduled_with: string
+          status: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string
+          deal_id?: string | null
+          id?: string
+          notes?: string | null
+          scheduled_at: string
+          scheduled_by: string
+          scheduled_with: string
+          status?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string
+          deal_id?: string | null
+          id?: string
+          notes?: string | null
+          scheduled_at?: string
+          scheduled_by?: string
+          scheduled_with?: string
+          status?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "scheduled_callbacks_deal_id_fkey"
+            columns: ["deal_id"]
+            isOneToOne: false
+            referencedRelation: "deals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       system_settings: {
         Row: {
           created_at: string
