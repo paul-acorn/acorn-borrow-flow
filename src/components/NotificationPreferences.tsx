@@ -199,14 +199,13 @@ export const NotificationPreferencesModal = ({ open, onOpenChange }: Notificatio
                   SMS Notifications
                 </Label>
                 <p className="text-xs text-muted-foreground">
-                  Receive notifications via SMS (coming soon)
+                  Receive notifications via SMS and WhatsApp
                 </p>
               </div>
               <Switch
                 id="sms-enabled"
                 checked={preferences.sms_enabled}
                 onCheckedChange={(checked) => updatePreference('sms_enabled', checked)}
-                disabled
               />
             </div>
           </div>
