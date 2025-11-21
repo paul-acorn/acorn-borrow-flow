@@ -253,6 +253,38 @@ export function UnifiedInbox({ brokerFilter }: { brokerFilter?: string }) {
                               </div>
                             </div>
                           </div>
+                           {comm.communication_type === 'call' && comm.phone_number && (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={async () => {
+                                try {
+                                  const { error } = await supabase.functions.invoke('make-call', {
+                                    body: {
+                                      to: comm.phone_number,
+                                      dealId: comm.deal_id,
+                                    },
+                                  });
+                                  
+                                  if (error) throw error;
+                                  
+                                  toast({
+                                    title: "Call Initiated",
+                                    description: "Connecting call to client...",
+                                  });
+                                } catch (error: any) {
+                                  toast({
+                                    title: "Error",
+                                    description: error.message || "Failed to initiate call",
+                                    variant: "destructive",
+                                  });
+                                }
+                              }}
+                            >
+                              <Phone className="h-3 w-3 mr-1" />
+                              Call Back
+                            </Button>
+                          )}
                           {(comm.communication_type === 'sms' || comm.communication_type === 'whatsapp') && 
                            comm.phone_number && (
                             <div className="mt-3">
