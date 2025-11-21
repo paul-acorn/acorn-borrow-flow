@@ -1185,6 +1185,9 @@ export type Database = {
           deal_id: string | null
           id: string
           notes: string | null
+          reminder_10m_sent: boolean | null
+          reminder_1h_sent: boolean | null
+          reminder_24h_sent: boolean | null
           scheduled_at: string
           scheduled_by: string
           scheduled_with: string
@@ -1198,6 +1201,9 @@ export type Database = {
           deal_id?: string | null
           id?: string
           notes?: string | null
+          reminder_10m_sent?: boolean | null
+          reminder_1h_sent?: boolean | null
+          reminder_24h_sent?: boolean | null
           scheduled_at: string
           scheduled_by: string
           scheduled_with: string
@@ -1211,6 +1217,9 @@ export type Database = {
           deal_id?: string | null
           id?: string
           notes?: string | null
+          reminder_10m_sent?: boolean | null
+          reminder_1h_sent?: boolean | null
+          reminder_24h_sent?: boolean | null
           scheduled_at?: string
           scheduled_by?: string
           scheduled_with?: string
