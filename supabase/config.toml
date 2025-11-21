@@ -21,5 +21,17 @@ verify_jwt = true
 [functions.receive-sms]
 verify_jwt = false
 
+[functions.receive-call]
+verify_jwt = false
+
+[functions.call-status]
+verify_jwt = false
+
+[functions.make-call]
+verify_jwt = true
+
+[functions.outbound-call-twiml]
+verify_jwt = false
+
 [functions.process-workflow]
 verify_jwt = false
