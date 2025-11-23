@@ -168,7 +168,7 @@ export const AnalyticsDashboard = ({ brokerFilter }: { brokerFilter?: string }) 
 
         <div className="flex flex-wrap gap-3">
           <Select value={timeRange} onValueChange={(value) => updateDateRange(value as TimeRange)}>
-            <SelectTrigger className="w-[140px]">
+            <SelectTrigger className="w-full sm:w-[140px]">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -182,10 +182,10 @@ export const AnalyticsDashboard = ({ brokerFilter }: { brokerFilter?: string }) 
           </Select>
 
           {timeRange === "custom" && (
-            <div className="flex gap-2">
+            <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
               <Popover>
                 <PopoverTrigger asChild>
-                  <Button variant="outline" className={cn("justify-start text-left font-normal", !dateFrom && "text-muted-foreground")}>
+                  <Button variant="outline" className={cn("w-full sm:w-auto justify-start text-left font-normal", !dateFrom && "text-muted-foreground")}>
                     <CalendarIcon className="mr-2 h-4 w-4" />
                     {dateFrom ? format(dateFrom, "PPP") : "From"}
                   </Button>
@@ -197,7 +197,7 @@ export const AnalyticsDashboard = ({ brokerFilter }: { brokerFilter?: string }) 
 
               <Popover>
                 <PopoverTrigger asChild>
-                  <Button variant="outline" className={cn("justify-start text-left font-normal", !dateTo && "text-muted-foreground")}>
+                  <Button variant="outline" className={cn("w-full sm:w-auto justify-start text-left font-normal", !dateTo && "text-muted-foreground")}>
                     <CalendarIcon className="mr-2 h-4 w-4" />
                     {dateTo ? format(dateTo, "PPP") : "To"}
                   </Button>
@@ -211,7 +211,7 @@ export const AnalyticsDashboard = ({ brokerFilter }: { brokerFilter?: string }) 
 
           {!brokerFilter && (
             <Select value={selectedBroker} onValueChange={setSelectedBroker}>
-              <SelectTrigger className="w-[180px]">
+              <SelectTrigger className="w-full sm:w-[180px]">
                 <SelectValue placeholder="All Brokers" />
               </SelectTrigger>
               <SelectContent>
@@ -285,15 +285,15 @@ export const AnalyticsDashboard = ({ brokerFilter }: { brokerFilter?: string }) 
       </div>
 
       {/* Charts Grid */}
-      <div className="grid gap-4 md:grid-cols-2">
+      <div className="grid gap-4 grid-cols-1 lg:grid-cols-2">
         {/* Deal Status Breakdown */}
         <Card>
           <CardHeader>
             <CardTitle>Deal Status Distribution</CardTitle>
             <CardDescription>Current pipeline breakdown</CardDescription>
           </CardHeader>
-          <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
+          <CardContent className="overflow-x-auto">
+            <ResponsiveContainer width="100%" height={300} className="min-w-[280px]">
               <PieChart>
                 <Pie
                   data={metrics.statusBreakdown.filter(s => s.value > 0)}
@@ -321,12 +321,12 @@ export const AnalyticsDashboard = ({ brokerFilter }: { brokerFilter?: string }) 
             <CardTitle>Revenue by Deal Type</CardTitle>
             <CardDescription>Total revenue breakdown</CardDescription>
           </CardHeader>
-          <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
+          <CardContent className="overflow-x-auto">
+            <ResponsiveContainer width="100%" height={300} className="min-w-[280px]">
               <BarChart data={metrics.typeData}>
                 <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="name" />
-                <YAxis />
+                <XAxis dataKey="name" tick={{ fontSize: 12 }} />
+                <YAxis tick={{ fontSize: 12 }} />
                 <Tooltip formatter={(value) => `£${Number(value).toLocaleString()}`} />
                 <Bar dataKey="value" fill="hsl(var(--premium))" />
               </BarChart>
@@ -340,12 +340,12 @@ export const AnalyticsDashboard = ({ brokerFilter }: { brokerFilter?: string }) 
             <CardTitle>Broker Performance - Deals</CardTitle>
             <CardDescription>Total deals by broker</CardDescription>
           </CardHeader>
-          <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
+          <CardContent className="overflow-x-auto">
+            <ResponsiveContainer width="100%" height={300} className="min-w-[320px]">
               <BarChart data={metrics.brokerData}>
                 <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="name" angle={-45} textAnchor="end" height={100} />
-                <YAxis />
+                <XAxis dataKey="name" angle={-45} textAnchor="end" height={100} tick={{ fontSize: 11 }} />
+                <YAxis tick={{ fontSize: 12 }} />
                 <Tooltip />
                 <Legend />
                 <Bar dataKey="deals" fill="hsl(var(--premium))" name="Total Deals" />
@@ -361,12 +361,12 @@ export const AnalyticsDashboard = ({ brokerFilter }: { brokerFilter?: string }) 
             <CardTitle>Broker Performance - Revenue</CardTitle>
             <CardDescription>Revenue generated by broker</CardDescription>
           </CardHeader>
-          <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
+          <CardContent className="overflow-x-auto">
+            <ResponsiveContainer width="100%" height={300} className="min-w-[320px]">
               <BarChart data={metrics.brokerData}>
                 <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="name" angle={-45} textAnchor="end" height={100} />
-                <YAxis />
+                <XAxis dataKey="name" angle={-45} textAnchor="end" height={100} tick={{ fontSize: 11 }} />
+                <YAxis tick={{ fontSize: 12 }} />
                 <Tooltip formatter={(value) => `£${Number(value).toLocaleString()}`} />
                 <Bar dataKey="revenue" fill="hsl(var(--accent))" name="Revenue" />
               </BarChart>
