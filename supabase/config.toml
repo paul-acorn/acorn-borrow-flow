@@ -6,6 +6,12 @@ verify_jwt = true
 [functions.google-sheets-sync]
 verify_jwt = true
 
+[functions.test-twilio]
+verify_jwt = true
+
+[functions.test-gmail]
+verify_jwt = true
+
 [functions.hubspot]
 verify_jwt = true
 
