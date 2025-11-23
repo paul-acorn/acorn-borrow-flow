@@ -110,14 +110,14 @@ export const WorkflowAutomation = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
         <div>
           <h2 className="text-2xl font-bold text-navy">Workflow Automation</h2>
-          <p className="text-muted-foreground">Automate actions based on deal events</p>
+          <p className="text-sm text-muted-foreground">Automate actions based on deal events</p>
         </div>
         <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
           <DialogTrigger asChild>
-            <Button className="bg-gradient-primary">
+            <Button className="bg-gradient-primary w-full sm:w-auto">
               <Plus className="w-4 h-4 mr-2" />
               New Workflow
             </Button>
@@ -149,18 +149,18 @@ export const WorkflowAutomation = () => {
           rules.map((rule) => (
             <Card key={rule.id} className={!rule.is_active ? "opacity-60" : ""}>
               <CardHeader>
-                <div className="flex items-start justify-between">
+                <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
                   <div className="space-y-1 flex-1">
-                    <div className="flex items-center gap-2">
-                      <Zap className={`w-4 h-4 ${rule.is_active ? 'text-warning' : 'text-muted-foreground'}`} />
-                      <CardTitle className="text-lg">{rule.name}</CardTitle>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <Zap className={`w-4 h-4 flex-shrink-0 ${rule.is_active ? 'text-warning' : 'text-muted-foreground'}`} />
+                      <CardTitle className="text-lg break-words">{rule.name}</CardTitle>
                       {!rule.is_active && <Badge variant="outline">Inactive</Badge>}
                     </div>
                     {rule.description && (
-                      <CardDescription>{rule.description}</CardDescription>
+                      <CardDescription className="text-sm">{rule.description}</CardDescription>
                     )}
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 self-start sm:self-auto">
                     <Switch
                       checked={rule.is_active}
                       onCheckedChange={(checked) => 
@@ -206,26 +206,26 @@ export const WorkflowAutomation = () => {
           <CardDescription>Common automation patterns you can set up</CardDescription>
         </CardHeader>
         <CardContent className="grid gap-3">
-          <div className="border rounded-lg p-4">
-            <h4 className="font-medium mb-2">Welcome New Clients</h4>
-            <p className="text-sm text-muted-foreground mb-2">
+          <div className="border rounded-lg p-3 sm:p-4">
+            <h4 className="font-medium mb-2 text-sm sm:text-base">Welcome New Clients</h4>
+            <p className="text-xs sm:text-sm text-muted-foreground mb-2">
               When a deal is created (draft → in_progress), send welcome notification and create onboarding task.
             </p>
-            <Badge variant="outline">Status Change Trigger</Badge>
+            <Badge variant="outline" className="text-xs">Status Change Trigger</Badge>
           </div>
-          <div className="border rounded-lg p-4">
-            <h4 className="font-medium mb-2">Submission Reminder</h4>
-            <p className="text-sm text-muted-foreground mb-2">
+          <div className="border rounded-lg p-3 sm:p-4">
+            <h4 className="font-medium mb-2 text-sm sm:text-base">Submission Reminder</h4>
+            <p className="text-xs sm:text-sm text-muted-foreground mb-2">
               When deal moves to submitted, notify broker and create review task with 2-day deadline.
             </p>
-            <Badge variant="outline">Status Change Trigger</Badge>
+            <Badge variant="outline" className="text-xs">Status Change Trigger</Badge>
           </div>
-          <div className="border rounded-lg p-4">
-            <h4 className="font-medium mb-2">Approval Celebration</h4>
-            <p className="text-sm text-muted-foreground mb-2">
+          <div className="border rounded-lg p-3 sm:p-4">
+            <h4 className="font-medium mb-2 text-sm sm:text-base">Approval Celebration</h4>
+            <p className="text-xs sm:text-sm text-muted-foreground mb-2">
               When deal is approved, send congratulations notification to client and broker.
             </p>
-            <Badge variant="outline">Status Change Trigger</Badge>
+            <Badge variant="outline" className="text-xs">Status Change Trigger</Badge>
           </div>
         </CardContent>
       </Card>
