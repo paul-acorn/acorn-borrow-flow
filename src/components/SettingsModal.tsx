@@ -13,21 +13,37 @@ interface SettingsModalProps {
 }
 
 export const SettingsModal = ({ open, onOpenChange }: SettingsModalProps) => {
-  const [theme, setTheme] = useState<"light" | "dark">("light");
+  const [theme, setTheme] = useState<"light" | "dark" | "system">("system");
   const [showNotificationPrefs, setShowNotificationPrefs] = useState(false);
 
   useEffect(() => {
     // Load theme from localStorage
-    const savedTheme = localStorage.getItem("theme") as "light" | "dark" || "light";
+    const savedTheme = localStorage.getItem("theme") as "light" | "dark" | "system" || "system";
     setTheme(savedTheme);
-    document.documentElement.classList.toggle("dark", savedTheme === "dark");
+    applyTheme(savedTheme);
+
+    // Listen for system theme changes if theme is set to system
+    if (savedTheme === "system") {
+      const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
+      const handleChange = () => applyTheme("system");
+      mediaQuery.addEventListener("change", handleChange);
+      return () => mediaQuery.removeEventListener("change", handleChange);
+    }
   }, []);
 
-  const handleThemeChange = (checked: boolean) => {
-    const newTheme = checked ? "dark" : "light";
+  const applyTheme = (themeValue: "light" | "dark" | "system") => {
+    if (themeValue === "system") {
+      const isDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+      document.documentElement.classList.toggle("dark", isDark);
+    } else {
+      document.documentElement.classList.toggle("dark", themeValue === "dark");
+    }
+  };
+
+  const handleThemeChange = (newTheme: "light" | "dark" | "system") => {
     setTheme(newTheme);
     localStorage.setItem("theme", newTheme);
-    document.documentElement.classList.toggle("dark", newTheme === "dark");
+    applyTheme(newTheme);
   };
 
   return (
@@ -40,20 +56,36 @@ export const SettingsModal = ({ open, onOpenChange }: SettingsModalProps) => {
           {/* Theme Settings */}
           <div className="space-y-4">
             <h3 className="text-sm font-medium">Appearance</h3>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                {theme === "light" ? (
-                  <Sun className="h-4 w-4 text-muted-foreground" />
-                ) : (
-                  <Moon className="h-4 w-4 text-muted-foreground" />
-                )}
-                <Label htmlFor="theme">Dark Mode</Label>
+            <div className="space-y-3">
+              <Label>Theme</Label>
+              <div className="grid grid-cols-3 gap-2">
+                <Button
+                  variant={theme === "light" ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => handleThemeChange("light")}
+                  className="flex items-center gap-2"
+                >
+                  <Sun className="h-4 w-4" />
+                  Light
+                </Button>
+                <Button
+                  variant={theme === "dark" ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => handleThemeChange("dark")}
+                  className="flex items-center gap-2"
+                >
+                  <Moon className="h-4 w-4" />
+                  Dark
+                </Button>
+                <Button
+                  variant={theme === "system" ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => handleThemeChange("system")}
+                  className="text-xs"
+                >
+                  System
+                </Button>
               </div>
-              <Switch
-                id="theme"
-                checked={theme === "dark"}
-                onCheckedChange={handleThemeChange}
-              />
             </div>
           </div>
 

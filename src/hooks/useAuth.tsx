@@ -11,6 +11,8 @@ interface AuthContextType {
   isLoading: boolean;
   hasRole: (role: AppRole) => boolean;
   signIn: (email: string, password: string) => Promise<{ error: any }>;
+  signInWithBiometric: () => Promise<{ error: any }>;
+  registerBiometric: () => Promise<{ error: any }>;
   signUp: (email: string, password: string, firstName: string, lastName: string, invitationCode?: string) => Promise<{ error: any }>;
   signOut: () => Promise<void>;
 }
@@ -73,7 +75,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     return () => subscription.unsubscribe();
   }, []);
 
-  const hasRole = (role: AppRole) => userRoles.includes(role);
+  const hasRole = (role: AppRole) => {
+    // Super admins automatically have all roles including broker
+    if (userRoles.includes('super_admin')) {
+      return true;
+    }
+    return userRoles.includes(role);
+  };
 
   const signIn = async (email: string, password: string) => {
     const { error } = await supabase.auth.signInWithPassword({ email, password });
@@ -131,6 +139,95 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     return { error };
   };
 
+  const registerBiometric = async () => {
+    try {
+      if (!window.PublicKeyCredential) {
+        return { error: { message: 'Biometric authentication not supported on this device' } };
+      }
+
+      if (!user?.email) {
+        return { error: { message: 'Please sign in first to register biometric authentication' } };
+      }
+
+      const challenge = new Uint8Array(32);
+      crypto.getRandomValues(challenge);
+
+      const credential = await navigator.credentials.create({
+        publicKey: {
+          challenge,
+          rp: {
+            name: "Acorn Finance",
+            id: window.location.hostname,
+          },
+          user: {
+            id: new TextEncoder().encode(user.id),
+            name: user.email,
+            displayName: user.email,
+          },
+          pubKeyCredParams: [{ alg: -7, type: "public-key" }],
+          authenticatorSelection: {
+            authenticatorAttachment: "platform",
+            userVerification: "required",
+          },
+          timeout: 60000,
+        },
+      });
+
+      // Store credential ID in localStorage for this demo
+      // In production, this should be stored in your backend
+      localStorage.setItem(`biometric_${user.id}`, JSON.stringify({
+        credentialId: Array.from(new Uint8Array((credential as any).rawId)),
+        email: user.email,
+      }));
+
+      return { error: null };
+    } catch (error: any) {
+      console.error('Biometric registration error:', error);
+      return { error: { message: error.message || 'Failed to register biometric authentication' } };
+    }
+  };
+
+  const signInWithBiometric = async () => {
+    try {
+      if (!window.PublicKeyCredential) {
+        return { error: { message: 'Biometric authentication not supported on this device' } };
+      }
+
+      const challenge = new Uint8Array(32);
+      crypto.getRandomValues(challenge);
+
+      const credential = await navigator.credentials.get({
+        publicKey: {
+          challenge,
+          timeout: 60000,
+          userVerification: "required",
+        },
+      });
+
+      // In a real implementation, verify the credential with your backend
+      // For now, we'll just check if we have a stored credential and sign in with that email
+      const credentialId = Array.from(new Uint8Array((credential as any).rawId));
+      
+      // Find matching stored credential
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key?.startsWith('biometric_')) {
+          const stored = JSON.parse(localStorage.getItem(key) || '{}');
+          if (JSON.stringify(stored.credentialId) === JSON.stringify(credentialId)) {
+            // Found matching credential - in production, get a token from backend
+            // For demo, we'll show a message that biometric is recognized
+            return { error: { message: 'Biometric recognized but passwordless sign-in requires backend integration. Please use email/password for now.' } };
+          }
+        }
+      }
+
+      return { error: { message: 'No registered biometric found for this device' } };
+    } catch (error: any) {
+      console.error('Biometric sign-in error:', error);
+      return { error: { message: error.message || 'Biometric authentication failed' } };
+    }
+  };
+
   const signOut = async () => {
     await supabase.auth.signOut();
   };
@@ -143,6 +240,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       isLoading,
       hasRole,
       signIn,
+      signInWithBiometric,
+      registerBiometric,
       signUp,
       signOut
     }}>

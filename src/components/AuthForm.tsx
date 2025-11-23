@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Eye, EyeOff, ArrowLeft } from "lucide-react";
+import { Eye, EyeOff, ArrowLeft, Fingerprint } from "lucide-react";
 import { TermsPrivacyModal } from "@/components/TermsPrivacyModal";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
@@ -20,7 +20,7 @@ interface AuthFormProps {
 }
 
 export function AuthForm({ onBack }: AuthFormProps) {
-  const { signIn, signUp } = useAuth();
+  const { signIn, signUp, signInWithBiometric } = useAuth();
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [showTermsModal, setShowTermsModal] = useState(false);
@@ -126,6 +126,26 @@ export function AuthForm({ onBack }: AuthFormProps) {
   };
 
   // Fetch invitation details when code is entered
+  const handleBiometricLogin = async () => {
+    setIsLoading(true);
+    try {
+      const { error } = await signInWithBiometric();
+      if (error) {
+        toast.error("Biometric sign-in failed", {
+          description: error.message
+        });
+      } else {
+        toast.success("Biometric sign-in successful!");
+      }
+    } catch (err) {
+      toast.error("An error occurred", {
+        description: "Please try again"
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const handleInvitationCodeChange = async (code: string) => {
     const upperCode = code.toUpperCase();
     setInvitationCode(upperCode);
@@ -236,6 +256,29 @@ export function AuthForm({ onBack }: AuthFormProps) {
                     disabled={isLoading}
                   >
                     {isLoading ? "Signing in..." : "Sign In"}
+                  </Button>
+
+                  <div className="relative">
+                    <div className="absolute inset-0 flex items-center">
+                      <span className="w-full border-t" />
+                    </div>
+                    <div className="relative flex justify-center text-xs uppercase">
+                      <span className="bg-background px-2 text-muted-foreground">
+                        Or
+                      </span>
+                    </div>
+                  </div>
+
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="lg"
+                    className="w-full"
+                    onClick={handleBiometricLogin}
+                    disabled={isLoading}
+                  >
+                    <Fingerprint className="w-5 h-5 mr-2" />
+                    Sign in with Biometrics
                   </Button>
                 </form>
 
