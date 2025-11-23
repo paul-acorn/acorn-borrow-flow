@@ -123,6 +123,7 @@ export const ProfileEditModal = ({ open, onOpenChange }: ProfileEditModalProps) 
               onChange={(e) => setFirstName(e.target.value)}
               placeholder="John"
               className="mt-1"
+              autoFocus
             />
           </div>
           <div className="space-y-2">
