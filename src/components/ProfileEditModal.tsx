@@ -82,14 +82,14 @@ export const ProfileEditModal = ({ open, onOpenChange }: ProfileEditModalProps) 
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
+      <DialogContent className="sm:max-w-md max-h-[85vh] flex flex-col">
+        <DialogHeader className="flex-shrink-0">
           <DialogTitle>Edit Profile</DialogTitle>
           <DialogDescription>
             Update your personal information and profile picture
           </DialogDescription>
         </DialogHeader>
-        <div className="space-y-4 py-4">
+        <div className="space-y-4 py-4 overflow-y-auto flex-1 -mx-6 px-6">
           <div className="flex justify-center mb-4">
             <div className="relative">
               <Avatar className="h-24 w-24">
@@ -118,6 +118,7 @@ export const ProfileEditModal = ({ open, onOpenChange }: ProfileEditModalProps) 
               value={firstName}
               onChange={(e) => setFirstName(e.target.value)}
               placeholder="John"
+              className="mt-1"
             />
           </div>
           <div className="space-y-2">
@@ -127,6 +128,7 @@ export const ProfileEditModal = ({ open, onOpenChange }: ProfileEditModalProps) 
               value={lastName}
               onChange={(e) => setLastName(e.target.value)}
               placeholder="Doe"
+              className="mt-1"
             />
           </div>
           <div className="space-y-2">
@@ -137,10 +139,11 @@ export const ProfileEditModal = ({ open, onOpenChange }: ProfileEditModalProps) 
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="john@example.com"
+              className="mt-1"
             />
           </div>
         </div>
-        <DialogFooter>
+        <DialogFooter className="flex-shrink-0 border-t pt-4">
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Cancel
           </Button>
