@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
+import { useFormNavigation } from "@/hooks/useFormNavigation";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -89,6 +90,9 @@ export function BrokerDealCreationModal({ open, onOpenChange }: BrokerDealCreati
   const [dealName, setDealName] = useState("");
   const [amount, setAmount] = useState("");
   const [description, setDescription] = useState("");
+  const formRef = useRef<HTMLDivElement>(null);
+  
+  useFormNavigation(formRef);
 
   // Fetch broker's clients
   const { data: clients } = useQuery({
@@ -249,7 +253,7 @@ export function BrokerDealCreationModal({ open, onOpenChange }: BrokerDealCreati
           <DialogTitle className="text-2xl">Create Deal for Client</DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-6 overflow-y-auto flex-1 -mx-6 px-6">
+        <div ref={formRef} className="space-y-6 overflow-y-auto flex-1 -mx-6 px-6">
           {/* Client Selection */}
           <div className="space-y-4">
             <h3 className="text-lg font-medium">Select Client</h3>

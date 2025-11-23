@@ -1,4 +1,5 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
+import { useFormNavigation } from "@/hooks/useFormNavigation";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -26,6 +27,9 @@ export const CallSchedulingModal = ({ isOpen, onClose, dealId, clientId, onSched
   const [loading, setLoading] = useState(false);
   const [clients, setClients] = useState<any[]>([]);
   const [deals, setDeals] = useState<any[]>([]);
+  const formRef = useRef<HTMLDivElement>(null);
+  
+  useFormNavigation(formRef);
   
   const [formData, setFormData] = useState({
     scheduled_with: clientId || "",
@@ -146,7 +150,8 @@ export const CallSchedulingModal = ({ isOpen, onClose, dealId, clientId, onSched
           </DialogDescription>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit}>
+          <div ref={formRef} className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="scheduled_with">
               {hasRole('client') ? 'Broker' : 'Client'} *
@@ -244,8 +249,9 @@ export const CallSchedulingModal = ({ isOpen, onClose, dealId, clientId, onSched
               rows={3}
             />
           </div>
+          </div>
 
-          <div className="flex justify-end gap-2">
+          <div className="flex justify-end gap-2 mt-4">
             <Button type="button" variant="outline" onClick={onClose}>
               Cancel
             </Button>

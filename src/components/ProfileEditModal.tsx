@@ -1,4 +1,5 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
+import { useFormNavigation } from "@/hooks/useFormNavigation";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -23,6 +24,9 @@ export const ProfileEditModal = ({ open, onOpenChange }: ProfileEditModalProps) 
   const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const formRef = useRef<HTMLDivElement>(null);
+  
+  useFormNavigation(formRef);
   const [initials, setInitials] = useState("");
 
   // Load current profile data when modal opens
@@ -89,7 +93,7 @@ export const ProfileEditModal = ({ open, onOpenChange }: ProfileEditModalProps) 
             Update your personal information and profile picture
           </DialogDescription>
         </DialogHeader>
-        <div className="space-y-4 py-4 overflow-y-auto flex-1 -mx-6 px-6">
+        <div ref={formRef} className="space-y-4 py-4 overflow-y-auto flex-1 -mx-6 px-6">
           <div className="flex justify-center mb-4">
             <div className="relative">
               <Avatar className="h-24 w-24">
