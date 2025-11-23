@@ -21,12 +21,22 @@ type AppState = 'splash' | 'auth' | 'dashboard';
 const AppContent = () => {
   const { user, isLoading, hasRole } = useAuth();
   const [showSplash, setShowSplash] = useState(true);
+  const isOAuthCallback = window.location.pathname === '/oauth-callback';
 
   useEffect(() => {
     // Show splash for at least 2 seconds
     const timer = setTimeout(() => setShowSplash(false), 2000);
     return () => clearTimeout(timer);
   }, []);
+
+  // Always allow OAuth callback to render immediately
+  if (isOAuthCallback) {
+    return (
+      <Routes>
+        <Route path="/oauth-callback" element={<OAuthCallback />} />
+      </Routes>
+    );
+  }
 
   if (showSplash) {
     return <SplashScreen onComplete={() => setShowSplash(false)} />;
