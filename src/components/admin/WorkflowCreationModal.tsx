@@ -237,14 +237,17 @@ export const WorkflowCreationModal = ({ open, onOpenChange, template }: Workflow
                 <div>
                   <Label htmlFor="from_status">From Status (Optional)</Label>
                   <Select
-                    value={formData.from_status}
-                    onValueChange={(value) => setFormData(prev => ({ ...prev, from_status: value }))}
+                    value={formData.from_status || "any"}
+                    onValueChange={(value) => setFormData(prev => ({ 
+                      ...prev, 
+                      from_status: value === "any" ? "" : value 
+                    }))}
                   >
                     <SelectTrigger id="from_status">
                       <SelectValue placeholder="Any status" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">Any status</SelectItem>
+                      <SelectItem value="any">Any status</SelectItem>
                       {DEAL_STATUSES.map(status => (
                         <SelectItem key={status} value={status}>
                           {formatStatus(status)}
