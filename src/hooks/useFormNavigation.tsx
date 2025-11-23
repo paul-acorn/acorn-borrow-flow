@@ -1,6 +1,14 @@
 import { useEffect } from 'react';
 
-export const useFormNavigation = (formRef: React.RefObject<HTMLElement>) => {
+interface UseFormNavigationOptions {
+  onSubmit?: () => void;
+  canSubmit?: () => boolean;
+}
+
+export const useFormNavigation = (
+  formRef: React.RefObject<HTMLElement>,
+  options?: UseFormNavigationOptions
+) => {
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (!formRef.current) return;
@@ -18,6 +26,15 @@ export const useFormNavigation = (formRef: React.RefObject<HTMLElement>) => {
       
       if (e.key === 'ArrowDown' || (e.key === 'Enter' && (e.target as HTMLElement).tagName !== 'TEXTAREA')) {
         e.preventDefault();
+        
+        // Check if we're on the last field and should submit
+        if (e.key === 'Enter' && currentIndex === elements.length - 1) {
+          if (options?.onSubmit && (!options?.canSubmit || options.canSubmit())) {
+            options.onSubmit();
+            return;
+          }
+        }
+        
         nextIndex = currentIndex + 1;
       } else if (e.key === 'ArrowUp') {
         e.preventDefault();
@@ -39,5 +56,5 @@ export const useFormNavigation = (formRef: React.RefObject<HTMLElement>) => {
         form.removeEventListener('keydown', handleKeyDown);
       }
     };
-  }, [formRef]);
+  }, [formRef, options]);
 };

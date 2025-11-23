@@ -29,7 +29,17 @@ export const CallSchedulingModal = ({ isOpen, onClose, dealId, clientId, onSched
   const [deals, setDeals] = useState<any[]>([]);
   const formRef = useRef<HTMLDivElement>(null);
   
-  useFormNavigation(formRef);
+  useFormNavigation(formRef, {
+    onSubmit: () => {
+      if (formData.scheduled_with && formData.title && formData.scheduled_time) {
+        const form = formRef.current?.closest('form');
+        if (form) {
+          form.requestSubmit();
+        }
+      }
+    },
+    canSubmit: () => !!(formData.scheduled_with && formData.title && formData.scheduled_time) && !loading
+  });
   
   const [formData, setFormData] = useState({
     scheduled_with: clientId || "",

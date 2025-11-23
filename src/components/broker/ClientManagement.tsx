@@ -55,7 +55,10 @@ export const ClientManagement = () => {
   const [selectedClientDetails, setSelectedClientDetails] = useState<{ id: string; name: string } | null>(null);
   const formRef = useRef<HTMLDivElement>(null);
   
-  useFormNavigation(formRef);
+  useFormNavigation(formRef, {
+    onSubmit: () => handleAddClient(),
+    canSubmit: () => !!(newClientEmail && newClientFirstName && newClientLastName) && !createClientMutation.isPending
+  });
 
   // Fetch broker's profile to get initials
   const { data: brokerProfile } = useQuery({

@@ -30,7 +30,17 @@ export function CallLoggingModal({ open, onOpenChange, dealId, phoneNumber }: Ca
   const { toast } = useToast();
   const formRef = useRef<HTMLDivElement>(null);
   
-  useFormNavigation(formRef);
+  useFormNavigation(formRef, {
+    onSubmit: () => {
+      if (dealId && formData.phone_number) {
+        const form = formRef.current?.closest('form');
+        if (form) {
+          form.requestSubmit();
+        }
+      }
+    },
+    canSubmit: () => !!(dealId && formData.phone_number) && !loading
+  });
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

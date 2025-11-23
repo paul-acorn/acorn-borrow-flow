@@ -92,7 +92,10 @@ export function BrokerDealCreationModal({ open, onOpenChange }: BrokerDealCreati
   const [description, setDescription] = useState("");
   const formRef = useRef<HTMLDivElement>(null);
   
-  useFormNavigation(formRef);
+  useFormNavigation(formRef, {
+    onSubmit: () => handleSubmit(),
+    canSubmit: () => !!(selectedClientId && selectedType && dealName) && !createDealMutation.isPending
+  });
 
   // Fetch broker's clients
   const { data: clients } = useQuery({
