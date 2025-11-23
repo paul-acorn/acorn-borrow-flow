@@ -9,7 +9,8 @@ import {
   FileCheck, 
   MessageSquare,
   Plus,
-  Calendar
+  Calendar,
+  Send
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { AnalyticsDashboard } from "@/components/admin/AnalyticsDashboard";
@@ -50,7 +51,7 @@ export const BrokerDashboard = () => {
 
       <main className="container mx-auto px-4 py-8">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-8 max-w-6xl">
+          <TabsList className="grid w-full grid-cols-8 max-w-6xl overflow-x-auto">
             <TabsTrigger value="analytics" className="flex items-center gap-2">
               <BarChart3 className="h-4 w-4" />
               <span className="hidden sm:inline">Analytics</span>
@@ -80,7 +81,7 @@ export const BrokerDashboard = () => {
               <span className="hidden sm:inline">Inbox</span>
             </TabsTrigger>
             <TabsTrigger value="campaigns" className="flex items-center gap-2">
-              <MessageSquare className="h-4 w-4" />
+              <Send className="h-4 w-4" />
               <span className="hidden sm:inline">Campaigns</span>
             </TabsTrigger>
           </TabsList>

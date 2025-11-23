@@ -358,7 +358,8 @@ export const ClientManagement = () => {
         {clients && clients.length > 0 && (
           <div>
             <h3 className="text-sm font-medium mb-3">Registered Clients</h3>
-            <Table>
+            <div className="overflow-x-auto -mx-6 px-6">
+              <Table>
               <TableHeader>
                 <TableRow>
                   <TableHead>Deal Code</TableHead>
@@ -445,6 +446,7 @@ export const ClientManagement = () => {
                 ))}
               </TableBody>
             </Table>
+            </div>
           </div>
         )}
 
@@ -452,7 +454,8 @@ export const ClientManagement = () => {
         {pendingInvitations && pendingInvitations.length > 0 && (
           <div>
             <h3 className="text-sm font-medium mb-3">Pending Invitations</h3>
-            <Table>
+            <div className="overflow-x-auto -mx-6 px-6">
+              <Table>
               <TableHeader>
                 <TableRow>
                   <TableHead>Client Name</TableHead>
@@ -501,6 +504,7 @@ export const ClientManagement = () => {
                 ))}
               </TableBody>
             </Table>
+            </div>
           </div>
         )}
 
