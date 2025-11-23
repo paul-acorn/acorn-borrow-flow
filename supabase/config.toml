@@ -21,6 +21,9 @@ verify_jwt = true
 [functions.send-client-invitation]
 verify_jwt = true
 
+[functions.send-client-invitation-sms]
+verify_jwt = true
+
 [functions.send-sms]
 verify_jwt = true
 

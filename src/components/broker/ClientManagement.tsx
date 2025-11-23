@@ -5,6 +5,8 @@ import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import {
   Card,
   CardContent,
@@ -30,7 +32,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { UserPlus, Loader2, Copy, Check, Mail, Phone, Eye } from "lucide-react";
+import { UserPlus, Loader2, Copy, Check, Mail, Phone, Eye, MessageSquare } from "lucide-react";
 import { toast } from "sonner";
 import { CallLoggingModal } from "@/components/CallLoggingModal";
 import { CustomerDetailsView } from "./CustomerDetailsView";
@@ -41,8 +43,11 @@ export const ClientManagement = () => {
   const queryClient = useQueryClient();
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [newClientEmail, setNewClientEmail] = useState("");
+  const [newClientPhone, setNewClientPhone] = useState("");
   const [newClientFirstName, setNewClientFirstName] = useState("");
   const [newClientLastName, setNewClientLastName] = useState("");
+  const [sendViaSms, setSendViaSms] = useState(false);
+  const [smsChannel, setSmsChannel] = useState<'sms' | 'whatsapp'>('sms');
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
   const [callLoggingOpen, setCallLoggingOpen] = useState(false);
   const [selectedClientForCall, setSelectedClientForCall] = useState<{ dealId?: string; phone?: string }>({});
@@ -214,6 +219,25 @@ export const ClientManagement = () => {
         // Don't fail the whole operation if email fails
       }
 
+      // Send SMS/WhatsApp invitation if phone number provided and option selected
+      if (sendViaSms && newClientPhone) {
+        try {
+          await supabase.functions.invoke("send-client-invitation-sms", {
+            body: {
+              phoneNumber: newClientPhone,
+              firstName: newClientFirstName,
+              lastName: newClientLastName,
+              invitationUrl,
+              brokerName: `${brokerProfile.first_name} ${brokerProfile.last_name}`,
+              channel: smsChannel,
+            },
+          });
+        } catch (smsError) {
+          console.error("Failed to send invitation SMS:", smsError);
+          // Don't fail the whole operation if SMS fails
+        }
+      }
+
       return {
         invitationCode,
         dealCode: dealCodeData,
@@ -224,16 +248,22 @@ export const ClientManagement = () => {
       };
     },
     onSuccess: (data) => {
+      const channels = [];
+      if (data.email) channels.push('email');
+      if (sendViaSms && newClientPhone) channels.push(smsChannel);
+      
       toast.success(
-        `Invitation sent to ${data.firstName} ${data.lastName}!`,
+        `Invitation sent to ${data.firstName} ${data.lastName} via ${channels.join(' and ')}!`,
         { duration: 5000 }
       );
       queryClient.invalidateQueries({ queryKey: ["broker-clients"] });
       queryClient.invalidateQueries({ queryKey: ["broker-invitations"] });
       setIsAddDialogOpen(false);
       setNewClientEmail("");
+      setNewClientPhone("");
       setNewClientFirstName("");
       setNewClientLastName("");
+      setSendViaSms(false);
     },
     onError: (error: any) => {
       toast.error(error.message || "Failed to add client");
@@ -301,47 +331,89 @@ export const ClientManagement = () => {
                 Add Client
               </Button>
             </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
+            <DialogContent className="max-w-md max-h-[85vh] flex flex-col">
+              <DialogHeader className="flex-shrink-0">
                 <DialogTitle>Invite New Client</DialogTitle>
                 <DialogDescription>
-                  Send an invitation email with a unique registration link
+                  Send an invitation via email, SMS, or WhatsApp
                 </DialogDescription>
               </DialogHeader>
-              <div className="space-y-4">
+              <div className="space-y-4 overflow-y-auto flex-1 -mx-6 px-6">
                 <div>
-                  <Label htmlFor="firstName">Client First Name</Label>
+                  <Label htmlFor="firstName">Client First Name *</Label>
                   <Input
                     id="firstName"
                     placeholder="John"
                     value={newClientFirstName}
                     onChange={(e) => setNewClientFirstName(e.target.value)}
+                    className="mt-1"
                   />
                 </div>
                 <div>
-                  <Label htmlFor="lastName">Client Last Name</Label>
+                  <Label htmlFor="lastName">Client Last Name *</Label>
                   <Input
                     id="lastName"
                     placeholder="Doe"
                     value={newClientLastName}
                     onChange={(e) => setNewClientLastName(e.target.value)}
+                    className="mt-1"
                   />
                 </div>
                 <div>
-                  <Label htmlFor="email">Client Email</Label>
+                  <Label htmlFor="email">Client Email *</Label>
                   <Input
                     id="email"
                     type="email"
                     placeholder="client@example.com"
                     value={newClientEmail}
                     onChange={(e) => setNewClientEmail(e.target.value)}
+                    className="mt-1"
                   />
                 </div>
+                <div>
+                  <Label htmlFor="phone">Client Phone (Optional)</Label>
+                  <Input
+                    id="phone"
+                    type="tel"
+                    placeholder="+44 7XXX XXXXXX"
+                    value={newClientPhone}
+                    onChange={(e) => setNewClientPhone(e.target.value)}
+                    className="mt-1"
+                  />
+                </div>
+                {newClientPhone && (
+                  <div className="space-y-3 pt-2 border-t">
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id="sendSms"
+                        checked={sendViaSms}
+                        onCheckedChange={(checked) => setSendViaSms(checked as boolean)}
+                      />
+                      <Label htmlFor="sendSms" className="cursor-pointer flex items-center gap-2">
+                        <MessageSquare className="h-4 w-4" />
+                        Also send invitation via SMS/WhatsApp
+                      </Label>
+                    </div>
+                    {sendViaSms && (
+                      <RadioGroup value={smsChannel} onValueChange={(value) => setSmsChannel(value as 'sms' | 'whatsapp')}>
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="sms" id="sms" />
+                          <Label htmlFor="sms" className="cursor-pointer">SMS</Label>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="whatsapp" id="whatsapp" />
+                          <Label htmlFor="whatsapp" className="cursor-pointer">WhatsApp</Label>
+                        </div>
+                      </RadioGroup>
+                    )}
+                  </div>
+                )}
               </div>
-              <DialogFooter>
+              <DialogFooter className="flex-shrink-0 border-t pt-4">
                 <Button
                   onClick={handleAddClient}
                   disabled={createClientMutation.isPending}
+                  className="w-full sm:w-auto"
                 >
                   {createClientMutation.isPending && (
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
