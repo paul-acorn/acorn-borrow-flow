@@ -161,15 +161,15 @@ export const NotificationPreferencesModal = ({ open, onOpenChange }: Notificatio
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
+      <DialogContent className="max-w-md max-h-[90vh] flex flex-col">
+        <DialogHeader className="flex-shrink-0">
           <DialogTitle>Notification Preferences</DialogTitle>
           <DialogDescription>
             Control which notifications you want to receive
           </DialogDescription>
         </DialogHeader>
         
-        <div className="space-y-6">
+        <div className="space-y-6 overflow-y-auto flex-1 -mx-6 px-6">
           {/* Communication Channels */}
           <div className="space-y-4">
             <h3 className="text-sm font-medium flex items-center gap-2">
@@ -345,15 +345,15 @@ export const NotificationPreferencesModal = ({ open, onOpenChange }: Notificatio
           </div>
 
           <Separator />
+        </div>
 
-          <div className="flex justify-end gap-2">
-            <Button variant="outline" onClick={() => onOpenChange(false)}>
-              Cancel
-            </Button>
-            <Button onClick={savePreferences} disabled={saving}>
-              {saving ? 'Saving...' : 'Save Preferences'}
-            </Button>
-          </div>
+        <div className="flex justify-end gap-2 pt-4 flex-shrink-0 border-t">
+          <Button variant="outline" onClick={() => onOpenChange(false)}>
+            Cancel
+          </Button>
+          <Button onClick={savePreferences} disabled={saving}>
+            {saving ? 'Saving...' : 'Save Preferences'}
+          </Button>
         </div>
       </DialogContent>
     </Dialog>
