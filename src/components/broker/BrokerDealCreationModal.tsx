@@ -244,12 +244,12 @@ export function BrokerDealCreationModal({ open, onOpenChange }: BrokerDealCreati
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
+      <DialogContent className="max-w-4xl max-h-[85vh] flex flex-col">
+        <DialogHeader className="flex-shrink-0">
           <DialogTitle className="text-2xl">Create Deal for Client</DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-6">
+        <div className="space-y-6 overflow-y-auto flex-1 -mx-6 px-6">
           {/* Client Selection */}
           <div className="space-y-4">
             <h3 className="text-lg font-medium">Select Client</h3>
@@ -363,25 +363,26 @@ export function BrokerDealCreationModal({ open, onOpenChange }: BrokerDealCreati
           )}
 
           {/* Submit Button */}
-          <div className="flex space-x-3 pt-4 border-t">
-            <Button 
-              variant="outline" 
-              onClick={() => onOpenChange(false)}
-              className="flex-1"
-            >
-              Cancel
-            </Button>
-            <Button 
-              onClick={handleSubmit}
-              disabled={!selectedClientId || !selectedType || !dealName || createDealMutation.isPending}
-              className="flex-1"
-            >
-              {createDealMutation.isPending && (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              )}
-              Create Deal
-            </Button>
-          </div>
+        </div>
+        
+        <div className="flex space-x-3 pt-4 border-t flex-shrink-0">
+          <Button 
+            variant="outline" 
+            onClick={() => onOpenChange(false)}
+            className="flex-1"
+          >
+            Cancel
+          </Button>
+          <Button 
+            onClick={handleSubmit}
+            disabled={!selectedClientId || !selectedType || !dealName || createDealMutation.isPending}
+            className="flex-1"
+          >
+            {createDealMutation.isPending && (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            )}
+            Create Deal
+          </Button>
         </div>
       </DialogContent>
     </Dialog>

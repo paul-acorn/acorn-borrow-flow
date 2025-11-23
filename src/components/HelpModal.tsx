@@ -12,19 +12,19 @@ interface HelpModalProps {
 export function HelpModal({ open, onOpenChange, title, content }: HelpModalProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl">
-        <DialogHeader>
+      <DialogContent className="max-w-2xl max-h-[85vh] flex flex-col">
+        <DialogHeader className="flex-shrink-0">
           <DialogTitle className="flex items-center space-x-2 text-primary">
             <HelpCircle className="w-6 h-6" />
             <span>{title}</span>
           </DialogTitle>
         </DialogHeader>
         
-        <div className="prose prose-sm max-w-none text-foreground">
+        <div className="prose prose-sm max-w-none text-foreground overflow-y-auto flex-1 -mx-6 px-6">
           {typeof content === 'string' ? <p>{content}</p> : content}
         </div>
 
-        <div className="flex justify-end pt-4 border-t">
+        <div className="flex justify-end pt-4 border-t flex-shrink-0">
           <Button onClick={() => onOpenChange(false)}>
             Got it
           </Button>
