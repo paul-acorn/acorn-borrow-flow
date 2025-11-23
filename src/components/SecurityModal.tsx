@@ -22,11 +22,11 @@ export const SecurityModal = ({ open, onOpenChange }: SecurityModalProps) => {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
+      <DialogContent className="sm:max-w-md max-h-[90vh] flex flex-col">
+        <DialogHeader className="flex-shrink-0">
           <DialogTitle>Security Settings</DialogTitle>
         </DialogHeader>
-        <div className="space-y-6 py-4">
+        <div className="space-y-6 py-4 overflow-y-auto flex-1 -mx-6 px-6">
           {/* Security Score */}
           <div className="p-4 border rounded-lg bg-muted/50">
             <div className="flex items-center justify-between mb-2">
