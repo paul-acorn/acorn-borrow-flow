@@ -26,7 +26,10 @@ export const ProfileEditModal = ({ open, onOpenChange }: ProfileEditModalProps) 
   const [isLoading, setIsLoading] = useState(false);
   const formRef = useRef<HTMLDivElement>(null);
   
-  useFormNavigation(formRef);
+  useFormNavigation(formRef, {
+    onSubmit: () => handleSave(),
+    canSubmit: () => !isLoading
+  });
   const [initials, setInitials] = useState("");
 
   // Load current profile data when modal opens

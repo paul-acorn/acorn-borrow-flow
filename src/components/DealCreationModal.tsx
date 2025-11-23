@@ -98,7 +98,10 @@ export function DealCreationModal({ open, onOpenChange, onSubmit }: DealCreation
   const [amount, setAmount] = useState('');
   const formRef = useRef<HTMLDivElement>(null);
   
-  useFormNavigation(formRef);
+  useFormNavigation(formRef, {
+    onSubmit: () => handleSubmit(),
+    canSubmit: () => !!(selectedType && dealName && amount)
+  });
 
   const handleSubmit = () => {
     if (!selectedType || !dealName || !amount) return;
