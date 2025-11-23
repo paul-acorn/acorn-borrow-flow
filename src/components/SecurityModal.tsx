@@ -1,7 +1,11 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Shield, Lock, Key, AlertTriangle, CheckCircle2 } from "lucide-react";
+import { Shield, Lock, Key, AlertTriangle, CheckCircle2, Fingerprint } from "lucide-react";
+import { Separator } from "@/components/ui/separator";
+import { useAuth } from "@/hooks/useAuth";
+import { toast } from "sonner";
+import { useState } from "react";
 
 interface SecurityModalProps {
   open: boolean;
@@ -9,6 +13,28 @@ interface SecurityModalProps {
 }
 
 export const SecurityModal = ({ open, onOpenChange }: SecurityModalProps) => {
+  const { registerBiometric, user } = useAuth();
+  const [isRegistering, setIsRegistering] = useState(false);
+  const [biometricRegistered, setBiometricRegistered] = useState(false);
+
+  const handleRegisterBiometric = async () => {
+    setIsRegistering(true);
+    try {
+      const { error } = await registerBiometric();
+      if (error) {
+        toast.error("Failed to register biometric", {
+          description: error.message
+        });
+      } else {
+        setBiometricRegistered(true);
+        toast.success("Biometric authentication registered!", {
+          description: "You can now sign in using your fingerprint or face"
+        });
+      }
+    } finally {
+      setIsRegistering(false);
+    }
+  };
   const securityChecklist = [
     { label: "Strong password set", completed: true },
     { label: "Email verified", completed: true },
@@ -42,6 +68,40 @@ export const SecurityModal = ({ open, onOpenChange }: SecurityModalProps) => {
               />
             </div>
           </div>
+
+          <Separator />
+
+          {/* Biometric Authentication */}
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-sm font-medium flex items-center gap-2">
+                  <Fingerprint className="h-4 w-4 text-muted-foreground" />
+                  Biometric Authentication
+                </h3>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Sign in with fingerprint or face recognition
+                </p>
+              </div>
+              {biometricRegistered ? (
+                <div className="flex items-center gap-2 text-success text-sm">
+                  <CheckCircle2 className="h-4 w-4" />
+                  <span>Enabled</span>
+                </div>
+              ) : (
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={handleRegisterBiometric}
+                  disabled={isRegistering || !user}
+                >
+                  {isRegistering ? "Setting up..." : "Enable"}
+                </Button>
+              )}
+            </div>
+          </div>
+
+          <Separator />
 
           {/* Security Checklist */}
           <div className="space-y-3">
