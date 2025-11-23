@@ -30,9 +30,11 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { UserPlus, Loader2, Copy, Check, Mail, Phone } from "lucide-react";
+import { UserPlus, Loader2, Copy, Check, Mail, Phone, Eye } from "lucide-react";
 import { toast } from "sonner";
 import { CallLoggingModal } from "@/components/CallLoggingModal";
+import { CustomerDetailsView } from "./CustomerDetailsView";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 
 export const ClientManagement = () => {
   const { user } = useAuth();
@@ -44,6 +46,7 @@ export const ClientManagement = () => {
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
   const [callLoggingOpen, setCallLoggingOpen] = useState(false);
   const [selectedClientForCall, setSelectedClientForCall] = useState<{ dealId?: string; phone?: string }>({});
+  const [selectedClientDetails, setSelectedClientDetails] = useState<{ id: string; name: string } | null>(null);
 
   // Fetch broker's profile to get initials
   const { data: brokerProfile } = useQuery({
@@ -363,7 +366,7 @@ export const ClientManagement = () => {
                   <TableHead>Email</TableHead>
                   <TableHead>Phone</TableHead>
                   <TableHead>Registered</TableHead>
-                  <TableHead>Actions</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -409,19 +412,34 @@ export const ClientManagement = () => {
                       {new Date(client.created_at).toLocaleDateString()}
                     </TableCell>
                     <TableCell>
-                      {client.phone_number && (
+                      <div className="flex items-center justify-end gap-2">
                         <Button
                           variant="outline"
                           size="sm"
                           onClick={() => {
-                            setSelectedClientForCall({ phone: client.phone_number || undefined });
-                            setCallLoggingOpen(true);
+                            setSelectedClientDetails({
+                              id: client.id,
+                              name: `${client.first_name} ${client.last_name}`
+                            });
                           }}
                         >
-                          <Phone className="h-3 w-3 mr-1" />
-                          Log Call
+                          <Eye className="h-3 w-3 mr-1" />
+                          View Details
                         </Button>
-                      )}
+                        {client.phone_number && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              setSelectedClientForCall({ phone: client.phone_number || undefined });
+                              setCallLoggingOpen(true);
+                            }}
+                          >
+                            <Phone className="h-3 w-3 mr-1" />
+                            Log Call
+                          </Button>
+                        )}
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))}
@@ -499,6 +517,22 @@ export const ClientManagement = () => {
         dealId={selectedClientForCall.dealId}
         phoneNumber={selectedClientForCall.phone}
       />
+
+      <Sheet open={!!selectedClientDetails} onOpenChange={(open) => !open && setSelectedClientDetails(null)}>
+        <SheetContent side="right" className="w-full sm:max-w-4xl overflow-y-auto">
+          <SheetHeader>
+            <SheetTitle>Customer Details</SheetTitle>
+          </SheetHeader>
+          <div className="mt-6">
+            {selectedClientDetails && (
+              <CustomerDetailsView
+                customerId={selectedClientDetails.id}
+                customerName={selectedClientDetails.name}
+              />
+            )}
+          </div>
+        </SheetContent>
+      </Sheet>
     </Card>
   );
 };
