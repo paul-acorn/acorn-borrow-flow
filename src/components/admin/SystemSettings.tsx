@@ -21,6 +21,8 @@ export function SystemSettings() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [testingConnection, setTestingConnection] = useState(false);
+  const [testingTwilio, setTestingTwilio] = useState(false);
+  const [testingGmail, setTestingGmail] = useState(false);
   const [clients, setClients] = useState<ClientProfile[]>([]);
   const [creatingFolders, setCreatingFolders] = useState<Set<string>>(new Set());
   const { toast } = useToast();
@@ -109,6 +111,54 @@ export function SystemSettings() {
     }
   };
 
+  const testTwilio = async () => {
+    setTestingTwilio(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('test-twilio');
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: `Twilio connected! Phone: ${data.phoneNumber}`,
+      });
+      console.log('Twilio test result:', data);
+    } catch (error: any) {
+      console.error('Error testing Twilio:', error);
+      toast({
+        title: "Twilio Connection Failed",
+        description: error.message || "Unable to connect to Twilio",
+        variant: "destructive",
+      });
+    } finally {
+      setTestingTwilio(false);
+    }
+  };
+
+  const testGmail = async () => {
+    setTestingGmail(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('test-gmail');
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: `Gmail connected! Email: ${data.email}`,
+      });
+      console.log('Gmail test result:', data);
+    } catch (error: any) {
+      console.error('Error testing Gmail:', error);
+      toast({
+        title: "Gmail Connection Failed",
+        description: error.message || "Unable to connect to Gmail. You may need to enable the Gmail API and add the required scopes.",
+        variant: "destructive",
+      });
+    } finally {
+      setTestingGmail(false);
+    }
+  };
+
   const createClientFolder = async (client: ClientProfile) => {
     if (!googleDriveFolderId) {
       toast({
@@ -170,12 +220,46 @@ export function SystemSettings() {
   }
 
   return (
-    <>
+    <div className="space-y-6">
     <Card>
       <CardHeader>
-        <CardTitle>System Settings</CardTitle>
+        <CardTitle>Integration Tests</CardTitle>
         <CardDescription>
-          Configure system-wide settings for document management and integrations
+          Test your external service connections
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="space-y-2">
+            <h4 className="font-medium text-sm">Google Drive</h4>
+            <Button onClick={testConnection} disabled={testingConnection} variant="outline" className="w-full gap-2">
+              <TestTube2 className="w-4 h-4" />
+              {testingConnection ? "Testing..." : "Test Drive"}
+            </Button>
+          </div>
+          <div className="space-y-2">
+            <h4 className="font-medium text-sm">Twilio (Calls & SMS)</h4>
+            <Button onClick={testTwilio} disabled={testingTwilio} variant="outline" className="w-full gap-2">
+              <TestTube2 className="w-4 h-4" />
+              {testingTwilio ? "Testing..." : "Test Twilio"}
+            </Button>
+          </div>
+          <div className="space-y-2">
+            <h4 className="font-medium text-sm">Gmail API</h4>
+            <Button onClick={testGmail} disabled={testingGmail} variant="outline" className="w-full gap-2">
+              <TestTube2 className="w-4 h-4" />
+              {testingGmail ? "Testing..." : "Test Gmail"}
+            </Button>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+
+    <Card>
+      <CardHeader>
+        <CardTitle>Google Drive Settings</CardTitle>
+        <CardDescription>
+          Configure document storage location
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
@@ -219,16 +303,10 @@ export function SystemSettings() {
             </div>
           </div>
 
-          <div className="flex gap-2">
-            <Button onClick={testConnection} disabled={testingConnection} variant="outline" className="gap-2">
-              <TestTube2 className="w-4 h-4" />
-              {testingConnection ? "Testing..." : "Test Connection"}
-            </Button>
-            <Button onClick={handleSave} disabled={saving} className="gap-2">
-              <Save className="w-4 h-4" />
-              {saving ? "Saving..." : "Save Settings"}
-            </Button>
-          </div>
+          <Button onClick={handleSave} disabled={saving} className="gap-2">
+            <Save className="w-4 h-4" />
+            {saving ? "Saving..." : "Save Settings"}
+          </Button>
         </div>
 
         <div className="pt-4 border-t space-y-2">
@@ -301,6 +379,31 @@ export function SystemSettings() {
         )}
       </CardContent>
     </Card>
-    </>
+
+    <Card>
+      <CardHeader>
+        <CardTitle>Gmail API Setup</CardTitle>
+        <CardDescription>
+          Enable Gmail integration for email tracking
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="space-y-3 text-sm">
+          <p className="font-medium">To enable Gmail integration:</p>
+          <ol className="list-decimal list-inside space-y-2 text-muted-foreground">
+            <li>Go to <a href="https://console.developers.google.com/apis/library/gmail.googleapis.com" target="_blank" rel="noopener noreferrer" className="text-primary underline">Google API Library</a> and enable the Gmail API</li>
+            <li>In your OAuth consent screen, add these scopes:
+              <ul className="list-disc list-inside ml-6 mt-1 font-mono text-xs">
+                <li>https://www.googleapis.com/auth/gmail.readonly</li>
+                <li>https://www.googleapis.com/auth/gmail.send</li>
+              </ul>
+            </li>
+            <li>The same refresh token you used for Google Drive will work for Gmail</li>
+            <li>Wait a few minutes after enabling, then click "Test Gmail" above</li>
+          </ol>
+        </div>
+      </CardContent>
+    </Card>
+    </div>
   );
 }
