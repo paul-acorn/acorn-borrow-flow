@@ -311,29 +311,29 @@ export const BrokerDealsView = () => {
                     className="w-full p-0 h-auto hover:bg-muted/50"
                   >
                     <CardHeader className="w-full">
-                      <div className="flex items-center justify-between w-full">
-                        <div className="flex items-center gap-4 text-left">
-                          <div>
-                            <CardTitle className="text-lg">{deal.name}</CardTitle>
-                            <CardDescription className="mt-1">
-                              {deal.client.first_name} {deal.client.last_name} • {deal.client.email}
-                            </CardDescription>
-                          </div>
+                      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 w-full">
+                        <div className="flex-1 min-w-0 text-left">
+                          <CardTitle className="text-lg truncate">{deal.name}</CardTitle>
+                          <CardDescription className="mt-1 text-xs sm:text-sm truncate">
+                            {deal.client.first_name} {deal.client.last_name} • {deal.client.email}
+                          </CardDescription>
                         </div>
-                        <div className="flex items-center gap-3">
-                          <Badge variant="outline">
-                            {deal.client.deal_code || "No Code"}
-                          </Badge>
-                          <Badge variant={getStatusColor(deal.status)}>
-                            {deal.status.replace(/_/g, " ")}
-                          </Badge>
-                          <div className="text-lg font-semibold text-foreground">
-                            {formatCurrency(deal.amount)}
+                        <div className="flex items-center justify-between sm:justify-end gap-2 sm:gap-3 flex-shrink-0">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <Badge variant="outline" className="text-xs">
+                              {deal.client.deal_code || "No Code"}
+                            </Badge>
+                            <Badge variant={getStatusColor(deal.status)} className="text-xs">
+                              {deal.status.replace(/_/g, " ")}
+                            </Badge>
+                            <div className="text-sm sm:text-lg font-semibold text-foreground whitespace-nowrap">
+                              {formatCurrency(deal.amount)}
+                            </div>
                           </div>
                           {expandedDeals.has(deal.id) ? (
-                            <ChevronUp className="h-5 w-5 text-muted-foreground" />
+                            <ChevronUp className="h-5 w-5 text-muted-foreground flex-shrink-0" />
                           ) : (
-                            <ChevronDown className="h-5 w-5 text-muted-foreground" />
+                            <ChevronDown className="h-5 w-5 text-muted-foreground flex-shrink-0" />
                           )}
                         </div>
                       </div>
