@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
+import { useFormNavigation } from "@/hooks/useFormNavigation";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -27,6 +28,9 @@ export function CallLoggingModal({ open, onOpenChange, dealId, phoneNumber }: Ca
   });
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
+  const formRef = useRef<HTMLDivElement>(null);
+  
+  useFormNavigation(formRef);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -106,7 +110,7 @@ export function CallLoggingModal({ open, onOpenChange, dealId, phoneNumber }: Ca
           <DialogTitle>Log Call</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit}>
-          <div className="space-y-4">
+          <div ref={formRef} className="space-y-4">
             <div>
               <Label htmlFor="phone_number">Phone Number</Label>
               <Input

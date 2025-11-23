@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { useFormNavigation } from "@/hooks/useFormNavigation";
 import {
   Card,
   CardContent,
@@ -52,6 +53,9 @@ export const ClientManagement = () => {
   const [callLoggingOpen, setCallLoggingOpen] = useState(false);
   const [selectedClientForCall, setSelectedClientForCall] = useState<{ dealId?: string; phone?: string }>({});
   const [selectedClientDetails, setSelectedClientDetails] = useState<{ id: string; name: string } | null>(null);
+  const formRef = useRef<HTMLDivElement>(null);
+  
+  useFormNavigation(formRef);
 
   // Fetch broker's profile to get initials
   const { data: brokerProfile } = useQuery({
@@ -338,7 +342,7 @@ export const ClientManagement = () => {
                   Send an invitation via email, SMS, or WhatsApp
                 </DialogDescription>
               </DialogHeader>
-              <div className="space-y-4 overflow-y-auto flex-1 -mx-6 px-6">
+              <div ref={formRef} className="space-y-4 overflow-y-auto flex-1 -mx-6 px-6">
                 <div>
                   <Label htmlFor="firstName">Client First Name *</Label>
                   <Input

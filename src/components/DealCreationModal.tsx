@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
+import { useFormNavigation } from "@/hooks/useFormNavigation";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -95,6 +96,9 @@ export function DealCreationModal({ open, onOpenChange, onSubmit }: DealCreation
   const [selectedType, setSelectedType] = useState<LoanType | null>(null);
   const [dealName, setDealName] = useState('');
   const [amount, setAmount] = useState('');
+  const formRef = useRef<HTMLDivElement>(null);
+  
+  useFormNavigation(formRef);
 
   const handleSubmit = () => {
     if (!selectedType || !dealName || !amount) return;
@@ -129,7 +133,7 @@ export function DealCreationModal({ open, onOpenChange, onSubmit }: DealCreation
           <DialogTitle className="text-2xl text-navy">Create New Application</DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-6">
+        <div ref={formRef} className="space-y-6">
           {/* Loan Type Selection */}
           <div className="space-y-4">
             <h3 className="text-lg font-medium text-navy">Select Finance Type</h3>
