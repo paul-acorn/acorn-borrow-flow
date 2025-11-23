@@ -351,6 +351,7 @@ export const ClientManagement = () => {
                     value={newClientFirstName}
                     onChange={(e) => setNewClientFirstName(e.target.value)}
                     className="mt-1"
+                    autoFocus
                   />
                 </div>
                 <div>

@@ -261,7 +261,7 @@ export function BrokerDealCreationModal({ open, onOpenChange }: BrokerDealCreati
               <div className="space-y-2">
                 <Label htmlFor="client">Client</Label>
                 <Select value={selectedClientId} onValueChange={handleClientChange}>
-                  <SelectTrigger>
+                  <SelectTrigger autoFocus>
                     <SelectValue placeholder="Select a client" />
                   </SelectTrigger>
                   <SelectContent>

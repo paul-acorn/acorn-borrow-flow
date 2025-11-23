@@ -186,6 +186,7 @@ export function DealCreationModal({ open, onOpenChange, onSubmit }: DealCreation
                     placeholder="e.g., High Street Property Purchase"
                     value={dealName}
                     onChange={(e) => setDealName(e.target.value)}
+                    autoFocus
                   />
                 </div>
                 <div className="space-y-2">

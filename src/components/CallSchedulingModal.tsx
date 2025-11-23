@@ -204,6 +204,7 @@ export const CallSchedulingModal = ({ isOpen, onClose, dealId, clientId, onSched
               onChange={(e) => setFormData({ ...formData, title: e.target.value })}
               placeholder="e.g., Follow-up call, Document review"
               required
+              autoFocus
             />
           </div>
 
