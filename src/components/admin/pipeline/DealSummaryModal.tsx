@@ -4,9 +4,11 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { Calendar, DollarSign, User, FileText, ExternalLink, MessageSquare, Phone } from "lucide-react";
-import { format } from "date-fns";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Calendar, DollarSign, User, FileText, ExternalLink, MessageSquare, Phone, Clock, Upload, ArrowRight } from "lucide-react";
+import { format, formatDistanceToNow } from "date-fns";
 import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useDealStatusChange } from "@/hooks/useDealStatusChange";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -70,7 +72,58 @@ export function DealSummaryModal({ deal, profile, open, onOpenChange, onViewFull
   const [isAddingNote, setIsAddingNote] = useState(false);
   const updateStatusMutation = useDealStatusChange();
   
+  // Fetch recent activity logs
+  const { data: activityLogs } = useQuery({
+    queryKey: ["deal-activity-logs", deal?.id],
+    queryFn: async () => {
+      if (!deal?.id) return [];
+      
+      const { data, error } = await supabase
+        .from("deal_activity_logs")
+        .select("*, profiles:user_id(first_name, last_name)")
+        .eq("deal_id", deal.id)
+        .order("created_at", { ascending: false })
+        .limit(5);
+
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: open && !!deal?.id,
+  });
+  
   if (!deal) return null;
+
+  const getActivityIcon = (action: string) => {
+    switch (action) {
+      case "status_change":
+        return <ArrowRight className="h-3 w-3" />;
+      case "note_added":
+        return <MessageSquare className="h-3 w-3" />;
+      case "call_logged":
+        return <Phone className="h-3 w-3" />;
+      case "document_uploaded":
+        return <Upload className="h-3 w-3" />;
+      default:
+        return <Clock className="h-3 w-3" />;
+    }
+  };
+
+  const getActivityDescription = (log: any) => {
+    const userName = log.profiles ? `${log.profiles.first_name} ${log.profiles.last_name}` : "Someone";
+    
+    switch (log.action) {
+      case "status_change":
+        return `${userName} changed status from ${STATUS_LABELS[log.details?.from] || log.details?.from} to ${STATUS_LABELS[log.details?.to] || log.details?.to}`;
+      case "note_added":
+        return `${userName} added a note: "${log.details?.note?.substring(0, 50)}${log.details?.note?.length > 50 ? '...' : ''}"`;
+      case "call_logged":
+        return `${userName} logged a call`;
+      case "document_uploaded":
+        return `${userName} uploaded a document`;
+      default:
+        return `${userName} performed ${log.action}`;
+    }
+  };
 
   const formatCurrency = (amount: number | null) => {
     if (!amount) return "Not specified";
@@ -142,12 +195,13 @@ export function DealSummaryModal({ deal, profile, open, onOpenChange, onViewFull
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[500px]">
+      <DialogContent className="sm:max-w-[600px] max-h-[90vh]">
         <DialogHeader>
           <DialogTitle>Deal Summary</DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-4">
+        <ScrollArea className="max-h-[calc(90vh-120px)] pr-4">
+          <div className="space-y-4">
           {/* Deal Name and Status */}
           <div className="space-y-2">
             <h3 className="text-lg font-semibold">{deal.name}</h3>
@@ -204,6 +258,33 @@ export function DealSummaryModal({ deal, profile, open, onOpenChange, onViewFull
           </div>
 
           <Separator />
+
+          {/* Recent Activity Timeline */}
+          {activityLogs && activityLogs.length > 0 && (
+            <>
+              <div className="space-y-3">
+                <h4 className="text-sm font-medium">Recent Activity</h4>
+                <div className="space-y-3">
+                  {activityLogs.map((log) => (
+                    <div key={log.id} className="flex gap-3">
+                      <div className="flex-shrink-0 w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary">
+                        {getActivityIcon(log.action)}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm text-foreground">
+                          {getActivityDescription(log)}
+                        </p>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          {formatDistanceToNow(new Date(log.created_at), { addSuffix: true })}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <Separator />
+            </>
+          )}
 
           {/* Quick Actions */}
           <div className="space-y-3">
@@ -279,7 +360,8 @@ export function DealSummaryModal({ deal, profile, open, onOpenChange, onViewFull
             View Full Details
             <ExternalLink className="h-4 w-4 ml-2" />
           </Button>
-        </div>
+          </div>
+        </ScrollArea>
       </DialogContent>
     </Dialog>
   );
