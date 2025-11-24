@@ -124,15 +124,119 @@ export function ClientDashboard() {
           </div>
         </header>
 
-        <div className="max-w-4xl mx-auto p-6">
-          <Card>
+        <div className="max-w-4xl mx-auto p-6 space-y-6">
+          {/* Welcome Card */}
+          <Card className="border-primary/20">
             <CardHeader>
-              <CardTitle>Welcome to Your Dashboard</CardTitle>
+              <CardTitle className="text-2xl">Welcome to Acorn Finance! 🎉</CardTitle>
             </CardHeader>
-            <CardContent>
-              <p className="text-muted-foreground">
-                You don't have any active deals yet. Your broker will create a case for you soon.
+            <CardContent className="space-y-4">
+              <p className="text-lg text-muted-foreground">
+                Thank you for choosing us for your finance needs. Your dedicated broker will create your case shortly.
               </p>
+              <p className="text-sm text-muted-foreground">
+                In the meantime, here are some things you should know about working with us.
+              </p>
+            </CardContent>
+          </Card>
+
+          {/* Quick Tips Grid */}
+          <div className="grid md:grid-cols-2 gap-4">
+            <Card>
+              <CardHeader>
+                <div className="flex items-start gap-3">
+                  <div className="p-2 rounded-lg bg-primary/10">
+                    <FileText className="h-5 w-5 text-primary" />
+                  </div>
+                  <div>
+                    <CardTitle className="text-lg">Document Preparation</CardTitle>
+                    <p className="text-sm text-muted-foreground mt-2">
+                      Start gathering important documents like ID, proof of address, and bank statements. You will be able to upload these directly through your dashboard.
+                    </p>
+                  </div>
+                </div>
+              </CardHeader>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <div className="flex items-start gap-3">
+                  <div className="p-2 rounded-lg bg-accent/10">
+                    <MessageCircle className="h-5 w-5 text-accent" />
+                  </div>
+                  <div>
+                    <CardTitle className="text-lg">Direct Communication</CardTitle>
+                    <p className="text-sm text-muted-foreground mt-2">
+                      Once your case is created, you can message your broker directly through the dashboard. No need for emails or phone tags!
+                    </p>
+                  </div>
+                </div>
+              </CardHeader>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <div className="flex items-start gap-3">
+                  <div className="p-2 rounded-lg bg-primary/10">
+                    <TrendingUp className="h-5 w-5 text-primary" />
+                  </div>
+                  <div>
+                    <CardTitle className="text-lg">Track Your Progress</CardTitle>
+                    <p className="text-sm text-muted-foreground mt-2">
+                      View real-time updates on your application status. From initial review to completion, you will always know where things stand.
+                    </p>
+                  </div>
+                </div>
+              </CardHeader>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <div className="flex items-start gap-3">
+                  <div className="p-2 rounded-lg bg-accent/10">
+                    <Calendar className="h-5 w-5 text-accent" />
+                  </div>
+                  <div>
+                    <CardTitle className="text-lg">Schedule Callbacks</CardTitle>
+                    <p className="text-sm text-muted-foreground mt-2">
+                      Need to speak with your broker? Schedule a callback at a time that works for you, and receive reminders before the call.
+                    </p>
+                  </div>
+                </div>
+              </CardHeader>
+            </Card>
+          </div>
+
+          {/* Next Steps Card */}
+          <Card className="bg-gradient-to-r from-primary/5 to-accent/5 border-primary/20">
+            <CardHeader>
+              <CardTitle>What Happens Next?</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <div className="flex items-start gap-3">
+                <div className="flex-shrink-0 w-6 h-6 rounded-full bg-primary flex items-center justify-center text-primary-foreground text-sm font-medium">
+                  1
+                </div>
+                <p className="text-sm">Your broker will review your information and create your case</p>
+              </div>
+              <div className="flex items-start gap-3">
+                <div className="flex-shrink-0 w-6 h-6 rounded-full bg-primary flex items-center justify-center text-primary-foreground text-sm font-medium">
+                  2
+                </div>
+                <p className="text-sm">You will receive a notification when your case is ready</p>
+              </div>
+              <div className="flex items-start gap-3">
+                <div className="flex-shrink-0 w-6 h-6 rounded-full bg-primary flex items-center justify-center text-primary-foreground text-sm font-medium">
+                  3
+                </div>
+                <p className="text-sm">Complete any required documents and communicate directly with your broker</p>
+              </div>
+              <div className="flex items-start gap-3">
+                <div className="flex-shrink-0 w-6 h-6 rounded-full bg-primary flex items-center justify-center text-primary-foreground text-sm font-medium">
+                  4
+                </div>
+                <p className="text-sm">Track your application progress through each stage until completion</p>
+              </div>
             </CardContent>
           </Card>
         </div>
