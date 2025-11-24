@@ -41,6 +41,7 @@ export function ClientDashboard() {
   const queryClient = useQueryClient();
   const [currentDealIndex, setCurrentDealIndex] = useState(0);
   const [showMessaging, setShowMessaging] = useState(false);
+  const [carouselApi, setCarouselApi] = useState<any>(null);
 
   // Fetch user's deals
   const { data: deals = [], isLoading } = useQuery({
@@ -84,6 +85,15 @@ export function ClientDashboard() {
       supabase.removeChannel(channel);
     };
   }, [user, queryClient]);
+
+  // Listen to carousel changes
+  useEffect(() => {
+    if (!carouselApi) return;
+
+    carouselApi.on('select', () => {
+      setCurrentDealIndex(carouselApi.selectedScrollSnap());
+    });
+  }, [carouselApi]);
 
   const getProgressPercentage = (status: string) => {
     const index = DEAL_STAGES.findIndex(stage => stage.id === status);
@@ -265,22 +275,25 @@ export function ClientDashboard() {
         {/* Deal Selector Carousel */}
         {deals.length > 1 && (
           <div className="flex items-center justify-center gap-2">
-            <Carousel className="w-full max-w-md" opts={{ loop: true }}>
+            <Carousel 
+              className="w-full max-w-md" 
+              opts={{ loop: true }}
+              setApi={setCarouselApi}
+            >
               <CarouselContent>
-                {deals.map((deal, index) => (
+                {deals.map((deal) => (
                   <CarouselItem key={deal.id}>
                     <Button
-                      variant={index === currentDealIndex ? "default" : "outline"}
+                      variant="default"
                       className="w-full"
-                      onClick={() => setCurrentDealIndex(index)}
                     >
                       {deal.name}
                     </Button>
                   </CarouselItem>
                 ))}
               </CarouselContent>
-              <CarouselPrevious onClick={() => setCurrentDealIndex((prev) => (prev - 1 + deals.length) % deals.length)} />
-              <CarouselNext onClick={() => setCurrentDealIndex((prev) => (prev + 1) % deals.length)} />
+              <CarouselPrevious />
+              <CarouselNext />
             </Carousel>
           </div>
         )}
@@ -290,12 +303,11 @@ export function ClientDashboard() {
           <CardHeader>
             <div className="flex justify-between items-start">
               <div>
-                <CardTitle className="text-2xl mb-2">{activeDeal.name}</CardTitle>
                 <p className="text-sm text-muted-foreground capitalize">
                   {activeDeal.type.replace(/_/g, ' ')} Finance
                 </p>
                 {deals.length > 1 && (
-                  <p className="text-xs text-muted-foreground mt-2">
+                  <p className="text-xs text-muted-foreground mt-1">
                     Deal {currentDealIndex + 1} of {deals.length}
                   </p>
                 )}
