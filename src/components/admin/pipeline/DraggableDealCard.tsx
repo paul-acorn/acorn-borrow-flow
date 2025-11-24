@@ -26,6 +26,7 @@ interface Profile {
 interface DraggableDealCardProps {
   deal: Deal;
   profile?: Profile;
+  onClick?: () => void;
 }
 
 const LOAN_TYPE_LABELS: Record<string, string> = {
@@ -39,7 +40,7 @@ const LOAN_TYPE_LABELS: Record<string, string> = {
   equity: "Equity Release",
 };
 
-export function DraggableDealCard({ deal, profile }: DraggableDealCardProps) {
+export function DraggableDealCard({ deal, profile, onClick }: DraggableDealCardProps) {
   const {
     attributes,
     listeners,
@@ -65,11 +66,20 @@ export function DraggableDealCard({ deal, profile }: DraggableDealCardProps) {
     }).format(amount);
   };
 
+  const handleClick = (e: React.MouseEvent) => {
+    // Only trigger click if not dragging
+    if (onClick && !isDragging) {
+      e.stopPropagation();
+      onClick();
+    }
+  };
+
   return (
     <Card
       ref={setNodeRef}
       style={style}
       className="cursor-grab active:cursor-grabbing hover:shadow-md transition-shadow"
+      onClick={handleClick}
     >
       <CardContent className="p-4">
         <div className="space-y-2">

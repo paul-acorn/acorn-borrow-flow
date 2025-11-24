@@ -9,6 +9,8 @@ import { toast } from "sonner";
 import { TrendingUp, TrendingDown } from "lucide-react";
 import { DraggableDealCard } from "./pipeline/DraggableDealCard";
 import { DroppableColumn } from "./pipeline/DroppableColumn";
+import { DealSummaryModal } from "./pipeline/DealSummaryModal";
+import { LoanDetailsModal } from "@/components/LoanDetailsModal";
 
 interface Deal {
   id: string;
@@ -50,6 +52,9 @@ interface SalesPipelineViewProps {
 export function SalesPipelineView({ deals, profiles, searchTerm = "", filterType = "all" }: SalesPipelineViewProps) {
   const queryClient = useQueryClient();
   const [activeId, setActiveId] = useState<string | null>(null);
+  const [selectedDeal, setSelectedDeal] = useState<Deal | null>(null);
+  const [showSummaryModal, setShowSummaryModal] = useState(false);
+  const [showFullDetailsModal, setShowFullDetailsModal] = useState(false);
   
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -157,6 +162,22 @@ export function SalesPipelineView({ deals, profiles, searchTerm = "", filterType
 
   const activeDeal = activeId ? deals.find(d => d.id === activeId) : null;
   const activeProfile = activeDeal ? profiles.find(p => p.id === activeDeal.user_id) : null;
+  const selectedProfile = selectedDeal ? profiles.find(p => p.id === selectedDeal.user_id) : undefined;
+
+  const handleDealClick = (deal: Deal) => {
+    setSelectedDeal(deal);
+    setShowSummaryModal(true);
+  };
+
+  const handleViewFullDetails = () => {
+    setShowSummaryModal(false);
+    setShowFullDetailsModal(true);
+  };
+
+  const handleSaveFullDetails = (data: any) => {
+    console.log("Saving full details:", data);
+    // Add save logic here if needed
+  };
 
   const formatCurrency = (amount: number | null) => {
     if (!amount) return "£0";
@@ -224,6 +245,7 @@ export function SalesPipelineView({ deals, profiles, searchTerm = "", filterType
                           key={deal.id}
                           deal={deal}
                           profile={profile}
+                          onClick={() => handleDealClick(deal)}
                         />
                       );
                     })}
@@ -256,6 +278,27 @@ export function SalesPipelineView({ deals, profiles, searchTerm = "", filterType
           )}
         </DragOverlay>
       </DndContext>
+
+      {/* Deal Summary Modal */}
+      <DealSummaryModal
+        deal={selectedDeal}
+        profile={selectedProfile}
+        open={showSummaryModal}
+        onOpenChange={setShowSummaryModal}
+        onViewFullDetails={handleViewFullDetails}
+      />
+
+      {/* Full Deal Details Modal */}
+      {selectedDeal && (
+        <LoanDetailsModal
+          open={showFullDetailsModal}
+          onOpenChange={setShowFullDetailsModal}
+          dealType={selectedDeal.type}
+          dealName={selectedDeal.name}
+          dealAmount={selectedDeal.amount || undefined}
+          onSave={handleSaveFullDetails}
+        />
+      )}
     </div>
   );
 }
