@@ -10,7 +10,7 @@ interface AuthContextType {
   userRoles: AppRole[];
   isLoading: boolean;
   hasRole: (role: AppRole) => boolean;
-  signIn: (email: string, password: string) => Promise<{ error: any }>;
+  signIn: (email: string, password: string) => Promise<{ data?: any; error: any }>;
   signInWithBiometric: () => Promise<{ error: any }>;
   registerBiometric: () => Promise<{ error: any }>;
   signUp: (email: string, password: string, firstName: string, lastName: string, invitationCode?: string) => Promise<{ error: any }>;
@@ -84,8 +84,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const signIn = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
-    return { error };
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+    return { data, error };
   };
 
   const signUp = async (
