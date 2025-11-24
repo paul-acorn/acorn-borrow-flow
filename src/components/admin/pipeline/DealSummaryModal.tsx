@@ -2,8 +2,18 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { Calendar, DollarSign, User, FileText, ExternalLink } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
+import { Calendar, DollarSign, User, FileText, ExternalLink, MessageSquare, Phone } from "lucide-react";
 import { format } from "date-fns";
+import { useState } from "react";
+import { useDealStatusChange } from "@/hooks/useDealStatusChange";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
+import { toast } from "sonner";
+import type { Database } from "@/integrations/supabase/types";
+
+type DealStatus = Database["public"]["Enums"]["deal_status"];
 
 interface Deal {
   id: string;
@@ -55,6 +65,11 @@ const STATUS_LABELS: Record<string, string> = {
 };
 
 export function DealSummaryModal({ deal, profile, open, onOpenChange, onViewFullDetails }: DealSummaryModalProps) {
+  const { user } = useAuth();
+  const [note, setNote] = useState("");
+  const [isAddingNote, setIsAddingNote] = useState(false);
+  const updateStatusMutation = useDealStatusChange();
+  
   if (!deal) return null;
 
   const formatCurrency = (amount: number | null) => {
@@ -65,6 +80,64 @@ export function DealSummaryModal({ deal, profile, open, onOpenChange, onViewFull
       minimumFractionDigits: 0,
       maximumFractionDigits: 0,
     }).format(amount);
+  };
+
+  const handleStatusChange = async (newStatus: DealStatus) => {
+    await updateStatusMutation.mutateAsync({
+      dealId: deal.id,
+      oldStatus: deal.status as DealStatus,
+      newStatus,
+    });
+  };
+
+  const handleAddNote = async () => {
+    if (!note.trim()) {
+      toast.error("Please enter a note");
+      return;
+    }
+
+    setIsAddingNote(true);
+    try {
+      await supabase.from("deal_activity_logs").insert({
+        deal_id: deal.id,
+        user_id: user?.id,
+        action: "note_added",
+        details: { note: note.trim() },
+      });
+
+      toast.success("Note added successfully");
+      setNote("");
+    } catch (error) {
+      toast.error("Failed to add note");
+      console.error(error);
+    } finally {
+      setIsAddingNote(false);
+    }
+  };
+
+  const handleLogCall = async () => {
+    if (!note.trim()) {
+      toast.error("Please enter call details");
+      return;
+    }
+
+    setIsAddingNote(true);
+    try {
+      await supabase.from("deal_activity_logs").insert({
+        deal_id: deal.id,
+        user_id: user?.id,
+        action: "call_logged",
+        details: { notes: note.trim() },
+      });
+
+      toast.success("Call logged successfully");
+      setNote("");
+    } catch (error) {
+      toast.error("Failed to log call");
+      console.error(error);
+    } finally {
+      setIsAddingNote(false);
+    }
   };
 
   return (
@@ -132,7 +205,71 @@ export function DealSummaryModal({ deal, profile, open, onOpenChange, onViewFull
 
           <Separator />
 
-          {/* Action Button */}
+          {/* Quick Actions */}
+          <div className="space-y-3">
+            <h4 className="text-sm font-medium">Quick Actions</h4>
+            
+            {/* Status Change */}
+            <div className="space-y-2">
+              <label className="text-xs text-muted-foreground">Change Status</label>
+              <Select
+                value={deal.status}
+                onValueChange={handleStatusChange}
+                disabled={updateStatusMutation.isPending}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="new_case">New Case</SelectItem>
+                  <SelectItem value="awaiting_dip">Awaiting DIP</SelectItem>
+                  <SelectItem value="dip_approved">DIP Approved</SelectItem>
+                  <SelectItem value="reports_instructed">Reports Instructed</SelectItem>
+                  <SelectItem value="final_underwriting">Final Underwriting</SelectItem>
+                  <SelectItem value="offered">Offered</SelectItem>
+                  <SelectItem value="with_solicitors">With Solicitors</SelectItem>
+                  <SelectItem value="completed">Completed</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Add Note/Call */}
+            <div className="space-y-2">
+              <label className="text-xs text-muted-foreground">Add Note or Log Call</label>
+              <Textarea
+                placeholder="Enter note or call details..."
+                value={note}
+                onChange={(e) => setNote(e.target.value)}
+                className="min-h-[80px]"
+              />
+              <div className="flex gap-2">
+                <Button
+                  onClick={handleAddNote}
+                  disabled={isAddingNote || !note.trim()}
+                  variant="outline"
+                  size="sm"
+                  className="flex-1"
+                >
+                  <MessageSquare className="h-3 w-3 mr-1" />
+                  Add Note
+                </Button>
+                <Button
+                  onClick={handleLogCall}
+                  disabled={isAddingNote || !note.trim()}
+                  variant="outline"
+                  size="sm"
+                  className="flex-1"
+                >
+                  <Phone className="h-3 w-3 mr-1" />
+                  Log Call
+                </Button>
+              </div>
+            </div>
+          </div>
+
+          <Separator />
+
+          {/* View Full Details Button */}
           <Button
             onClick={onViewFullDetails}
             className="w-full"
