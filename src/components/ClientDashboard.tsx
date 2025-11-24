@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
 import { MessagingModal } from "@/components/MessagingModal";
 import { RequirementsManager } from "@/components/RequirementsManager";
 import { ScheduledCallbacksView } from "@/components/ScheduledCallbacksView";
@@ -38,7 +39,7 @@ export function ClientDashboard() {
   const { user } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const [selectedDeal, setSelectedDeal] = useState<Deal | null>(null);
+  const [currentDealIndex, setCurrentDealIndex] = useState(0);
   const [showMessaging, setShowMessaging] = useState(false);
 
   // Fetch user's deals
@@ -107,9 +108,7 @@ export function ClientDashboard() {
     );
   }
 
-  const activeDeal = deals[0]; // Show the most recent deal
-
-  if (!activeDeal) {
+  if (deals.length === 0) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-background via-secondary/20 to-background">
         {/* Header */}
@@ -244,6 +243,7 @@ export function ClientDashboard() {
     );
   }
 
+  const activeDeal = deals[currentDealIndex];
   const currentStageIndex = DEAL_STAGES.findIndex(stage => stage.id === activeDeal.status);
   const currentStage = DEAL_STAGES[currentStageIndex];
 
@@ -262,6 +262,29 @@ export function ClientDashboard() {
       </header>
 
       <div className="max-w-6xl mx-auto p-4 md:p-6 space-y-6">
+        {/* Deal Selector Carousel */}
+        {deals.length > 1 && (
+          <div className="flex items-center justify-center gap-2">
+            <Carousel className="w-full max-w-md" opts={{ loop: true }}>
+              <CarouselContent>
+                {deals.map((deal, index) => (
+                  <CarouselItem key={deal.id}>
+                    <Button
+                      variant={index === currentDealIndex ? "default" : "outline"}
+                      className="w-full"
+                      onClick={() => setCurrentDealIndex(index)}
+                    >
+                      {deal.name}
+                    </Button>
+                  </CarouselItem>
+                ))}
+              </CarouselContent>
+              <CarouselPrevious onClick={() => setCurrentDealIndex((prev) => (prev - 1 + deals.length) % deals.length)} />
+              <CarouselNext onClick={() => setCurrentDealIndex((prev) => (prev + 1) % deals.length)} />
+            </Carousel>
+          </div>
+        )}
+
         {/* Header Card */}
         <Card className="bg-gradient-to-r from-primary/10 to-accent/10 border-primary/20">
           <CardHeader>
@@ -271,6 +294,11 @@ export function ClientDashboard() {
                 <p className="text-sm text-muted-foreground capitalize">
                   {activeDeal.type.replace(/_/g, ' ')} Finance
                 </p>
+                {deals.length > 1 && (
+                  <p className="text-xs text-muted-foreground mt-2">
+                    Deal {currentDealIndex + 1} of {deals.length}
+                  </p>
+                )}
               </div>
               <div className="text-right">
                 <div className="text-3xl font-bold">{formatCurrency(activeDeal.amount)}</div>
