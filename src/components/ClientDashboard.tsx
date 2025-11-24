@@ -8,6 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { MessagingModal } from "@/components/MessagingModal";
 import { RequirementsManager } from "@/components/RequirementsManager";
 import { ScheduledCallbacksView } from "@/components/ScheduledCallbacksView";
+import { UserProfileMenu } from "@/components/UserProfileMenu";
 import { MessageCircle, FileText, CheckCircle, Clock, TrendingUp, Calendar } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
@@ -110,8 +111,20 @@ export function ClientDashboard() {
 
   if (!activeDeal) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-background via-secondary/20 to-background p-6">
-        <div className="max-w-4xl mx-auto">
+      <div className="min-h-screen bg-gradient-to-br from-background via-secondary/20 to-background">
+        {/* Header */}
+        <header className="bg-card/50 backdrop-blur-sm border-b border-border sticky top-0 z-10">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="flex justify-between items-center h-16">
+              <h1 className="text-xl font-semibold">
+                Your Dashboard
+              </h1>
+              <UserProfileMenu />
+            </div>
+          </div>
+        </header>
+
+        <div className="max-w-4xl mx-auto p-6">
           <Card>
             <CardHeader>
               <CardTitle>Welcome to Your Dashboard</CardTitle>
@@ -131,8 +144,20 @@ export function ClientDashboard() {
   const currentStage = DEAL_STAGES[currentStageIndex];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-secondary/20 to-background p-4 md:p-6">
-      <div className="max-w-6xl mx-auto space-y-6">
+    <div className="min-h-screen bg-gradient-to-br from-background via-secondary/20 to-background">
+      {/* Header */}
+      <header className="bg-card/50 backdrop-blur-sm border-b border-border sticky top-0 z-10">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center h-16">
+            <h1 className="text-xl font-semibold">
+              Your Dashboard
+            </h1>
+            <UserProfileMenu />
+          </div>
+        </div>
+      </header>
+
+      <div className="max-w-6xl mx-auto p-4 md:p-6 space-y-6">
         {/* Header Card */}
         <Card className="bg-gradient-to-r from-primary/10 to-accent/10 border-primary/20">
           <CardHeader>
