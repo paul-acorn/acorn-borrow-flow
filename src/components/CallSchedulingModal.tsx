@@ -60,15 +60,16 @@ export const CallSchedulingModal = ({ isOpen, onClose, dealId, clientId, onSched
     try {
       if (hasRole('broker')) {
         // Load broker's clients
-        const { data: clientsData } = await supabase
+        const { data: clientsData, error: clientError } = await supabase
           .from("profiles")
           .select("id, first_name, last_name, email")
           .eq("assigned_broker", user?.id);
         
+        if (clientError) throw clientError;
         setClients(clientsData || []);
 
         // Load broker's deals
-        const { data: dealsData } = await supabase
+        const { data: dealsData, error: dealError } = await supabase
           .from("deals")
           .select(`
             id,
@@ -80,29 +81,44 @@ export const CallSchedulingModal = ({ isOpen, onClose, dealId, clientId, onSched
           `)
           .eq("profiles.assigned_broker", user?.id);
         
+        if (dealError) throw dealError;
         setDeals(dealsData || []);
       } else if (hasRole('client')) {
         // Load client's broker
-        const { data: profile } = await supabase
+        const { data: profile, error: profileError } = await supabase
           .from("profiles")
-          .select("assigned_broker, profiles:profiles!profiles_assigned_broker_fkey (id, first_name, last_name, email)")
+          .select("assigned_broker")
           .eq("id", user?.id)
           .single();
         
+        if (profileError) throw profileError;
+
         if (profile?.assigned_broker) {
-          setClients([profile.profiles]);
+          // Fetch the broker details separately
+          const { data: brokerData, error: brokerError } = await supabase
+            .from("profiles")
+            .select("id, first_name, last_name, email")
+            .eq("id", profile.assigned_broker)
+            .single();
+          
+          if (brokerError) throw brokerError;
+          if (brokerData) {
+            setClients([brokerData]);
+          }
         }
 
         // Load client's deals
-        const { data: dealsData } = await supabase
+        const { data: dealsData, error: dealError } = await supabase
           .from("deals")
           .select("id, name")
           .eq("user_id", user?.id);
         
+        if (dealError) throw dealError;
         setDeals(dealsData || []);
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error loading data:", error);
+      toast.error(error.message || "Failed to load data");
     }
   };
 
@@ -166,23 +182,31 @@ export const CallSchedulingModal = ({ isOpen, onClose, dealId, clientId, onSched
             <Label htmlFor="scheduled_with">
               {hasRole('client') ? 'Broker' : 'Client'} *
             </Label>
-            <Select
-              value={formData.scheduled_with}
-              onValueChange={(value) => setFormData({ ...formData, scheduled_with: value })}
-              disabled={!!clientId}
-              required
-            >
-              <SelectTrigger>
-                <SelectValue placeholder={`Select ${hasRole('client') ? 'broker' : 'client'}`} />
-              </SelectTrigger>
-              <SelectContent>
-                {clients.map((client) => (
-                  <SelectItem key={client.id} value={client.id}>
-                    {client.first_name} {client.last_name} ({client.email})
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            {clients.length === 0 ? (
+              <div className="p-4 rounded-md bg-muted text-sm text-muted-foreground">
+                {hasRole('client') 
+                  ? 'No broker assigned yet. Please contact support.'
+                  : 'No clients available. Add clients first.'}
+              </div>
+            ) : (
+              <Select
+                value={formData.scheduled_with}
+                onValueChange={(value) => setFormData({ ...formData, scheduled_with: value })}
+                disabled={!!clientId}
+                required
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder={`Select ${hasRole('client') ? 'broker' : 'client'}`} />
+                </SelectTrigger>
+                <SelectContent>
+                  {clients.map((client) => (
+                    <SelectItem key={client.id} value={client.id}>
+                      {client.first_name} {client.last_name} ({client.email})
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
           </div>
 
           <div className="space-y-2">

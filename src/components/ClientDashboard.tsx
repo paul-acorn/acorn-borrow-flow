@@ -417,26 +417,48 @@ function ActivityLog({ dealId }: { dealId: string }) {
     },
   });
 
+  const formatActivityDetails = (action: string, details: any) => {
+    if (!details) return null;
+    
+    switch (action) {
+      case 'message_sent':
+        return details.message_preview || 'Message sent';
+      case 'broker_assigned':
+        return 'Broker assigned to your case';
+      case 'status_changed':
+        return `Status updated to ${details.new_status?.replace(/_/g, ' ') || 'new status'}`;
+      case 'document_uploaded':
+        return `Document uploaded: ${details.document_name || 'File'}`;
+      case 'note_added':
+        return details.note || 'Note added';
+      default:
+        return typeof details === 'object' ? null : details;
+    }
+  };
+
   return (
     <div className="space-y-4">
       {activities.length === 0 ? (
         <p className="text-center text-muted-foreground py-8">No activity yet</p>
       ) : (
-        activities.map((activity) => (
-          <div key={activity.id} className="flex gap-3 p-4 rounded-lg bg-muted/50">
-            <div className="flex-1">
-              <p className="font-medium capitalize">{activity.action.replace(/_/g, ' ')}</p>
-              {activity.details && (
-                <p className="text-sm text-muted-foreground mt-1">
-                  {JSON.stringify(activity.details)}
+        activities.map((activity) => {
+          const formattedDetails = formatActivityDetails(activity.action, activity.details);
+          return (
+            <div key={activity.id} className="flex gap-3 p-4 rounded-lg bg-muted/50">
+              <div className="flex-1">
+                <p className="font-medium capitalize">{activity.action.replace(/_/g, ' ')}</p>
+                {formattedDetails && (
+                  <p className="text-sm text-muted-foreground mt-1">
+                    {formattedDetails}
+                  </p>
+                )}
+                <p className="text-xs text-muted-foreground mt-2">
+                  {new Date(activity.created_at).toLocaleString()}
                 </p>
-              )}
-              <p className="text-xs text-muted-foreground mt-2">
-                {new Date(activity.created_at).toLocaleString()}
-              </p>
+              </div>
             </div>
-          </div>
-        ))
+          );
+        })
       )}
     </div>
   );
