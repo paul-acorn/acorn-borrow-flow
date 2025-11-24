@@ -1323,6 +1323,42 @@ export type Database = {
         }
         Relationships: []
       }
+      two_factor_auth: {
+        Row: {
+          backup_codes: string[] | null
+          created_at: string | null
+          id: string
+          sms_enabled: boolean | null
+          sms_phone_number: string | null
+          totp_enabled: boolean | null
+          totp_secret: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          backup_codes?: string[] | null
+          created_at?: string | null
+          id?: string
+          sms_enabled?: boolean | null
+          sms_phone_number?: string | null
+          totp_enabled?: boolean | null
+          totp_secret?: string | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          backup_codes?: string[] | null
+          created_at?: string | null
+          id?: string
+          sms_enabled?: boolean | null
+          sms_phone_number?: string | null
+          totp_enabled?: boolean | null
+          totp_secret?: string | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string

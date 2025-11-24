@@ -5,7 +5,9 @@ import { Shield, Lock, Key, AlertTriangle, CheckCircle2, Fingerprint } from "luc
 import { Separator } from "@/components/ui/separator";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { TwoFactorSetup } from "@/components/security/TwoFactorSetup";
 
 interface SecurityModalProps {
   open: boolean;
@@ -16,6 +18,60 @@ export const SecurityModal = ({ open, onOpenChange }: SecurityModalProps) => {
   const { registerBiometric, user } = useAuth();
   const [isRegistering, setIsRegistering] = useState(false);
   const [biometricRegistered, setBiometricRegistered] = useState(false);
+  const [twoFactorEnabled, setTwoFactorEnabled] = useState(false);
+  const [showTwoFactorSetup, setShowTwoFactorSetup] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    if (user && open) {
+      fetchTwoFactorStatus();
+    }
+  }, [user, open]);
+
+  const fetchTwoFactorStatus = async () => {
+    if (!user) return;
+    
+    setIsLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from("two_factor_auth")
+        .select("totp_enabled, sms_enabled")
+        .eq("user_id", user.id)
+        .single();
+
+      if (error && error.code !== "PGRST116") throw error;
+      
+      setTwoFactorEnabled(data?.totp_enabled || data?.sms_enabled || false);
+    } catch (error: any) {
+      console.error("Error fetching 2FA status:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const disable2FA = async () => {
+    if (!user) return;
+
+    try {
+      const { error } = await supabase
+        .from("two_factor_auth")
+        .update({
+          totp_enabled: false,
+          sms_enabled: false,
+        })
+        .eq("user_id", user.id);
+
+      if (error) throw error;
+
+      setTwoFactorEnabled(false);
+      toast.success("Two-factor authentication disabled");
+    } catch (error: any) {
+      console.error("Error disabling 2FA:", error);
+      toast.error("Failed to disable 2FA", {
+        description: error.message
+      });
+    }
+  };
 
   const handleRegisterBiometric = async () => {
     setIsRegistering(true);
@@ -38,9 +94,8 @@ export const SecurityModal = ({ open, onOpenChange }: SecurityModalProps) => {
   const securityChecklist = [
     { label: "Strong password set", completed: true },
     { label: "Email verified", completed: true },
-    { label: "Two-factor authentication", completed: false },
-    { label: "Recovery email added", completed: false },
-    { label: "Security questions set", completed: false },
+    { label: "Two-factor authentication", completed: twoFactorEnabled },
+    { label: "Biometric authentication", completed: biometricRegistered },
   ];
 
   const completedCount = securityChecklist.filter(item => item.completed).length;
@@ -121,18 +176,44 @@ export const SecurityModal = ({ open, onOpenChange }: SecurityModalProps) => {
           </div>
 
           {/* Two-Factor Authentication */}
-          <div className="space-y-3">
-            <h3 className="text-sm font-medium flex items-center gap-2">
-              <Shield className="h-4 w-4" />
-              Two-Factor Authentication
-            </h3>
-            <p className="text-sm text-muted-foreground">
-              Add an extra layer of security to your account
-            </p>
-            <Button variant="outline" className="w-full" disabled>
-              <Key className="mr-2 h-4 w-4" />
-              Enable 2FA (Coming Soon)
-            </Button>
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-sm font-medium flex items-center gap-2">
+                  <Shield className="h-4 w-4 text-muted-foreground" />
+                  Two-Factor Authentication
+                </h3>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Add an extra layer of security with TOTP or SMS
+                </p>
+              </div>
+              {twoFactorEnabled ? (
+                <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 text-success text-sm">
+                    <CheckCircle2 className="h-4 w-4" />
+                    <span>Enabled</span>
+                  </div>
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={disable2FA}
+                    disabled={isLoading}
+                  >
+                    Disable
+                  </Button>
+                </div>
+              ) : (
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => setShowTwoFactorSetup(true)}
+                  disabled={!user || isLoading}
+                >
+                  <Key className="mr-2 h-4 w-4" />
+                  Enable
+                </Button>
+              )}
+            </div>
           </div>
 
           {/* Password Change */}
@@ -158,6 +239,20 @@ export const SecurityModal = ({ open, onOpenChange }: SecurityModalProps) => {
           </div>
         </div>
       </DialogContent>
+
+      {user && (
+        <TwoFactorSetup
+          open={showTwoFactorSetup}
+          onOpenChange={(open) => {
+            setShowTwoFactorSetup(open);
+            if (!open) {
+              fetchTwoFactorStatus();
+            }
+          }}
+          userId={user.id}
+          userEmail={user.email || ""}
+        />
+      )}
     </Dialog>
   );
 };
