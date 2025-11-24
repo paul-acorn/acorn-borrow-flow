@@ -10,7 +10,10 @@ import { MessagingModal } from "@/components/MessagingModal";
 import { RequirementsManager } from "@/components/RequirementsManager";
 import { ScheduledCallbacksView } from "@/components/ScheduledCallbacksView";
 import { UserProfileMenu } from "@/components/UserProfileMenu";
-import { MessageCircle, FileText, CheckCircle, Clock, TrendingUp, Calendar, History } from "lucide-react";
+import { PersonalDetailsView } from "@/components/client/PersonalDetailsView";
+import { ALIEView } from "@/components/client/ALIEView";
+import { CreditHistoryView } from "@/components/client/CreditHistoryView";
+import { MessageCircle, FileText, CheckCircle, Clock, TrendingUp, Calendar, History, User, DollarSign, AlertCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
@@ -391,7 +394,7 @@ export function ClientDashboard() {
         <Card>
           <Tabs defaultValue="requirements" className="w-full">
             <CardHeader>
-              <TabsList className="grid w-full grid-cols-3">
+              <TabsList className="grid w-full grid-cols-3 lg:grid-cols-6 overflow-x-auto">
                 <TabsTrigger value="requirements" className="flex items-center gap-2">
                   <FileText className="h-4 w-4" />
                   <span className="hidden sm:inline">Documents</span>
@@ -403,6 +406,18 @@ export function ClientDashboard() {
                 <TabsTrigger value="activity" className="flex items-center gap-2">
                   <History className="h-4 w-4" />
                   <span className="hidden sm:inline">Activity</span>
+                </TabsTrigger>
+                <TabsTrigger value="personal" className="flex items-center gap-2">
+                  <User className="h-4 w-4" />
+                  <span className="hidden sm:inline">Personal</span>
+                </TabsTrigger>
+                <TabsTrigger value="alie" className="flex items-center gap-2">
+                  <DollarSign className="h-4 w-4" />
+                  <span className="hidden sm:inline">ALIE</span>
+                </TabsTrigger>
+                <TabsTrigger value="credit" className="flex items-center gap-2">
+                  <AlertCircle className="h-4 w-4" />
+                  <span className="hidden sm:inline">Credit</span>
                 </TabsTrigger>
               </TabsList>
             </CardHeader>
@@ -417,6 +432,18 @@ export function ClientDashboard() {
 
               <TabsContent value="activity" className="space-y-4">
                 <ActivityLog dealId={activeDeal.id} />
+              </TabsContent>
+
+              <TabsContent value="personal" className="space-y-4">
+                <PersonalDetailsView />
+              </TabsContent>
+
+              <TabsContent value="alie" className="space-y-4">
+                <ALIEView />
+              </TabsContent>
+
+              <TabsContent value="credit" className="space-y-4">
+                <CreditHistoryView />
               </TabsContent>
             </CardContent>
           </Tabs>

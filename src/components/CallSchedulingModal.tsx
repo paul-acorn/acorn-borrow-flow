@@ -25,6 +25,7 @@ interface CallSchedulingModalProps {
 export const CallSchedulingModal = ({ isOpen, onClose, dealId, clientId, onScheduled }: CallSchedulingModalProps) => {
   const { user, hasRole } = useAuth();
   const [loading, setLoading] = useState(false);
+  const [dataLoading, setDataLoading] = useState(true);
   const [clients, setClients] = useState<any[]>([]);
   const [deals, setDeals] = useState<any[]>([]);
   const formRef = useRef<HTMLDivElement>(null);
@@ -57,6 +58,7 @@ export const CallSchedulingModal = ({ isOpen, onClose, dealId, clientId, onSched
   }, [isOpen]);
 
   const loadClientsAndDeals = async () => {
+    setDataLoading(true);
     try {
       if (hasRole('broker')) {
         // Load broker's clients
@@ -119,6 +121,8 @@ export const CallSchedulingModal = ({ isOpen, onClose, dealId, clientId, onSched
     } catch (error: any) {
       console.error("Error loading data:", error);
       toast.error(error.message || "Failed to load data");
+    } finally {
+      setDataLoading(false);
     }
   };
 
@@ -176,7 +180,12 @@ export const CallSchedulingModal = ({ isOpen, onClose, dealId, clientId, onSched
           </DialogDescription>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit}>
+        {dataLoading ? (
+          <div className="flex items-center justify-center py-8">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+          </div>
+        ) : (
+          <form onSubmit={handleSubmit}>
           <div ref={formRef} className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="scheduled_with">
@@ -295,6 +304,7 @@ export const CallSchedulingModal = ({ isOpen, onClose, dealId, clientId, onSched
             </Button>
           </div>
         </form>
+        )}
       </DialogContent>
     </Dialog>
   );
