@@ -106,11 +106,11 @@ export function PersonalDetailsView() {
                 <p className="text-sm text-muted-foreground">Residence Status</p>
                 <p className="font-medium capitalize">{personalDetails.residence?.replace(/_/g, ' ') || 'Not provided'}</p>
               </div>
-              {personalDetails.visa_type && (
+              {personalDetails.residence === 'visa_holder' && (
                 <>
                   <div>
                     <p className="text-sm text-muted-foreground">Visa Type</p>
-                    <p className="font-medium">{personalDetails.visa_type}</p>
+                    <p className="font-medium">{personalDetails.visa_type || 'Not provided'}</p>
                   </div>
                   <div>
                     <p className="text-sm text-muted-foreground">Visa Expiry</p>
@@ -128,9 +128,15 @@ export function PersonalDetailsView() {
       {/* Address History */}
       <Card>
         <CardHeader>
-          <div className="flex items-center gap-2">
-            <Home className="h-5 w-5 text-primary" />
-            <CardTitle>Address History</CardTitle>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Home className="h-5 w-5 text-primary" />
+              <CardTitle>Address History</CardTitle>
+            </div>
+            <Button size="sm" variant="outline" onClick={() => setEditModalOpen(true)}>
+              <Edit className="h-4 w-4 mr-2" />
+              Edit
+            </Button>
           </div>
         </CardHeader>
         <CardContent className="space-y-4">

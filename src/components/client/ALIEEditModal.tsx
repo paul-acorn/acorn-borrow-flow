@@ -7,7 +7,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
+import { Plus, Trash2 } from "lucide-react";
 
 interface ALIEEditModalProps {
   open: boolean;
@@ -18,6 +20,33 @@ export function ALIEEditModal({ open, onOpenChange }: ALIEEditModalProps) {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const [loading, setLoading] = useState(false);
+  const [activeTab, setActiveTab] = useState("assets");
+
+  // Income state
+  const [incomeStreams, setIncomeStreams] = useState<Array<{
+    type: string;
+    monthlyNet?: string;
+    employerName?: string;
+    annualGross?: string;
+  }>>([{ type: 'employed', monthlyNet: '', employerName: '' }]);
+
+  // Liabilities state
+  const [mortgages, setMortgages] = useState<Array<{
+    lender: string;
+    balance: string;
+    monthlyPayment: string;
+    interestRate: string;
+  }>>([]);
+  const [personalLoans, setPersonalLoans] = useState<Array<{
+    lender: string;
+    balance: string;
+    monthlyPayment: string;
+  }>>([]);
+  const [creditCards, setCreditCards] = useState<Array<{
+    creditLimit: string;
+    balance: string;
+    monthlyPayment: string;
+  }>>([]);
 
   const handleAssetsSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -60,6 +89,100 @@ export function ALIEEditModal({ open, onOpenChange }: ALIEEditModalProps) {
     }
   };
 
+  const handleIncomeSubmit = async () => {
+    setLoading(true);
+    try {
+      // Delete existing income streams
+      await supabase.from('client_income_streams').delete().eq('user_id', user?.id);
+
+      // Insert new income streams
+      const incomeData = incomeStreams
+        .filter(s => s.monthlyNet || s.employerName)
+        .map(s => ({
+          user_id: user?.id,
+          income_type: s.type,
+          monthly_net: parseFloat(s.monthlyNet || '0') || null,
+          annual_gross: parseFloat(s.annualGross || '0') || null,
+          employer_name: s.employerName || null,
+        }));
+
+      if (incomeData.length > 0) {
+        await supabase.from('client_income_streams').insert(incomeData);
+      }
+
+      toast.success("Income streams updated successfully");
+      queryClient.invalidateQueries({ queryKey: ['client-income-streams'] });
+    } catch (error) {
+      toast.error("Failed to update income streams");
+      console.error(error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleLiabilitiesSubmit = async () => {
+    setLoading(true);
+    try {
+      // Delete existing liabilities
+      await Promise.all([
+        supabase.from('client_mortgages').delete().eq('user_id', user?.id),
+        supabase.from('client_personal_loans').delete().eq('user_id', user?.id),
+        supabase.from('client_credit_cards').delete().eq('user_id', user?.id),
+      ]);
+
+      // Insert mortgages
+      const mortgageData = mortgages
+        .filter(m => m.lender)
+        .map(m => ({
+          user_id: user?.id,
+          lender: m.lender,
+          balance: parseFloat(m.balance) || null,
+          monthly_payment: parseFloat(m.monthlyPayment) || null,
+          interest_rate: parseFloat(m.interestRate) || null,
+        }));
+
+      if (mortgageData.length > 0) {
+        await supabase.from('client_mortgages').insert(mortgageData);
+      }
+
+      // Insert personal loans
+      const loanData = personalLoans
+        .filter(l => l.lender)
+        .map(l => ({
+          user_id: user?.id,
+          lender: l.lender,
+          balance: parseFloat(l.balance) || null,
+          monthly_payment: parseFloat(l.monthlyPayment) || null,
+        }));
+
+      if (loanData.length > 0) {
+        await supabase.from('client_personal_loans').insert(loanData);
+      }
+
+      // Insert credit cards
+      const cardData = creditCards
+        .filter(c => c.creditLimit)
+        .map(c => ({
+          user_id: user?.id,
+          credit_limit: parseFloat(c.creditLimit) || null,
+          balance: parseFloat(c.balance) || null,
+          monthly_payment: parseFloat(c.monthlyPayment) || null,
+        }));
+
+      if (cardData.length > 0) {
+        await supabase.from('client_credit_cards').insert(cardData);
+      }
+
+      toast.success("Liabilities updated successfully");
+      queryClient.invalidateQueries({ queryKey: ['client-mortgages', 'client-personal-loans', 'client-credit-cards'] });
+    } catch (error) {
+      toast.error("Failed to update liabilities");
+      console.error(error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
@@ -67,7 +190,7 @@ export function ALIEEditModal({ open, onOpenChange }: ALIEEditModalProps) {
           <DialogTitle>Edit Financial Information</DialogTitle>
         </DialogHeader>
         
-        <Tabs defaultValue="assets" className="w-full">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="assets">Assets</TabsTrigger>
             <TabsTrigger value="income">Income</TabsTrigger>
@@ -146,12 +269,333 @@ export function ALIEEditModal({ open, onOpenChange }: ALIEEditModalProps) {
             </form>
           </TabsContent>
 
-          <TabsContent value="income">
-            <p className="text-sm text-muted-foreground">Income stream management coming soon. Use the main dashboard to add income sources.</p>
+          <TabsContent value="income" className="space-y-4">
+            <div className="space-y-4">
+              {incomeStreams.map((stream, index) => (
+                <div key={index} className="p-4 border rounded-lg space-y-4">
+                  <div className="flex justify-between items-center">
+                    <Label>Income Stream {index + 1}</Label>
+                    {incomeStreams.length > 1 && (
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setIncomeStreams(incomeStreams.filter((_, i) => i !== index))}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    )}
+                  </div>
+                  <div className="grid md:grid-cols-2 gap-4">
+                    <div>
+                      <Label>Type</Label>
+                      <Select
+                        value={stream.type}
+                        onValueChange={(value) => {
+                          const updated = [...incomeStreams];
+                          updated[index].type = value;
+                          setIncomeStreams(updated);
+                        }}
+                      >
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="employed">Employed</SelectItem>
+                          <SelectItem value="self-employed">Self-Employed</SelectItem>
+                          <SelectItem value="benefits">Benefits</SelectItem>
+                          <SelectItem value="pension">Pension</SelectItem>
+                          <SelectItem value="rental">Rental</SelectItem>
+                          <SelectItem value="other">Other</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <Label>Monthly Net (£)</Label>
+                      <Input
+                        type="number"
+                        value={stream.monthlyNet}
+                        onChange={(e) => {
+                          const updated = [...incomeStreams];
+                          updated[index].monthlyNet = e.target.value;
+                          setIncomeStreams(updated);
+                        }}
+                        placeholder="0.00"
+                      />
+                    </div>
+                    <div>
+                      <Label>Employer/Source Name</Label>
+                      <Input
+                        value={stream.employerName}
+                        onChange={(e) => {
+                          const updated = [...incomeStreams];
+                          updated[index].employerName = e.target.value;
+                          setIncomeStreams(updated);
+                        }}
+                        placeholder="Company name"
+                      />
+                    </div>
+                    <div>
+                      <Label>Annual Gross (£)</Label>
+                      <Input
+                        type="number"
+                        value={stream.annualGross}
+                        onChange={(e) => {
+                          const updated = [...incomeStreams];
+                          updated[index].annualGross = e.target.value;
+                          setIncomeStreams(updated);
+                        }}
+                        placeholder="0.00"
+                      />
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setIncomeStreams([...incomeStreams, { type: 'employed', monthlyNet: '', employerName: '' }])}
+              className="w-full"
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              Add Income Stream
+            </Button>
+
+            <div className="flex gap-2 justify-end">
+              <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+                Cancel
+              </Button>
+              <Button onClick={handleIncomeSubmit} disabled={loading}>
+                {loading ? "Saving..." : "Save Income"}
+              </Button>
+            </div>
           </TabsContent>
 
-          <TabsContent value="liabilities">
-            <p className="text-sm text-muted-foreground">Liability management coming soon. Use the main dashboard to add liabilities.</p>
+          <TabsContent value="liabilities" className="space-y-6">
+            {/* Mortgages */}
+            <div className="space-y-4">
+              <div className="flex justify-between items-center">
+                <h4 className="font-medium">Mortgages</h4>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setMortgages([...mortgages, { lender: '', balance: '', monthlyPayment: '', interestRate: '' }])}
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add
+                </Button>
+              </div>
+              {mortgages.map((mortgage, index) => (
+                <div key={index} className="p-4 border rounded-lg space-y-4">
+                  <div className="flex justify-end">
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setMortgages(mortgages.filter((_, i) => i !== index))}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                  <div className="grid md:grid-cols-2 gap-4">
+                    <div>
+                      <Label>Lender</Label>
+                      <Input
+                        value={mortgage.lender}
+                        onChange={(e) => {
+                          const updated = [...mortgages];
+                          updated[index].lender = e.target.value;
+                          setMortgages(updated);
+                        }}
+                      />
+                    </div>
+                    <div>
+                      <Label>Balance (£)</Label>
+                      <Input
+                        type="number"
+                        value={mortgage.balance}
+                        onChange={(e) => {
+                          const updated = [...mortgages];
+                          updated[index].balance = e.target.value;
+                          setMortgages(updated);
+                        }}
+                      />
+                    </div>
+                    <div>
+                      <Label>Monthly Payment (£)</Label>
+                      <Input
+                        type="number"
+                        value={mortgage.monthlyPayment}
+                        onChange={(e) => {
+                          const updated = [...mortgages];
+                          updated[index].monthlyPayment = e.target.value;
+                          setMortgages(updated);
+                        }}
+                      />
+                    </div>
+                    <div>
+                      <Label>Interest Rate (%)</Label>
+                      <Input
+                        type="number"
+                        value={mortgage.interestRate}
+                        onChange={(e) => {
+                          const updated = [...mortgages];
+                          updated[index].interestRate = e.target.value;
+                          setMortgages(updated);
+                        }}
+                      />
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Personal Loans */}
+            <div className="space-y-4">
+              <div className="flex justify-between items-center">
+                <h4 className="font-medium">Personal Loans</h4>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setPersonalLoans([...personalLoans, { lender: '', balance: '', monthlyPayment: '' }])}
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add
+                </Button>
+              </div>
+              {personalLoans.map((loan, index) => (
+                <div key={index} className="p-4 border rounded-lg space-y-4">
+                  <div className="flex justify-end">
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setPersonalLoans(personalLoans.filter((_, i) => i !== index))}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                  <div className="grid md:grid-cols-2 gap-4">
+                    <div>
+                      <Label>Lender</Label>
+                      <Input
+                        value={loan.lender}
+                        onChange={(e) => {
+                          const updated = [...personalLoans];
+                          updated[index].lender = e.target.value;
+                          setPersonalLoans(updated);
+                        }}
+                      />
+                    </div>
+                    <div>
+                      <Label>Balance (£)</Label>
+                      <Input
+                        type="number"
+                        value={loan.balance}
+                        onChange={(e) => {
+                          const updated = [...personalLoans];
+                          updated[index].balance = e.target.value;
+                          setPersonalLoans(updated);
+                        }}
+                      />
+                    </div>
+                    <div>
+                      <Label>Monthly Payment (£)</Label>
+                      <Input
+                        type="number"
+                        value={loan.monthlyPayment}
+                        onChange={(e) => {
+                          const updated = [...personalLoans];
+                          updated[index].monthlyPayment = e.target.value;
+                          setPersonalLoans(updated);
+                        }}
+                      />
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Credit Cards */}
+            <div className="space-y-4">
+              <div className="flex justify-between items-center">
+                <h4 className="font-medium">Credit Cards</h4>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCreditCards([...creditCards, { creditLimit: '', balance: '', monthlyPayment: '' }])}
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add
+                </Button>
+              </div>
+              {creditCards.map((card, index) => (
+                <div key={index} className="p-4 border rounded-lg space-y-4">
+                  <div className="flex justify-end">
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setCreditCards(creditCards.filter((_, i) => i !== index))}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                  <div className="grid md:grid-cols-2 gap-4">
+                    <div>
+                      <Label>Credit Limit (£)</Label>
+                      <Input
+                        type="number"
+                        value={card.creditLimit}
+                        onChange={(e) => {
+                          const updated = [...creditCards];
+                          updated[index].creditLimit = e.target.value;
+                          setCreditCards(updated);
+                        }}
+                      />
+                    </div>
+                    <div>
+                      <Label>Balance (£)</Label>
+                      <Input
+                        type="number"
+                        value={card.balance}
+                        onChange={(e) => {
+                          const updated = [...creditCards];
+                          updated[index].balance = e.target.value;
+                          setCreditCards(updated);
+                        }}
+                      />
+                    </div>
+                    <div>
+                      <Label>Monthly Payment (£)</Label>
+                      <Input
+                        type="number"
+                        value={card.monthlyPayment}
+                        onChange={(e) => {
+                          const updated = [...creditCards];
+                          updated[index].monthlyPayment = e.target.value;
+                          setCreditCards(updated);
+                        }}
+                      />
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div className="flex gap-2 justify-end">
+              <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+                Cancel
+              </Button>
+              <Button onClick={handleLiabilitiesSubmit} disabled={loading}>
+                {loading ? "Saving..." : "Save Liabilities"}
+              </Button>
+            </div>
           </TabsContent>
 
           <TabsContent value="expenses">
