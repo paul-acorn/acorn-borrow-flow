@@ -1,13 +1,17 @@
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { User, Home, Calendar } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { User, Home, Calendar, Edit } from "lucide-react";
+import { PersonalDetailsEditModal } from "./PersonalDetailsEditModal";
 
 export function PersonalDetailsView() {
   const { user } = useAuth();
+  const [editModalOpen, setEditModalOpen] = useState(false);
 
   const { data: personalDetails, isLoading: loadingPersonal } = useQuery({
     queryKey: ['client-personal-details', user?.id],
@@ -49,15 +53,22 @@ export function PersonalDetailsView() {
   }
 
   return (
-    <div className="space-y-6">
-      {/* Personal Information */}
-      <Card>
-        <CardHeader>
-          <div className="flex items-center gap-2">
-            <User className="h-5 w-5 text-primary" />
-            <CardTitle>Personal Information</CardTitle>
-          </div>
-        </CardHeader>
+    <>
+      <div className="space-y-6">
+        {/* Personal Information */}
+        <Card>
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <User className="h-5 w-5 text-primary" />
+                <CardTitle>Personal Information</CardTitle>
+              </div>
+              <Button size="sm" variant="outline" onClick={() => setEditModalOpen(true)}>
+                <Edit className="h-4 w-4 mr-2" />
+                Edit
+              </Button>
+            </div>
+          </CardHeader>
         <CardContent className="space-y-4">
           {personalDetails ? (
             <div className="grid md:grid-cols-2 gap-4">
@@ -158,6 +169,13 @@ export function PersonalDetailsView() {
           )}
         </CardContent>
       </Card>
-    </div>
+      </div>
+
+      <PersonalDetailsEditModal
+        open={editModalOpen}
+        onOpenChange={setEditModalOpen}
+        personalDetails={personalDetails}
+      />
+    </>
   );
 }

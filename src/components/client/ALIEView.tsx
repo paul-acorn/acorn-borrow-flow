@@ -1,12 +1,16 @@
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { TrendingUp, TrendingDown, Briefcase, DollarSign } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { TrendingUp, TrendingDown, Briefcase, DollarSign, Edit } from "lucide-react";
+import { ALIEEditModal } from "./ALIEEditModal";
 
 export function ALIEView() {
   const { user } = useAuth();
+  const [editModalOpen, setEditModalOpen] = useState(false);
 
   const { data: assets, isLoading: loadingAssets } = useQuery({
     queryKey: ['client-financial-assets', user?.id],
@@ -147,9 +151,17 @@ export function ALIEView() {
     (otherDebts?.reduce((sum, d) => sum + (d.monthly_payment || 0), 0) || 0);
 
   return (
-    <div className="space-y-6">
-      {/* Summary Cards */}
-      <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
+    <>
+      <div className="space-y-6">
+        <div className="flex justify-end">
+          <Button size="sm" variant="outline" onClick={() => setEditModalOpen(true)}>
+            <Edit className="h-4 w-4 mr-2" />
+            Edit Financial Info
+          </Button>
+        </div>
+        
+        {/* Summary Cards */}
+        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
         <Card>
           <CardHeader className="pb-2">
             <div className="flex items-center justify-between">
@@ -377,6 +389,9 @@ export function ALIEView() {
           )}
         </CardContent>
       </Card>
-    </div>
+      </div>
+
+      <ALIEEditModal open={editModalOpen} onOpenChange={setEditModalOpen} />
+    </>
   );
 }
