@@ -394,28 +394,28 @@ export function ClientDashboard() {
         <Card>
           <Tabs defaultValue="personal" className="w-full">
             <CardHeader>
-              <TabsList className="grid w-full grid-cols-3 grid-rows-2 lg:grid-cols-6 lg:grid-rows-1">
-                <TabsTrigger value="personal" className="flex items-center gap-2">
+              <TabsList className="w-full flex overflow-x-auto gap-2 justify-start">
+                <TabsTrigger value="personal" className="flex items-center gap-2 flex-shrink-0">
                   <User className="h-4 w-4" />
                   <span className="hidden sm:inline">Personal</span>
                 </TabsTrigger>
-                <TabsTrigger value="alie" className="flex items-center gap-2">
+                <TabsTrigger value="alie" className="flex items-center gap-2 flex-shrink-0">
                   <DollarSign className="h-4 w-4" />
                   <span className="hidden sm:inline">ALIE</span>
                 </TabsTrigger>
-                <TabsTrigger value="credit" className="flex items-center gap-2">
+                <TabsTrigger value="credit" className="flex items-center gap-2 flex-shrink-0">
                   <AlertCircle className="h-4 w-4" />
                   <span className="hidden sm:inline">Credit</span>
                 </TabsTrigger>
-                <TabsTrigger value="requirements" className="flex items-center gap-2">
+                <TabsTrigger value="requirements" className="flex items-center gap-2 flex-shrink-0">
                   <FileText className="h-4 w-4" />
                   <span className="hidden sm:inline">Documents</span>
                 </TabsTrigger>
-                <TabsTrigger value="callbacks" className="flex items-center gap-2">
+                <TabsTrigger value="callbacks" className="flex items-center gap-2 flex-shrink-0">
                   <Calendar className="h-4 w-4" />
                   <span className="hidden sm:inline">Callbacks</span>
                 </TabsTrigger>
-                <TabsTrigger value="activity" className="flex items-center gap-2">
+                <TabsTrigger value="activity" className="flex items-center gap-2 flex-shrink-0">
                   <History className="h-4 w-4" />
                   <span className="hidden sm:inline">Activity</span>
                 </TabsTrigger>
