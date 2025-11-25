@@ -164,24 +164,28 @@ export function PersonalDetailsEditModal({ open, onOpenChange, personalDetails }
               </Select>
             </div>
 
-            <div>
-              <Label htmlFor="visa_type">Visa Type (if applicable)</Label>
-              <Input
-                id="visa_type"
-                name="visa_type"
-                defaultValue={personalDetails?.visa_type || ""}
-              />
-            </div>
+            {personalDetails?.residence === 'visa_holder' && (
+              <>
+                <div>
+                  <Label htmlFor="visa_type">Visa Type</Label>
+                  <Input
+                    id="visa_type"
+                    name="visa_type"
+                    defaultValue={personalDetails?.visa_type || ""}
+                  />
+                </div>
 
-            <div>
-              <Label htmlFor="visa_expiry">Visa Expiry (if applicable)</Label>
-              <Input
-                id="visa_expiry"
-                name="visa_expiry"
-                type="date"
-                defaultValue={personalDetails?.visa_expiry || ""}
-              />
-            </div>
+                <div>
+                  <Label htmlFor="visa_expiry">Visa Expiry</Label>
+                  <Input
+                    id="visa_expiry"
+                    name="visa_expiry"
+                    type="date"
+                    defaultValue={personalDetails?.visa_expiry || ""}
+                  />
+                </div>
+              </>
+            )}
           </div>
 
           <div className="flex gap-2 justify-end">
