@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { useQueryClient } from "@tanstack/react-query";
+import { useState, useEffect } from "react";
+import { useQueryClient, useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -21,11 +21,39 @@ export function PersonalDetailsEditModal({ open, onOpenChange, personalDetails }
   const [loading, setLoading] = useState(false);
   const [residence, setResidence] = useState(personalDetails?.residence || '');
 
+  const { data: profile } = useQuery({
+    queryKey: ['profile', user?.id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('first_name, last_name')
+        .eq('id', user?.id)
+        .single();
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!user?.id,
+  });
+
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setLoading(true);
 
     const formData = new FormData(e.currentTarget);
+    
+    // Update profile names if changed
+    const firstName = formData.get('first_name') as string;
+    const lastName = formData.get('last_name') as string;
+    if (firstName || lastName) {
+      await supabase
+        .from('profiles')
+        .update({
+          first_name: firstName || profile?.first_name,
+          last_name: lastName || profile?.last_name,
+        })
+        .eq('id', user?.id);
+    }
+    
     const data = {
       title: formData.get('title') as string,
       dob: formData.get('dob') as string || null,
@@ -70,6 +98,26 @@ export function PersonalDetailsEditModal({ open, onOpenChange, personalDetails }
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="grid md:grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="first_name">First Name</Label>
+              <Input
+                id="first_name"
+                name="first_name"
+                defaultValue={profile?.first_name || ""}
+                placeholder="First name"
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="last_name">Last Name</Label>
+              <Input
+                id="last_name"
+                name="last_name"
+                defaultValue={profile?.last_name || ""}
+                placeholder="Last name"
+              />
+            </div>
+
             <div>
               <Label htmlFor="title">Title</Label>
               <Select name="title" defaultValue={personalDetails?.title || ""}>

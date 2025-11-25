@@ -102,6 +102,27 @@ export function AddressHistoryEditModal({ open, onOpenChange, addresses }: Addre
     setAddressList(updated);
   };
 
+  // Calculate total years of address history
+  const calculateTotalYears = () => {
+    const now = new Date();
+    let totalMonths = 0;
+
+    addressList.forEach(address => {
+      if (!address.dateMovedIn) return;
+      
+      const movedIn = new Date(address.dateMovedIn);
+      const movedOut = address.isCurrent ? now : (address.dateMovedOut ? new Date(address.dateMovedOut) : now);
+      
+      const months = (movedOut.getFullYear() - movedIn.getFullYear()) * 12 + 
+                     (movedOut.getMonth() - movedIn.getMonth());
+      totalMonths += months;
+    });
+
+    return totalMonths / 12;
+  };
+
+  const needsPreviousAddress = calculateTotalYears() < 3;
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
@@ -194,10 +215,12 @@ export function AddressHistoryEditModal({ open, onOpenChange, addresses }: Addre
             </div>
           ))}
 
-          <Button type="button" variant="outline" onClick={addAddress} className="w-full">
-            <Plus className="h-4 w-4 mr-2" />
-            Add Previous Address
-          </Button>
+          {needsPreviousAddress && (
+            <Button type="button" variant="outline" onClick={addAddress} className="w-full">
+              <Plus className="h-4 w-4 mr-2" />
+              Add Previous Address
+            </Button>
+          )}
 
           <div className="flex gap-2 justify-end">
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
