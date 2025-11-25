@@ -47,6 +47,20 @@ export function AddressHistoryEditModal({ open, onOpenChange, addresses }: Addre
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    
+    // Validate date ranges
+    for (let i = 0; i < addressList.length; i++) {
+      const address = addressList[i];
+      if (address.dateMovedIn && address.dateMovedOut && !address.isCurrent) {
+        const movedIn = new Date(address.dateMovedIn);
+        const movedOut = new Date(address.dateMovedOut);
+        if (movedOut <= movedIn) {
+          toast.error(`Address ${i + 1}: Move out date must be after move in date`);
+          return;
+        }
+      }
+    }
+    
     setLoading(true);
 
     try {
@@ -102,23 +116,24 @@ export function AddressHistoryEditModal({ open, onOpenChange, addresses }: Addre
     setAddressList(updated);
   };
 
-  // Calculate total years of address history
+  // Calculate total years of address history from earliest address to now
   const calculateTotalYears = () => {
+    const validAddresses = addressList.filter(a => a.dateMovedIn && a.street);
+    if (validAddresses.length === 0) return 0;
+    
     const now = new Date();
-    let totalMonths = 0;
-
-    addressList.forEach(address => {
-      if (!address.dateMovedIn) return;
-      
+    
+    // Find the earliest move-in date
+    const earliestDate = validAddresses.reduce((earliest, address) => {
       const movedIn = new Date(address.dateMovedIn);
-      const movedOut = address.isCurrent ? now : (address.dateMovedOut ? new Date(address.dateMovedOut) : now);
-      
-      const months = (movedOut.getFullYear() - movedIn.getFullYear()) * 12 + 
-                     (movedOut.getMonth() - movedIn.getMonth());
-      totalMonths += months;
-    });
-
-    return totalMonths / 12;
+      return movedIn < earliest ? movedIn : earliest;
+    }, new Date(validAddresses[0].dateMovedIn));
+    
+    // Calculate years from earliest address to now
+    const diffMs = now.getTime() - earliestDate.getTime();
+    const diffYears = diffMs / (1000 * 60 * 60 * 24 * 365.25);
+    
+    return diffYears;
   };
 
   const needsPreviousAddress = calculateTotalYears() < 3;
