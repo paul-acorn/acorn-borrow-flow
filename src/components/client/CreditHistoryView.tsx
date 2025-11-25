@@ -1,13 +1,17 @@
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { AlertCircle, CheckCircle, XCircle } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { AlertCircle, CheckCircle, XCircle, Edit } from "lucide-react";
+import { CreditHistoryEditModal } from "./CreditHistoryEditModal";
 
 export function CreditHistoryView() {
   const { user } = useAuth();
+  const [editModalOpen, setEditModalOpen] = useState(false);
 
   const { data: creditHistory, isLoading } = useQuery({
     queryKey: ['client-credit-history', user?.id],
@@ -53,12 +57,20 @@ export function CreditHistoryView() {
   };
 
   return (
-    <div className="space-y-6">
-      {/* Credit Score */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Credit Score</CardTitle>
-        </CardHeader>
+    <>
+      <div className="space-y-6">
+        <div className="flex justify-end">
+          <Button size="sm" variant="outline" onClick={() => setEditModalOpen(true)}>
+            <Edit className="h-4 w-4 mr-2" />
+            Edit Credit History
+          </Button>
+        </div>
+        
+        {/* Credit Score */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Credit Score</CardTitle>
+          </CardHeader>
         <CardContent>
           <div className="flex items-center justify-between">
             <div>
@@ -233,6 +245,13 @@ export function CreditHistoryView() {
           </CardContent>
         </Card>
       )}
-    </div>
+      </div>
+
+      <CreditHistoryEditModal
+        open={editModalOpen}
+        onOpenChange={setEditModalOpen}
+        creditHistory={creditHistory}
+      />
+    </>
   );
 }
