@@ -394,7 +394,7 @@ export function ClientDashboard() {
         <Card>
           <Tabs defaultValue="personal" className="w-full">
             <CardHeader>
-              <TabsList className="grid w-full grid-cols-3 lg:grid-cols-6 overflow-x-auto">
+              <TabsList className="grid w-full grid-cols-3 grid-rows-2 lg:grid-cols-6 lg:grid-rows-1">
                 <TabsTrigger value="personal" className="flex items-center gap-2">
                   <User className="h-4 w-4" />
                   <span className="hidden sm:inline">Personal</span>
