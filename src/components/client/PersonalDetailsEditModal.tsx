@@ -19,6 +19,7 @@ export function PersonalDetailsEditModal({ open, onOpenChange, personalDetails }
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const [loading, setLoading] = useState(false);
+  const [residence, setResidence] = useState(personalDetails?.residence || '');
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -33,7 +34,7 @@ export function PersonalDetailsEditModal({ open, onOpenChange, personalDetails }
       dependents: parseInt(formData.get('dependents') as string) || 0,
       dependent_ages: formData.get('dependent_ages') as string || null,
       ni_number: formData.get('ni_number') as string || null,
-      residence: formData.get('residence') as string || null,
+      residence: residence || null,
       visa_type: formData.get('visa_type') as string || null,
       visa_expiry: formData.get('visa_expiry') as string || null,
     };
@@ -152,7 +153,7 @@ export function PersonalDetailsEditModal({ open, onOpenChange, personalDetails }
 
             <div>
               <Label htmlFor="residence">Residence Status</Label>
-              <Select name="residence" defaultValue={personalDetails?.residence || ""}>
+              <Select name="residence" value={residence} onValueChange={setResidence}>
                 <SelectTrigger>
                   <SelectValue placeholder="Select status" />
                 </SelectTrigger>
@@ -164,7 +165,7 @@ export function PersonalDetailsEditModal({ open, onOpenChange, personalDetails }
               </Select>
             </div>
 
-            {personalDetails?.residence === 'visa_holder' && (
+            {residence === 'visa_holder' && (
               <>
                 <div>
                   <Label htmlFor="visa_type">Visa Type</Label>

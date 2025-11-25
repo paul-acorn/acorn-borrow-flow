@@ -8,10 +8,12 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { User, Home, Calendar, Edit } from "lucide-react";
 import { PersonalDetailsEditModal } from "./PersonalDetailsEditModal";
+import { AddressHistoryEditModal } from "./AddressHistoryEditModal";
 
 export function PersonalDetailsView() {
   const { user } = useAuth();
   const [editModalOpen, setEditModalOpen] = useState(false);
+  const [addressModalOpen, setAddressModalOpen] = useState(false);
 
   const { data: personalDetails, isLoading: loadingPersonal } = useQuery({
     queryKey: ['client-personal-details', user?.id],
@@ -133,7 +135,7 @@ export function PersonalDetailsView() {
               <Home className="h-5 w-5 text-primary" />
               <CardTitle>Address History</CardTitle>
             </div>
-            <Button size="sm" variant="outline" onClick={() => setEditModalOpen(true)}>
+            <Button size="sm" variant="outline" onClick={() => setAddressModalOpen(true)}>
               <Edit className="h-4 w-4 mr-2" />
               Edit
             </Button>
@@ -181,6 +183,12 @@ export function PersonalDetailsView() {
         open={editModalOpen}
         onOpenChange={setEditModalOpen}
         personalDetails={personalDetails}
+      />
+      
+      <AddressHistoryEditModal
+        open={addressModalOpen}
+        onOpenChange={setAddressModalOpen}
+        addresses={addresses || []}
       />
     </>
   );

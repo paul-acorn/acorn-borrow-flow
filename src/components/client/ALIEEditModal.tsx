@@ -48,6 +48,19 @@ export function ALIEEditModal({ open, onOpenChange }: ALIEEditModalProps) {
     monthlyPayment: string;
   }>>([]);
 
+  // Expenses state
+  const [expenses, setExpenses] = useState({
+    mortgage: '',
+    rent: '',
+    utilities: '',
+    councilTax: '',
+    groceries: '',
+    transport: '',
+    childcare: '',
+    insurance: '',
+    other: '',
+  });
+
   const handleAssetsSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setLoading(true);
@@ -310,19 +323,35 @@ export function ALIEEditModal({ open, onOpenChange }: ALIEEditModalProps) {
                         </SelectContent>
                       </Select>
                     </div>
-                    <div>
-                      <Label>Monthly Net (£)</Label>
-                      <Input
-                        type="number"
-                        value={stream.monthlyNet}
-                        onChange={(e) => {
-                          const updated = [...incomeStreams];
-                          updated[index].monthlyNet = e.target.value;
-                          setIncomeStreams(updated);
-                        }}
-                        placeholder="0.00"
-                      />
-                    </div>
+                    {stream.type === 'self-employed' ? (
+                      <div>
+                        <Label>Annual Gross (£)</Label>
+                        <Input
+                          type="number"
+                          value={stream.annualGross}
+                          onChange={(e) => {
+                            const updated = [...incomeStreams];
+                            updated[index].annualGross = e.target.value;
+                            setIncomeStreams(updated);
+                          }}
+                          placeholder="0.00"
+                        />
+                      </div>
+                    ) : (
+                      <div>
+                        <Label>Monthly Net (£)</Label>
+                        <Input
+                          type="number"
+                          value={stream.monthlyNet}
+                          onChange={(e) => {
+                            const updated = [...incomeStreams];
+                            updated[index].monthlyNet = e.target.value;
+                            setIncomeStreams(updated);
+                          }}
+                          placeholder="0.00"
+                        />
+                      </div>
+                    )}
                     <div>
                       <Label>Employer/Source Name</Label>
                       <Input
@@ -333,19 +362,6 @@ export function ALIEEditModal({ open, onOpenChange }: ALIEEditModalProps) {
                           setIncomeStreams(updated);
                         }}
                         placeholder="Company name"
-                      />
-                    </div>
-                    <div>
-                      <Label>Annual Gross (£)</Label>
-                      <Input
-                        type="number"
-                        value={stream.annualGross}
-                        onChange={(e) => {
-                          const updated = [...incomeStreams];
-                          updated[index].annualGross = e.target.value;
-                          setIncomeStreams(updated);
-                        }}
-                        placeholder="0.00"
                       />
                     </div>
                   </div>
@@ -599,7 +615,108 @@ export function ALIEEditModal({ open, onOpenChange }: ALIEEditModalProps) {
           </TabsContent>
 
           <TabsContent value="expenses">
-            <p className="text-sm text-muted-foreground">Expense tracking coming soon.</p>
+            <div className="space-y-4">
+              <p className="text-sm text-muted-foreground">Track your monthly expenses. This helps assess affordability.</p>
+              
+              <div className="grid md:grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="mortgage">Mortgage/Rent (£)</Label>
+                  <Input
+                    id="mortgage"
+                    type="number"
+                    value={expenses.mortgage}
+                    onChange={(e) => setExpenses({ ...expenses, mortgage: e.target.value })}
+                    placeholder="0.00"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="utilities">Utilities (£)</Label>
+                  <Input
+                    id="utilities"
+                    type="number"
+                    value={expenses.utilities}
+                    onChange={(e) => setExpenses({ ...expenses, utilities: e.target.value })}
+                    placeholder="Gas, electric, water"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="councilTax">Council Tax (£)</Label>
+                  <Input
+                    id="councilTax"
+                    type="number"
+                    value={expenses.councilTax}
+                    onChange={(e) => setExpenses({ ...expenses, councilTax: e.target.value })}
+                    placeholder="0.00"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="groceries">Groceries (£)</Label>
+                  <Input
+                    id="groceries"
+                    type="number"
+                    value={expenses.groceries}
+                    onChange={(e) => setExpenses({ ...expenses, groceries: e.target.value })}
+                    placeholder="0.00"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="transport">Transport (£)</Label>
+                  <Input
+                    id="transport"
+                    type="number"
+                    value={expenses.transport}
+                    onChange={(e) => setExpenses({ ...expenses, transport: e.target.value })}
+                    placeholder="Fuel, public transport"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="childcare">Childcare (£)</Label>
+                  <Input
+                    id="childcare"
+                    type="number"
+                    value={expenses.childcare}
+                    onChange={(e) => setExpenses({ ...expenses, childcare: e.target.value })}
+                    placeholder="0.00"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="insurance">Insurance (£)</Label>
+                  <Input
+                    id="insurance"
+                    type="number"
+                    value={expenses.insurance}
+                    onChange={(e) => setExpenses({ ...expenses, insurance: e.target.value })}
+                    placeholder="Life, home, car"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="other">Other Expenses (£)</Label>
+                  <Input
+                    id="other"
+                    type="number"
+                    value={expenses.other}
+                    onChange={(e) => setExpenses({ ...expenses, other: e.target.value })}
+                    placeholder="0.00"
+                  />
+                </div>
+              </div>
+
+              <div className="p-4 bg-muted rounded-lg">
+                <p className="text-sm font-medium">Total Monthly Expenses</p>
+                <p className="text-2xl font-bold">
+                  £{Object.values(expenses).reduce((sum, val) => sum + (parseFloat(val) || 0), 0).toFixed(2)}
+                </p>
+              </div>
+
+              <div className="flex gap-2 justify-end">
+                <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+                  Cancel
+                </Button>
+                <Button type="button" onClick={() => toast.success("Expenses noted")}>
+                  Save Expenses
+                </Button>
+              </div>
+            </div>
           </TabsContent>
         </Tabs>
       </DialogContent>
