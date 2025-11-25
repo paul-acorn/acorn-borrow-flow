@@ -392,21 +392,9 @@ export function ClientDashboard() {
 
         {/* Main Content Tabs */}
         <Card>
-          <Tabs defaultValue="requirements" className="w-full">
+          <Tabs defaultValue="personal" className="w-full">
             <CardHeader>
               <TabsList className="grid w-full grid-cols-3 lg:grid-cols-6 overflow-x-auto">
-                <TabsTrigger value="requirements" className="flex items-center gap-2">
-                  <FileText className="h-4 w-4" />
-                  <span className="hidden sm:inline">Documents</span>
-                </TabsTrigger>
-                <TabsTrigger value="callbacks" className="flex items-center gap-2">
-                  <Calendar className="h-4 w-4" />
-                  <span className="hidden sm:inline">Callbacks</span>
-                </TabsTrigger>
-                <TabsTrigger value="activity" className="flex items-center gap-2">
-                  <History className="h-4 w-4" />
-                  <span className="hidden sm:inline">Activity</span>
-                </TabsTrigger>
                 <TabsTrigger value="personal" className="flex items-center gap-2">
                   <User className="h-4 w-4" />
                   <span className="hidden sm:inline">Personal</span>
@@ -419,21 +407,21 @@ export function ClientDashboard() {
                   <AlertCircle className="h-4 w-4" />
                   <span className="hidden sm:inline">Credit</span>
                 </TabsTrigger>
+                <TabsTrigger value="requirements" className="flex items-center gap-2">
+                  <FileText className="h-4 w-4" />
+                  <span className="hidden sm:inline">Documents</span>
+                </TabsTrigger>
+                <TabsTrigger value="callbacks" className="flex items-center gap-2">
+                  <Calendar className="h-4 w-4" />
+                  <span className="hidden sm:inline">Callbacks</span>
+                </TabsTrigger>
+                <TabsTrigger value="activity" className="flex items-center gap-2">
+                  <History className="h-4 w-4" />
+                  <span className="hidden sm:inline">Activity</span>
+                </TabsTrigger>
               </TabsList>
             </CardHeader>
             <CardContent>
-              <TabsContent value="requirements" className="space-y-4">
-                <RequirementsManager dealId={activeDeal.id} />
-              </TabsContent>
-
-              <TabsContent value="callbacks" className="space-y-4">
-                <ScheduledCallbacksView />
-              </TabsContent>
-
-              <TabsContent value="activity" className="space-y-4">
-                <ActivityLog dealId={activeDeal.id} />
-              </TabsContent>
-
               <TabsContent value="personal" className="space-y-4">
                 <PersonalDetailsView />
               </TabsContent>
@@ -444,6 +432,18 @@ export function ClientDashboard() {
 
               <TabsContent value="credit" className="space-y-4">
                 <CreditHistoryView />
+              </TabsContent>
+
+              <TabsContent value="requirements" className="space-y-4">
+                <RequirementsManager dealId={activeDeal.id} />
+              </TabsContent>
+
+              <TabsContent value="callbacks" className="space-y-4">
+                <ScheduledCallbacksView />
+              </TabsContent>
+
+              <TabsContent value="activity" className="space-y-4">
+                <ActivityLog dealId={activeDeal.id} />
               </TabsContent>
             </CardContent>
           </Tabs>
