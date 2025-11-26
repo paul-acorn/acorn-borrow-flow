@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
-import { Plus, Trash2 } from "lucide-react";
+import { Plus, Trash2, Search } from "lucide-react";
 
 interface AddressHistoryEditModalProps {
   open: boolean;
@@ -20,6 +20,7 @@ export function AddressHistoryEditModal({ open, onOpenChange, addresses }: Addre
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const [loading, setLoading] = useState(false);
+  const [lookupLoading, setLookupLoading] = useState<number | null>(null);
   
   const [addressList, setAddressList] = useState<Array<{
     id?: string;
@@ -116,9 +117,44 @@ export function AddressHistoryEditModal({ open, onOpenChange, addresses }: Addre
     setAddressList(updated);
   };
 
+  const lookupPostcode = async (index: number) => {
+    const postcode = addressList[index].postcode.replace(/\s/g, '');
+    if (!postcode) {
+      toast.error("Please enter a postcode");
+      return;
+    }
+
+    setLookupLoading(index);
+    try {
+      const response = await fetch(`https://api.postcodes.io/postcodes/${postcode}`);
+      const data = await response.json();
+      
+      if (data.status === 200 && data.result) {
+        const updated = [...addressList];
+        updated[index].city = data.result.admin_district || data.result.parish || '';
+        setAddressList(updated);
+        toast.success("Address details populated from postcode");
+      } else {
+        toast.error("Postcode not found");
+      }
+    } catch (error) {
+      toast.error("Failed to lookup postcode");
+    } finally {
+      setLookupLoading(null);
+    }
+  };
+
   // Calculate total years of address history from earliest address to now
   const calculateTotalYears = () => {
-    const validAddresses = addressList.filter(a => a.dateMovedIn && a.street);
+    // Filter for addresses with required data
+    const validAddresses = addressList.filter(a => {
+      // Must have street and move-in date
+      if (!a.street || !a.dateMovedIn) return false;
+      // If not current, must have move-out date
+      if (!a.isCurrent && !a.dateMovedOut) return false;
+      return true;
+    });
+    
     if (validAddresses.length === 0) return 0;
     
     const now = new Date();
@@ -136,13 +172,19 @@ export function AddressHistoryEditModal({ open, onOpenChange, addresses }: Addre
     return diffYears;
   };
 
-  const needsPreviousAddress = calculateTotalYears() < 3;
+  const totalYears = calculateTotalYears();
+  const needsPreviousAddress = totalYears < 3;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Edit Address History</DialogTitle>
+          {totalYears > 0 && (
+            <p className="text-sm text-muted-foreground">
+              Current address history: {totalYears.toFixed(1)} years {totalYears < 3 && '(Need 3 years minimum)'}
+            </p>
+          )}
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-6">
           {addressList.map((address, index) => (
@@ -197,14 +239,26 @@ export function AddressHistoryEditModal({ open, onOpenChange, addresses }: Addre
                     placeholder="City"
                   />
                 </div>
-                <div>
+                <div className="md:col-span-2">
                   <Label htmlFor={`postcode_${index}`}>Postcode</Label>
-                  <Input
-                    id={`postcode_${index}`}
-                    value={address.postcode}
-                    onChange={(e) => updateAddress(index, 'postcode', e.target.value)}
-                    placeholder="Postcode"
-                  />
+                  <div className="flex gap-2">
+                    <Input
+                      id={`postcode_${index}`}
+                      value={address.postcode}
+                      onChange={(e) => updateAddress(index, 'postcode', e.target.value.toUpperCase())}
+                      placeholder="e.g., SW1A 1AA"
+                      className="flex-1"
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => lookupPostcode(index)}
+                      disabled={lookupLoading === index}
+                    >
+                      <Search className="h-4 w-4 mr-2" />
+                      {lookupLoading === index ? "Looking up..." : "Lookup"}
+                    </Button>
+                  </div>
                 </div>
                 <div>
                   <Label htmlFor={`moved_in_${index}`}>Date Moved In</Label>
