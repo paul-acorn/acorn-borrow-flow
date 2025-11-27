@@ -797,7 +797,7 @@ export function BackgroundDetailsModal({ open, onOpenChange, steps, onStepComple
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="title">Title</Label>
-                    <Select value={formData.title} onValueChange={(value) => updateFormData('title', value)}>
+                    <Select value={formData.title || undefined} onValueChange={(value) => updateFormData('title', value)}>
                       <SelectTrigger>
                         <SelectValue placeholder="Select title" />
                       </SelectTrigger>
@@ -842,7 +842,7 @@ export function BackgroundDetailsModal({ open, onOpenChange, steps, onStepComple
                   
                   <div className="space-y-2">
                     <Label htmlFor="maritalStatus">Marital Status</Label>
-                    <Select value={formData.maritalStatus} onValueChange={(value) => updateFormData('maritalStatus', value)}>
+                    <Select value={formData.maritalStatus || undefined} onValueChange={(value) => updateFormData('maritalStatus', value)}>
                       <SelectTrigger>
                         <SelectValue placeholder="Select status" />
                       </SelectTrigger>
@@ -892,7 +892,7 @@ export function BackgroundDetailsModal({ open, onOpenChange, steps, onStepComple
                   
                   <div className="space-y-2">
                     <Label htmlFor="nationality">Nationality</Label>
-                    <Select value={formData.nationality} onValueChange={(value) => updateFormData('nationality', value)}>
+                    <Select value={formData.nationality || undefined} onValueChange={(value) => updateFormData('nationality', value)}>
                       <SelectTrigger>
                         <SelectValue placeholder="Select nationality" />
                       </SelectTrigger>
@@ -911,7 +911,7 @@ export function BackgroundDetailsModal({ open, onOpenChange, steps, onStepComple
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="residentCountry">Country of Residence</Label>
-                    <Select value={formData.residence} onValueChange={(value) => updateFormData('residence', value)}>
+                    <Select value={formData.residence || undefined} onValueChange={(value) => updateFormData('residence', value)}>
                       <SelectTrigger>
                         <SelectValue placeholder="Select country" />
                       </SelectTrigger>
@@ -929,7 +929,7 @@ export function BackgroundDetailsModal({ open, onOpenChange, steps, onStepComple
                   {showVisaFields && (
                     <div className="space-y-2">
                       <Label htmlFor="visaType">Visa Type</Label>
-                      <Select value={formData.visaType} onValueChange={(value) => updateFormData('visaType', value)}>
+                      <Select value={formData.visaType || undefined} onValueChange={(value) => updateFormData('visaType', value)}>
                         <SelectTrigger>
                           <SelectValue placeholder="Select visa type" />
                         </SelectTrigger>

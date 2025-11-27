@@ -74,7 +74,7 @@ export function BridgingFinanceModal({ formData, onFormDataChange, onAutoRefinan
           <div className="space-y-2">
             <Label htmlFor="bridgingPurpose">Bridging Purpose</Label>
             <Select
-              value={formData.bridgingPurpose || ''}
+              value={formData.bridgingPurpose || undefined}
               onValueChange={(value) => handleFieldChange('bridgingPurpose', value)}
             >
               <SelectTrigger>
@@ -285,7 +285,7 @@ export function BridgingFinanceModal({ formData, onFormDataChange, onAutoRefinan
           <div className="space-y-2">
             <Label htmlFor="exitStrategy">Exit Strategy</Label>
             <Select
-              value={formData.exitStrategy || ''}
+              value={formData.exitStrategy || undefined}
               onValueChange={(value) => handleFieldChange('exitStrategy', value)}
             >
               <SelectTrigger>
