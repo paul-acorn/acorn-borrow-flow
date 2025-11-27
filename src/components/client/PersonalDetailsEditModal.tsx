@@ -19,7 +19,7 @@ export function PersonalDetailsEditModal({ open, onOpenChange, personalDetails }
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const [loading, setLoading] = useState(false);
-  const [residence, setResidence] = useState(personalDetails?.residence || '');
+  const [residence, setResidence] = useState(personalDetails?.residence || undefined);
 
   const { data: profile } = useQuery({
     queryKey: ['profile', user?.id],
