@@ -98,7 +98,7 @@ export function MortgageModal({ formData, onFormDataChange }: MortgageModalProps
             <div className="space-y-2">
               <Label htmlFor="capitalRaisePurpose">Purpose of Capital Raise</Label>
               <Select
-                value={formData.capitalRaisePurpose || ''}
+                value={formData.capitalRaisePurpose || undefined}
                 onValueChange={(value) => handleFieldChange('capitalRaisePurpose', value)}
               >
                 <SelectTrigger>
@@ -119,7 +119,7 @@ export function MortgageModal({ formData, onFormDataChange }: MortgageModalProps
           <div className="space-y-2">
             <Label htmlFor="applicantType">Applicant Type</Label>
             <Select
-              value={formData.applicantType || ''}
+              value={formData.applicantType || undefined}
               onValueChange={(value) => handleFieldChange('applicantType', value)}
             >
               <SelectTrigger>
@@ -272,7 +272,7 @@ export function MortgageModal({ formData, onFormDataChange }: MortgageModalProps
             <div className="space-y-2">
               <Label htmlFor="fixedTerm">Fixed Rate Term (years)</Label>
               <Select
-                value={formData.fixedTerm || ''}
+                value={formData.fixedTerm || undefined}
                 onValueChange={(value) => handleFieldChange('fixedTerm', value)}
               >
                 <SelectTrigger>

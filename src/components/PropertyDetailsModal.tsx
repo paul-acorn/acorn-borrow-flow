@@ -160,7 +160,7 @@ export function PropertyDetailsModal({ open, onOpenChange, dealName, onSave }: P
               <div className="space-y-2">
                 <Label htmlFor="parking">Parking</Label>
                 <Select
-                  value={formData.parking}
+                  value={formData.parking || undefined}
                   onValueChange={(value) => handleFieldChange('parking', value)}
                 >
                   <SelectTrigger>
@@ -252,7 +252,7 @@ export function PropertyDetailsModal({ open, onOpenChange, dealName, onSave }: P
               <div className="space-y-2">
                 <Label htmlFor="hasLift">Lift Access</Label>
                 <Select
-                  value={formData.hasLift}
+                  value={formData.hasLift || undefined}
                   onValueChange={(value) => handleFieldChange('hasLift', value)}
                 >
                   <SelectTrigger>
@@ -287,7 +287,7 @@ export function PropertyDetailsModal({ open, onOpenChange, dealName, onSave }: P
               <div className="space-y-2">
                 <Label htmlFor="commercialType">Type of Commercial</Label>
                 <Select
-                  value={formData.commercialType}
+                  value={formData.commercialType || undefined}
                   onValueChange={(value) => handleFieldChange('commercialType', value)}
                 >
                   <SelectTrigger>
@@ -446,7 +446,7 @@ export function PropertyDetailsModal({ open, onOpenChange, dealName, onSave }: P
                     <div className="space-y-2">
                       <Label htmlFor="propertyType">Property Classification</Label>
                       <Select
-                        value={formData.propertyType}
+                        value={formData.propertyType || undefined}
                         onValueChange={(value) => setFormData({...formData, propertyType: value})}
                       >
                         <SelectTrigger>
@@ -464,7 +464,7 @@ export function PropertyDetailsModal({ open, onOpenChange, dealName, onSave }: P
                     <div className="space-y-2">
                       <Label htmlFor="buildingType">Building Type</Label>
                       <Select
-                        value={formData.buildingType}
+                        value={formData.buildingType || undefined}
                         onValueChange={(value) => setFormData({...formData, buildingType: value})}
                       >
                         <SelectTrigger>
