@@ -120,7 +120,7 @@ export function PersonalDetailsEditModal({ open, onOpenChange, personalDetails }
 
             <div>
               <Label htmlFor="title">Title</Label>
-              <Select name="title" defaultValue={personalDetails?.title || ""}>
+              <Select name="title" defaultValue={personalDetails?.title || undefined}>
                 <SelectTrigger>
                   <SelectValue placeholder="Select title" />
                 </SelectTrigger>
@@ -155,7 +155,7 @@ export function PersonalDetailsEditModal({ open, onOpenChange, personalDetails }
 
             <div>
               <Label htmlFor="marital_status">Marital Status</Label>
-              <Select name="marital_status" defaultValue={personalDetails?.marital_status || ""}>
+              <Select name="marital_status" defaultValue={personalDetails?.marital_status || undefined}>
                 <SelectTrigger>
                   <SelectValue placeholder="Select status" />
                 </SelectTrigger>
