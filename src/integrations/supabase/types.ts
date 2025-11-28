@@ -439,6 +439,51 @@ export type Database = {
         }
         Relationships: []
       }
+      client_expenses: {
+        Row: {
+          childcare: number | null
+          council_tax: number | null
+          created_at: string
+          groceries: number | null
+          id: string
+          insurance: number | null
+          mortgage_rent: number | null
+          other: number | null
+          transport: number | null
+          updated_at: string
+          user_id: string
+          utilities: number | null
+        }
+        Insert: {
+          childcare?: number | null
+          council_tax?: number | null
+          created_at?: string
+          groceries?: number | null
+          id?: string
+          insurance?: number | null
+          mortgage_rent?: number | null
+          other?: number | null
+          transport?: number | null
+          updated_at?: string
+          user_id: string
+          utilities?: number | null
+        }
+        Update: {
+          childcare?: number | null
+          council_tax?: number | null
+          created_at?: string
+          groceries?: number | null
+          id?: string
+          insurance?: number | null
+          mortgage_rent?: number | null
+          other?: number | null
+          transport?: number | null
+          updated_at?: string
+          user_id?: string
+          utilities?: number | null
+        }
+        Relationships: []
+      }
       client_financial_assets: {
         Row: {
           bank_accounts: number | null
