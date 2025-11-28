@@ -111,6 +111,21 @@ export function ALIEView() {
     enabled: !!user,
   });
 
+  const { data: expenses, isLoading: loadingExpenses } = useQuery({
+    queryKey: ['client-expenses', user?.id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('client_expenses')
+        .select('*')
+        .eq('user_id', user?.id)
+        .maybeSingle();
+      
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!user,
+  });
+
   const formatCurrency = (amount: number | null | undefined) => {
     if (!amount) return '£0';
     return new Intl.NumberFormat('en-GB', {
@@ -121,7 +136,7 @@ export function ALIEView() {
     }).format(amount);
   };
 
-  const isLoading = loadingAssets || loadingIncome || loadingMortgages || loadingLoans || loadingCards || loadingLeases || loadingOtherDebts;
+  const isLoading = loadingAssets || loadingIncome || loadingMortgages || loadingLoans || loadingCards || loadingLeases || loadingOtherDebts || loadingExpenses;
 
   if (isLoading) {
     return (
@@ -148,7 +163,15 @@ export function ALIEView() {
     (personalLoans?.reduce((sum, l) => sum + (l.monthly_payment || 0), 0) || 0) +
     (creditCards?.reduce((sum, c) => sum + (c.monthly_payment || 0), 0) || 0) +
     (carLeases?.reduce((sum, l) => sum + (l.monthly_payment || 0), 0) || 0) +
-    (otherDebts?.reduce((sum, d) => sum + (d.monthly_payment || 0), 0) || 0);
+    (otherDebts?.reduce((sum, d) => sum + (d.monthly_payment || 0), 0) || 0) +
+    (expenses?.mortgage_rent || 0) +
+    (expenses?.utilities || 0) +
+    (expenses?.council_tax || 0) +
+    (expenses?.groceries || 0) +
+    (expenses?.transport || 0) +
+    (expenses?.childcare || 0) +
+    (expenses?.insurance || 0) +
+    (expenses?.other || 0);
 
   return (
     <>

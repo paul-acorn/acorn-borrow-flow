@@ -196,6 +196,47 @@ export function ALIEEditModal({ open, onOpenChange }: ALIEEditModalProps) {
     }
   };
 
+  const handleExpensesSubmit = async () => {
+    setLoading(true);
+    try {
+      const expenseData = {
+        mortgage_rent: parseFloat(expenses.mortgage) || 0,
+        utilities: parseFloat(expenses.utilities) || 0,
+        council_tax: parseFloat(expenses.councilTax) || 0,
+        groceries: parseFloat(expenses.groceries) || 0,
+        transport: parseFloat(expenses.transport) || 0,
+        childcare: parseFloat(expenses.childcare) || 0,
+        insurance: parseFloat(expenses.insurance) || 0,
+        other: parseFloat(expenses.other) || 0,
+      };
+
+      const { data: existing } = await supabase
+        .from('client_expenses')
+        .select('id')
+        .eq('user_id', user?.id)
+        .maybeSingle();
+
+      if (existing) {
+        await supabase
+          .from('client_expenses')
+          .update(expenseData)
+          .eq('user_id', user?.id);
+      } else {
+        await supabase
+          .from('client_expenses')
+          .insert({ ...expenseData, user_id: user?.id });
+      }
+
+      toast.success("Expenses updated successfully");
+      queryClient.invalidateQueries({ queryKey: ['client-expenses'] });
+    } catch (error) {
+      toast.error("Failed to update expenses");
+      console.error(error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
@@ -712,8 +753,8 @@ export function ALIEEditModal({ open, onOpenChange }: ALIEEditModalProps) {
                 <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
                   Cancel
                 </Button>
-                <Button type="button" onClick={() => toast.success("Expenses noted")}>
-                  Save Expenses
+                <Button type="button" onClick={handleExpensesSubmit} disabled={loading}>
+                  {loading ? "Saving..." : "Save Expenses"}
                 </Button>
               </div>
             </div>
