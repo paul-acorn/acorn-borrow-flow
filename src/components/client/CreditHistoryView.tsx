@@ -38,11 +38,25 @@ export function CreditHistoryView() {
 
   if (!creditHistory) {
     return (
-      <Card>
-        <CardContent className="py-8">
-          <p className="text-center text-muted-foreground">No credit history information recorded yet.</p>
-        </CardContent>
-      </Card>
+      <>
+        <Card>
+          <CardContent className="py-8 space-y-4">
+            <p className="text-center text-muted-foreground">No credit history information recorded yet.</p>
+            <div className="flex justify-center">
+              <Button size="sm" onClick={() => setEditModalOpen(true)}>
+                <Edit className="h-4 w-4 mr-2" />
+                Add Credit History
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+        
+        <CreditHistoryEditModal
+          open={editModalOpen}
+          onOpenChange={setEditModalOpen}
+          creditHistory={null}
+        />
+      </>
     );
   }
 
