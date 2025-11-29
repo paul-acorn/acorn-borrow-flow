@@ -1,5 +1,11 @@
 project_id = "hooffptvzsvwukvstjai"
 
+[functions.encrypt-data]
+verify_jwt = true
+
+[functions.manage-sensitive-data]
+verify_jwt = true
+
 [functions.google-drive]
 verify_jwt = true
 
