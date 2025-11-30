@@ -110,30 +110,63 @@ export function UserManagement() {
         dealCode = data;
       }
 
-      // Create invitation for the user
+      // Create invitation for the user (secure_token is auto-generated)
       const expiresAt = new Date();
       expiresAt.setDate(expiresAt.getDate() + 7); // 7 days expiry
 
+      // Generate invitation code for backwards compatibility
       const { data: inviteCode, error: inviteCodeError } = await supabase
         .rpc('generate_invitation_code');
 
       if (inviteCodeError) throw inviteCodeError;
 
-      const { error: inviteError } = await supabase
+      const { data: invitation, error: inviteError } = await supabase
         .from('team_invitations')
         .insert({
           created_by: user.id,
           invitation_code: inviteCode,
+          client_email: newUserEmail,
+          client_first_name: newUserFirstName,
+          client_last_name: newUserLastName,
+          deal_code: dealCode,
           expires_at: expiresAt.toISOString(),
           role: newUserRole as 'client' | 'broker' | 'admin'
-        });
+        })
+        .select('secure_token')
+        .single();
 
       if (inviteError) throw inviteError;
+
+      // Get broker name for the email
+      const { data: brokerProfile } = await supabase
+        .from('profiles')
+        .select('first_name, last_name')
+        .eq('id', user.id)
+        .single();
+
+      const brokerName = brokerProfile 
+        ? `${brokerProfile.first_name} ${brokerProfile.last_name}`
+        : 'Your broker';
+
+      // Send invitation email with secure link
+      const { error: emailError } = await supabase.functions.invoke('send-client-invitation', {
+        body: {
+          email: newUserEmail,
+          firstName: newUserFirstName,
+          lastName: newUserLastName,
+          secureToken: invitation.secure_token,
+          brokerName
+        }
+      });
+
+      if (emailError) {
+        console.error('Error sending invitation email:', emailError);
+      }
 
       const roleLabel = newUserRole.replace('_', ' ');
       toast({
         title: `${roleLabel.charAt(0).toUpperCase() + roleLabel.slice(1)} Invitation Created`,
-        description: `${dealCode ? `Deal code: ${dealCode}. ` : ''}Invitation code: ${inviteCode}`,
+        description: `Invitation email sent to ${newUserEmail}${dealCode ? `. Deal code: ${dealCode}` : ''}`,
       });
 
       // Reset form

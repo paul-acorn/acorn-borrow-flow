@@ -19,9 +19,16 @@ const nameSchema = z.string().min(1, "This field is required");
 
 interface AuthFormProps {
   onBack: () => void;
+  invitationToken?: string;
+  invitationData?: {
+    firstName: string;
+    lastName: string;
+    email: string;
+    dealCode: string | null;
+  } | null;
 }
 
-export function AuthForm({ onBack }: AuthFormProps) {
+export function AuthForm({ onBack, invitationToken, invitationData }: AuthFormProps) {
   const { signIn, signUp, signInWithBiometric } = useAuth();
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -31,10 +38,10 @@ export function AuthForm({ onBack }: AuthFormProps) {
   
   const [loginEmail, setLoginEmail] = useState("");
   const [loginPassword, setLoginPassword] = useState("");
-  const [registerEmail, setRegisterEmail] = useState("");
+  const [registerEmail, setRegisterEmail] = useState(invitationData?.email || "");
   const [registerPassword, setRegisterPassword] = useState("");
-  const [firstName, setFirstName] = useState("");
-  const [lastName, setLastName] = useState("");
+  const [firstName, setFirstName] = useState(invitationData?.firstName || "");
+  const [lastName, setLastName] = useState(invitationData?.lastName || "");
   const [invitationCode, setInvitationCode] = useState("");
   const [isCheckingInvitation, setIsCheckingInvitation] = useState(false);
   const [show2FAVerification, setShow2FAVerification] = useState(false);
@@ -167,7 +174,7 @@ export function AuthForm({ onBack }: AuthFormProps) {
         registerPassword, 
         firstName, 
         lastName,
-        invitationCode || undefined
+        invitationToken || undefined
       );
       
       if (error) {
@@ -404,21 +411,23 @@ export function AuthForm({ onBack }: AuthFormProps) {
                     />
                   </div>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="invitationCode">Invitation Code (Optional)</Label>
-                    <Input 
-                      id="invitationCode"
-                      type="text"
-                      placeholder="Enter code if you have one"
-                      value={invitationCode}
-                      onChange={(e) => handleInvitationCodeChange(e.target.value)}
-                      className="h-11"
-                      disabled={isCheckingInvitation}
-                    />
-                    {isCheckingInvitation && (
-                      <p className="text-xs text-muted-foreground">Checking invitation...</p>
-                    )}
-                  </div>
+                  {!invitationToken && (
+                    <div className="space-y-2">
+                      <Label htmlFor="invitationCode">Invitation Code (Optional)</Label>
+                      <Input 
+                        id="invitationCode"
+                        type="text"
+                        placeholder="Enter code if you have one"
+                        value={invitationCode}
+                        onChange={(e) => handleInvitationCodeChange(e.target.value)}
+                        className="h-11"
+                        disabled={isCheckingInvitation}
+                      />
+                      {isCheckingInvitation && (
+                        <p className="text-xs text-muted-foreground">Checking invitation...</p>
+                      )}
+                    </div>
+                  )}
 
                   <div className="space-y-2">
                     <Label htmlFor="regPassword">Password</Label>

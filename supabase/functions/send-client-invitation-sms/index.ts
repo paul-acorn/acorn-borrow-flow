@@ -14,7 +14,7 @@ interface SendInvitationSmsRequest {
   phoneNumber: string;
   firstName: string;
   lastName: string;
-  invitationUrl: string;
+  secureToken: string;
   brokerName: string;
   channel: 'sms' | 'whatsapp';
 }
@@ -33,15 +33,18 @@ Deno.serve(async (req) => {
       phoneNumber, 
       firstName, 
       lastName, 
-      invitationUrl, 
+      secureToken, 
       brokerName,
       channel 
     }: SendInvitationSmsRequest = await req.json();
 
     console.log(`Sending ${channel} invitation to ${firstName} ${lastName} at ${phoneNumber}`);
 
+    // Build secure invitation URL
+    const invitationUrl = `${Deno.env.get('SUPABASE_URL')?.replace('.supabase.co', '')}.lovable.app/invite/${secureToken}`;
+
     // Format the message
-    const message = `Hi ${firstName}! ${brokerName} from Acorn Finance has invited you to start your loan application. Click here to get started: ${invitationUrl}`;
+    const message = `Hi ${firstName}! ${brokerName} from Acorn Finance has invited you to create your account. Click here to get started: ${invitationUrl}`;
 
     // Send via Twilio
     const fromNumber = channel === 'whatsapp' 
