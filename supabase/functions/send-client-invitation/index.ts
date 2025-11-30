@@ -13,8 +13,7 @@ interface InvitationEmailRequest {
   email: string;
   firstName: string;
   lastName: string;
-  invitationCode: string;
-  invitationUrl: string;
+  secureToken: string;
   brokerName: string;
 }
 
@@ -28,10 +27,12 @@ const handler = async (req: Request): Promise<Response> => {
       email,
       firstName,
       lastName,
-      invitationCode,
-      invitationUrl,
+      secureToken,
       brokerName,
     }: InvitationEmailRequest = await req.json();
+
+    // Build secure invitation URL
+    const invitationUrl = `${Deno.env.get('SUPABASE_URL')?.replace('.supabase.co', '')}.lovable.app/invite/${secureToken}`;
 
     const emailResponse = await resend.emails.send({
       from: "Acorn Finance <onboarding@resend.dev>",
@@ -43,20 +44,20 @@ const handler = async (req: Request): Promise<Response> => {
           <p>Hi ${firstName},</p>
           <p>${brokerName} has invited you to join Acorn Finance to manage your financial application.</p>
           
-          <div style="background-color: #f7fafc; padding: 20px; border-radius: 8px; margin: 20px 0;">
-            <p style="margin: 0 0 10px 0;"><strong>Your Invitation Code:</strong></p>
-            <p style="font-size: 24px; font-family: monospace; color: #2d3748; margin: 0;">${invitationCode}</p>
-          </div>
-          
-          <p>Click the button below to get started:</p>
+          <p style="margin: 30px 0;">Click the button below to create your account and get started:</p>
           
           <a href="${invitationUrl}" 
-             style="display: inline-block; background-color: #3182ce; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; margin: 20px 0;">
-            Complete Registration
+             style="display: inline-block; background-color: #3182ce; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; margin: 20px 0; font-weight: bold;">
+            Create Your Account
           </a>
           
-          <p style="color: #718096; font-size: 14px;">
-            This invitation will expire in 7 days. If you have any questions, please contact ${brokerName}.
+          <p style="color: #718096; font-size: 14px; margin-top: 30px;">
+            This secure invitation link will expire in 7 days. If you have any questions, please contact ${brokerName}.
+          </p>
+          
+          <p style="color: #718096; font-size: 12px; margin-top: 20px;">
+            If the button doesn't work, copy and paste this link into your browser:<br/>
+            <a href="${invitationUrl}" style="color: #3182ce; word-break: break-all;">${invitationUrl}</a>
           </p>
           
           <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 30px 0;" />

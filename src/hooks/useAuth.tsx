@@ -93,22 +93,22 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     password: string, 
     firstName: string, 
     lastName: string,
-    invitationCode?: string
+    invitationToken?: string
   ) => {
     const redirectUrl = `${window.location.origin}/`;
     
-    // If invitation code provided, validate it first
-    if (invitationCode) {
+    // If invitation token provided, validate it first
+    if (invitationToken) {
       const { data: invitation, error: inviteError } = await supabase
         .from('team_invitations')
         .select('*')
-        .eq('invitation_code', invitationCode)
+        .eq('secure_token', invitationToken)
         .is('used_at', null)
         .gt('expires_at', new Date().toISOString())
         .maybeSingle();
 
       if (inviteError || !invitation) {
-        return { error: { message: 'Invalid or expired invitation code' } };
+        return { error: { message: 'Invalid or expired invitation link' } };
       }
     }
 
@@ -120,21 +120,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         data: {
           first_name: firstName,
           last_name: lastName,
-          invitation_code: invitationCode
+          invitation_token: invitationToken
         }
       }
     });
 
-    // If signup successful and invitation code was used, mark it as used
-    if (!error && data.user && invitationCode) {
-      await supabase
-        .from('team_invitations')
-        .update({ 
-          used_at: new Date().toISOString(), 
-          used_by_user_id: data.user.id 
-        })
-        .eq('invitation_code', invitationCode);
-    }
+    // Note: Invitation token marking as used is now handled in the handle_new_user trigger
+    // No need to manually update here as the database trigger handles it
 
     return { error };
   };

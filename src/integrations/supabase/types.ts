@@ -1333,6 +1333,7 @@ export type Database = {
           invitation_code: string
           last_email_sent_at: string | null
           role: Database["public"]["Enums"]["app_role"]
+          secure_token: string
           used_at: string | null
           used_by_user_id: string | null
         }
@@ -1348,6 +1349,7 @@ export type Database = {
           invitation_code: string
           last_email_sent_at?: string | null
           role?: Database["public"]["Enums"]["app_role"]
+          secure_token?: string
           used_at?: string | null
           used_by_user_id?: string | null
         }
@@ -1363,6 +1365,7 @@ export type Database = {
           invitation_code?: string
           last_email_sent_at?: string | null
           role?: Database["public"]["Enums"]["app_role"]
+          secure_token?: string
           used_at?: string | null
           used_by_user_id?: string | null
         }
