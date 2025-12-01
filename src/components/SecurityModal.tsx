@@ -23,6 +23,12 @@ export const SecurityModal = ({ open, onOpenChange }: SecurityModalProps) => {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
+    const handleOpenModal = () => onOpenChange(true);
+    window.addEventListener("open-security-modal", handleOpenModal);
+    return () => window.removeEventListener("open-security-modal", handleOpenModal);
+  }, [onOpenChange]);
+
+  useEffect(() => {
     if (user && open) {
       fetchTwoFactorStatus();
     }

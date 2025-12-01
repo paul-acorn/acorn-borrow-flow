@@ -22,10 +22,14 @@
 ### 2. **Enhanced User Profile Protection**
 - **Issue**: No explicit deny policy for unauthenticated users on `profiles` table
 - **Risk**: If RLS is bypassed or misconfigured, email addresses, phone numbers, and names could be exposed
-- **Fix Required**: Add explicit policy denying anonymous access
-- **Status**: ❌ NOT FIXED
+- **Fix Implemented**: 
+  - ✅ Added explicit DENY policy for anonymous users on profiles table
+  - ✅ Added 2FA setup reminder notifications for users without 2FA enabled
+- **Status**: ✅ FIXED
 
-### 3. **Two-Factor Authentication Secret Protection**
+---
+
+## 🟡 HIGH PRIORITY - Recommended Before Launch
 - **Issue**: TOTP secrets and SMS phone numbers stored in plain text in `two_factor_auth` table
 - **Risk**: If policies are bypassed, attackers could steal secrets to bypass 2FA
 - **Implementation**: 

@@ -12,6 +12,7 @@ import { DocumentUploadModal } from "@/components/DocumentUploadModal";
 import { MessagingModal } from "@/components/MessagingModal";
 import { NotificationCenter, type Notification as DealNotification } from "@/components/NotificationCenter";
 import { getNotificationPreferences } from "./NotificationPreferences";
+import { TwoFactorReminder } from "@/components/TwoFactorReminder";
 import { 
   User, 
   MapPin, 
@@ -334,9 +335,11 @@ export function Dashboard({ hideBackgroundDetails = false }: { hideBackgroundDet
   };
 
   return (
-    <div className="min-h-screen bg-gradient-surface">
-      {/* Header */}
-      <header className="bg-white border-b border-border shadow-sm">
+    <>
+      <TwoFactorReminder />
+      <div className="min-h-screen bg-gradient-surface">
+        {/* Header */}
+        <header className="bg-white border-b border-border shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <h1 className="text-xl font-semibold text-navy">
@@ -657,6 +660,7 @@ export function Dashboard({ hideBackgroundDetails = false }: { hideBackgroundDet
           />
         </>
       )}
-    </div>
+      </div>
+    </>
   );
 }
