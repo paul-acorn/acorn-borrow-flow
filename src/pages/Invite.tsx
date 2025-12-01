@@ -25,39 +25,24 @@ const Invite = () => {
       }
 
       try {
-        // Fetch invitation details using the secure token
+        // Use the secure validation function to prevent enumeration attacks
         const { data, error: fetchError } = await supabase
-          .from("team_invitations")
-          .select("client_first_name, client_last_name, client_email, deal_code, expires_at, used_at")
-          .eq("secure_token", token)
-          .single();
+          .rpc("validate_invitation_token", { _token: token });
 
-        if (fetchError || !data) {
+        if (fetchError || !data || data.length === 0) {
           setError("Invalid or expired invitation link");
           setLoading(false);
           return;
         }
 
-        // Check if invitation has been used
-        if (data.used_at) {
-          setError("This invitation has already been used");
-          setLoading(false);
-          return;
-        }
-
-        // Check if invitation has expired
-        if (new Date(data.expires_at) < new Date()) {
-          setError("This invitation has expired");
-          setLoading(false);
-          return;
-        }
+        const invitation = data[0];
 
         // Set invitation data for pre-filling the form
         setInvitationData({
-          firstName: data.client_first_name || "",
-          lastName: data.client_last_name || "",
-          email: data.client_email || "",
-          dealCode: data.deal_code,
+          firstName: invitation.client_first_name || "",
+          lastName: invitation.client_last_name || "",
+          email: invitation.client_email || "",
+          dealCode: invitation.deal_code,
         });
         setLoading(false);
       } catch (err) {
