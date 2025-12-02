@@ -221,15 +221,15 @@ export const CallSchedulingModal = ({ isOpen, onClose, dealId, clientId, onSched
           <div className="space-y-2">
             <Label htmlFor="deal_id">Deal (Optional)</Label>
             <Select
-              value={formData.deal_id}
-              onValueChange={(value) => setFormData({ ...formData, deal_id: value })}
+              value={formData.deal_id || "none"}
+              onValueChange={(value) => setFormData({ ...formData, deal_id: value === "none" ? "" : value })}
               disabled={!!dealId}
             >
               <SelectTrigger>
                 <SelectValue placeholder="Select deal (optional)" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">No deal</SelectItem>
+                <SelectItem value="none">No deal</SelectItem>
                 {deals.map((deal) => (
                   <SelectItem key={deal.id} value={deal.id}>
                     {deal.name}
