@@ -56,3 +56,6 @@ verify_jwt = false
 
 [functions.send-callback-reminders]
 verify_jwt = false
+
+[functions.validate-invitation]
+verify_jwt = false

@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
 import { Loader2 } from "lucide-react";
 import { AuthForm } from "@/components/AuthForm";
 
@@ -25,17 +24,33 @@ const Invite = () => {
       }
 
       try {
-        // Use the secure validation function to prevent enumeration attacks
-        const { data, error: fetchError } = await supabase
-          .rpc("validate_invitation_token", { _token: token });
+        // Use the rate-limited edge function for secure validation
+        const response = await fetch(
+          "https://hooffptvzsvwukvstjai.supabase.co/functions/v1/validate-invitation",
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ token }),
+          }
+        );
 
-        if (fetchError || !data || data.length === 0) {
+        const result = await response.json();
+
+        if (response.status === 429) {
+          setError(`Too many attempts. Please try again in ${result.resetIn} seconds.`);
+          setLoading(false);
+          return;
+        }
+
+        if (!response.ok || !result.valid) {
           setError("Invalid or expired invitation link");
           setLoading(false);
           return;
         }
 
-        const invitation = data[0];
+        const invitation = result.invitation;
 
         // Set invitation data for pre-filling the form
         setInvitationData({
