@@ -1,4 +1,4 @@
-// Force Deploy Update: v2 (Shared Folder Fix)
+// Force Deploy Update: v3 (Shared Folder Fix)
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
 const corsHeaders = {
