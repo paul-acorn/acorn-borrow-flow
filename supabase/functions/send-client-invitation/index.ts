@@ -31,8 +31,10 @@ const handler = async (req: Request): Promise<Response> => {
       brokerName,
     }: InvitationEmailRequest = await req.json();
 
-    // Build secure invitation URL
-    const invitationUrl = `${Deno.env.get('SUPABASE_URL')?.replace('.supabase.co', '')}.lovable.app/invite/${secureToken}`;
+    // Build secure invitation URL - use SITE_URL if set, otherwise construct from SUPABASE_URL
+    const siteUrl = Deno.env.get('SITE_URL') || 
+      `https://${Deno.env.get('SUPABASE_URL')?.replace('https://', '').replace('.supabase.co', '')}.lovable.app`;
+    const invitationUrl = `${siteUrl}/invite/${secureToken}`;
 
     const emailResponse = await resend.emails.send({
       from: "Acorn Finance <onboarding@resend.dev>",
