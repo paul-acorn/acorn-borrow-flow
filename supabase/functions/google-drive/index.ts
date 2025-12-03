@@ -138,7 +138,7 @@ async function createFolder(accessToken: string, folderName: string, parentFolde
   if (!response.ok) {
     const error = await response.text();
     console.error('Failed to create folder:', error);
-    throw new Error('Failed to create folder');
+    throw new Error('Failed to create folder (PAUL_TEST):${errorText}');
   }
 
   return await response.json();
