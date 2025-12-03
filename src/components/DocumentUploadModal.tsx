@@ -7,6 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { Upload, FileText, CheckCircle, Clock, AlertTriangle } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client"; // <--- Added Import
 
 interface DocumentUploadModalProps {
   open: boolean;
@@ -65,18 +66,59 @@ export function DocumentUploadModal({ open, onOpenChange, dealName, onSave }: Do
   const [uploadedDocs, setUploadedDocs] = useState<{[key: string]: string}>({});
   const { toast } = useToast();
 
-  const handleUpload = (categoryId: string, docType: string) => {
-    // Simulate document upload
-    setUploadedDocs(prev => ({
-      ...prev,
-      [`${categoryId}-${docType}`]: 'uploaded'
-    }));
-    
-    toast({
-      title: "Document Uploaded",
-      description: `${docType} has been uploaded successfully.`,
-    });
+  // --- UPDATED UPLOAD LOGIC ---
+  const handleUpload = async (categoryId: string, docType: string) => {
+    try {
+      // 1. Notify user that upload is starting
+      toast({
+        title: "Uploading...",
+        description: `Connecting to secure storage...`,
+      });
+
+      // 2. Prepare the file data
+      // NOTE: Since we don't have a file picker input yet, we are sending a test text file.
+      // In the future, you will replace 'dummyContent' with the real file from an <input type="file" />
+      const dummyContent = `This is a test document for ${docType} in deal: ${dealName}.\nUploaded securely via Acorn Finance.`;
+      const base64Content = btoa(dummyContent); // Convert to base64 for safe transport
+
+      // 3. Call the Edge Function (Secure Backend)
+      const { data, error } = await supabase.functions.invoke('google-drive', {
+        body: {
+          action: 'upload',
+          // We create a folder structure: Deal Name -> Category -> File
+          fileName: `${dealName}/${categoryId}/${docType}.txt`, 
+          fileContent: base64Content,
+          mimeType: 'text/plain'
+        }
+      });
+
+      if (error) {
+        throw error;
+      }
+
+      console.log('Upload successful:', data);
+
+      // 4. Update UI on Success
+      setUploadedDocs(prev => ({
+        ...prev,
+        [`${categoryId}-${docType}`]: 'uploaded'
+      }));
+      
+      toast({
+        title: "Success",
+        description: `${docType} has been saved securely to Google Drive.`,
+      });
+
+    } catch (error) {
+      console.error('Upload failed:', error);
+      toast({
+        title: "Upload Failed",
+        description: "Could not save to Google Drive. Please check your connection.",
+        variant: "destructive"
+      });
+    }
   };
+  // --- END UPDATED LOGIC ---
 
   const handleSave = () => {
     onSave({ uploadedDocs });
@@ -186,7 +228,7 @@ export function DocumentUploadModal({ open, onOpenChange, dealName, onSave }: Do
                               disabled={status === 'uploaded'}
                             >
                               <Upload className="w-4 h-4 mr-2" />
-                              {status === 'uploaded' ? 'Uploaded' : 'Upload'}
+                              {status === 'uploaded' ? 'Uploaded' : 'Test Upload'}
                             </Button>
                           </div>
                         );
@@ -229,7 +271,7 @@ export function DocumentUploadModal({ open, onOpenChange, dealName, onSave }: Do
                               <div className="text-center">
                                 <Upload className="w-6 h-6 mx-auto mb-2 text-muted-foreground" />
                                 <span className="text-sm">
-                                  {status === 'uploaded' ? 'Document Uploaded' : `Upload ${docType}`}
+                                  {status === 'uploaded' ? 'Document Uploaded' : `Test Upload ${docType}`}
                                 </span>
                               </div>
                             </Button>
