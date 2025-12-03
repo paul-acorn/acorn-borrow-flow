@@ -120,6 +120,7 @@ async function deleteFile(accessToken: string, fileId: string) {
   return { success: true };
 }
 
+// 👇 REPLACE THE createFolder FUNCTION WITH THIS 👇
 async function createFolder(accessToken: string, folderName: string, parentFolderId?: string) {
   const metadata = {
     name: folderName,
@@ -127,7 +128,10 @@ async function createFolder(accessToken: string, folderName: string, parentFolde
     ...(parentFolderId && { parents: [parentFolderId] }),
   };
 
-  const response = await fetch('https://www.googleapis.com/drive/v3/files', {
+  console.log(`Creating folder '${folderName}' in parent '${parentFolderId || 'root'}'. Shared Drive Support: ON`);
+
+  // 🔴 CRITICAL FIX: ?supportsAllDrives=true
+  const response = await fetch('https://www.googleapis.com/drive/v3/files?supportsAllDrives=true', {
     method: 'POST',
     headers: {
       'Authorization': `Bearer ${accessToken}`,
@@ -137,9 +141,10 @@ async function createFolder(accessToken: string, folderName: string, parentFolde
   });
 
   if (!response.ok) {
-    const error = await response.text();
-    console.error('Failed to create folder:', error);
-    throw new Error('Failed to create folder (PAUL_TEST):${errorText}');
+    // 🔴 ERROR LOGGING FIX
+    const errorText = await response.text();
+    console.error('Google API Error Details:', errorText);
+    throw new Error(`Failed to create folder (DETAILS): ${errorText}`);
   }
 
   return await response.json();
