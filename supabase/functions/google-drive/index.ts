@@ -10,10 +10,14 @@ const GOOGLE_DRIVE_CLIENT_SECRET = Deno.env.get('GOOGLE_DRIVE_CLIENT_SECRET');
 const GOOGLE_DRIVE_REFRESH_TOKEN = Deno.env.get('GOOGLE_DRIVE_REFRESH_TOKEN');
 
 async function getAccessToken(): Promise<string> {
-  const tokenResponse = await fetch('https://oauth2.googleapis.com/token', {
+  const tokenResponse = await fetch('https://oauth2.googleapis.com/token?supportsAllDrives=true', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
+    headers: {
+      'Authorization': `Bearer ${accessToken}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(metadata),
+  });
       client_id: GOOGLE_DRIVE_CLIENT_ID,
       client_secret: GOOGLE_DRIVE_CLIENT_SECRET,
       refresh_token: GOOGLE_DRIVE_REFRESH_TOKEN,
@@ -23,10 +27,11 @@ async function getAccessToken(): Promise<string> {
 
   if (!tokenResponse.ok) {
     const error = await tokenResponse.text();
-    console.error('Failed to get access token:', error);
-    throw new Error('Failed to get access token');
+    console.error('Google API Error:', errorText);
+    throw new Error(`Failed to create folder: ${errorText}`);
   }
-
+return await response.json();
+}
   const tokenData = await tokenResponse.json();
   return tokenData.access_token;
 }
