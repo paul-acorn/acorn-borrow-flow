@@ -40,8 +40,10 @@ Deno.serve(async (req) => {
 
     console.log(`Sending ${channel} invitation to ${firstName} ${lastName} at ${phoneNumber}`);
 
-    // Build secure invitation URL
-    const invitationUrl = `${Deno.env.get('SUPABASE_URL')?.replace('.supabase.co', '')}.lovable.app/invite/${secureToken}`;
+    // Build secure invitation URL - use SITE_URL if set, otherwise construct from SUPABASE_URL
+    const siteUrl = Deno.env.get('SITE_URL') || 
+      `https://${Deno.env.get('SUPABASE_URL')?.replace('https://', '').replace('.supabase.co', '')}.lovable.app`;
+    const invitationUrl = `${siteUrl}/invite/${secureToken}`;
 
     // Format the message
     const message = `Hi ${firstName}! ${brokerName} from Acorn Finance has invited you to create your account. Click here to get started: ${invitationUrl}`;

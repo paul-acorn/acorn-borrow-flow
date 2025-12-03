@@ -23,6 +23,7 @@ export function SystemSettings() {
   const [testingConnection, setTestingConnection] = useState(false);
   const [testingTwilio, setTestingTwilio] = useState(false);
   const [testingGmail, setTestingGmail] = useState(false);
+  const [testingHubSpot, setTestingHubSpot] = useState(false);
   const [clients, setClients] = useState<ClientProfile[]>([]);
   const [creatingFolders, setCreatingFolders] = useState<Set<string>>(new Set());
   const { toast } = useToast();
@@ -159,6 +160,32 @@ export function SystemSettings() {
     }
   };
 
+  const testHubSpot = async () => {
+    setTestingHubSpot(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('hubspot', {
+        body: { action: 'listDeals', limit: 1 }
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: `HubSpot connected! Found ${data.total || 0} deals.`,
+      });
+      console.log('HubSpot test result:', data);
+    } catch (error: any) {
+      console.error('Error testing HubSpot:', error);
+      toast({
+        title: "HubSpot Connection Failed",
+        description: error.message || "Unable to connect to HubSpot. Please check your API key.",
+        variant: "destructive",
+      });
+    } finally {
+      setTestingHubSpot(false);
+    }
+  };
+
   const createClientFolder = async (client: ClientProfile) => {
     if (!googleDriveFolderId) {
       toast({
@@ -182,7 +209,8 @@ export function SystemSettings() {
 
       if (error) throw error;
 
-      const folderId = data.folderId;
+      // Google Drive API returns { id, name, ... }
+      const folderId = data.id;
 
       // Update profile with folder ID
       const { error: updateError } = await supabase
@@ -229,7 +257,7 @@ export function SystemSettings() {
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <div className="space-y-2">
             <h4 className="font-medium text-sm">Google Drive</h4>
             <Button onClick={testConnection} disabled={testingConnection} variant="outline" className="w-full gap-2">
@@ -249,6 +277,13 @@ export function SystemSettings() {
             <Button onClick={testGmail} disabled={testingGmail} variant="outline" className="w-full gap-2">
               <TestTube2 className="w-4 h-4" />
               {testingGmail ? "Testing..." : "Test Gmail"}
+            </Button>
+          </div>
+          <div className="space-y-2">
+            <h4 className="font-medium text-sm">HubSpot CRM</h4>
+            <Button onClick={testHubSpot} disabled={testingHubSpot} variant="outline" className="w-full gap-2">
+              <TestTube2 className="w-4 h-4" />
+              {testingHubSpot ? "Testing..." : "Test HubSpot"}
             </Button>
           </div>
         </div>
