@@ -1,4 +1,4 @@
-// Force Deploy Update: v3 (Shared Folder Fix)
+// Force Deploy Update: v4 (Shared Folder Fix with Better Logging)
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
 const corsHeaders = {
@@ -11,7 +11,40 @@ const GOOGLE_DRIVE_CLIENT_SECRET = Deno.env.get('GOOGLE_DRIVE_CLIENT_SECRET');
 const GOOGLE_DRIVE_REFRESH_TOKEN = Deno.env.get('GOOGLE_DRIVE_REFRESH_TOKEN');
 
 async function getAccessToken(): Promise<string> {
-  const tokenResponse = await fetch('https://oauth2.googleapis.com/token?supportsAllDrives=true', {
+  const tokenResponse = await fetch('https://oauth2.googleapis.com/token', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/x-www-form-urlencoded',
+    },
+    body: new URLSearchParams({
+      client_id: GOOGLE_DRIVE_CLIENT_ID!,
+      client_secret: GOOGLE_DRIVE_CLIENT_SECRET!,
+      refresh_token: GOOGLE_DRIVE_REFRESH_TOKEN!,
+      grant_type: 'refresh_token',
+    }),
+  });
+
+  if (!tokenResponse.ok) {
+    const error = await tokenResponse.text();
+    console.error('Failed to get access token:', error);
+    throw new Error(`Failed to get access token: ${error}`);
+  }
+
+  const tokenData = await tokenResponse.json();
+  return tokenData.access_token;
+}
+
+async function createFolder(accessToken: string, folderName: string, parentFolderId?: string) {
+  const metadata = {
+    name: folderName,
+    mimeType: 'application/vnd.google-apps.folder',
+    ...(parentFolderId && { parents: [parentFolderId] }),
+  };
+
+  console.log(`Creating folder '${folderName}' in parent '${parentFolderId || 'root'}'. Shared Drive Support: ON`);
+
+  // CRITICAL FIX: ?supportsAllDrives=true for Shared Drive access
+  const response = await fetch('https://www.googleapis.com/drive/v3/files?supportsAllDrives=true', {
     method: 'POST',
     headers: {
       'Authorization': `Bearer ${accessToken}`,
@@ -19,22 +52,14 @@ async function getAccessToken(): Promise<string> {
     },
     body: JSON.stringify(metadata),
   });
-      client_id: GOOGLE_DRIVE_CLIENT_ID,
-      client_secret: GOOGLE_DRIVE_CLIENT_SECRET,
-      refresh_token: GOOGLE_DRIVE_REFRESH_TOKEN,
-      grant_type: 'refresh_token',
-    }),
-  });
 
-  if (!tokenResponse.ok) {
-    const error = await tokenResponse.text();
-    console.error('Google API Error:', errorText);
+  if (!response.ok) {
+    const errorText = await response.text();
+    console.error('Google API Error Details:', errorText);
     throw new Error(`Failed to create folder: ${errorText}`);
   }
-return await response.json();
-}
-  const tokenData = await tokenResponse.json();
-  return tokenData.access_token;
+
+  return await response.json();
 }
 
 async function uploadFile(accessToken: string, fileName: string, fileContent: string, mimeType: string, folderId?: string) {
@@ -47,7 +72,7 @@ async function uploadFile(accessToken: string, fileName: string, fileContent: st
   form.append('metadata', new Blob([JSON.stringify(metadata)], { type: 'application/json' }));
   form.append('file', new Blob([fileContent], { type: mimeType }));
 
-  const response = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart', {
+  const response = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&supportsAllDrives=true', {
     method: 'POST',
     headers: {
       'Authorization': `Bearer ${accessToken}`,
@@ -58,7 +83,7 @@ async function uploadFile(accessToken: string, fileName: string, fileContent: st
   if (!response.ok) {
     const error = await response.text();
     console.error('Failed to upload file:', error);
-    throw new Error('Failed to upload file');
+    throw new Error(`Failed to upload file: ${error}`);
   }
 
   return await response.json();
@@ -69,6 +94,8 @@ async function listFiles(accessToken: string, folderId?: string, pageSize: numbe
   const params = new URLSearchParams({
     pageSize: pageSize.toString(),
     fields: 'files(id, name, mimeType, createdTime, modifiedTime, size)',
+    supportsAllDrives: 'true',
+    includeItemsFromAllDrives: 'true',
     ...(query && { q: query }),
   });
 
@@ -81,14 +108,14 @@ async function listFiles(accessToken: string, folderId?: string, pageSize: numbe
   if (!response.ok) {
     const error = await response.text();
     console.error('Failed to list files:', error);
-    throw new Error('Failed to list files');
+    throw new Error(`Failed to list files: ${error}`);
   }
 
   return await response.json();
 }
 
 async function downloadFile(accessToken: string, fileId: string) {
-  const response = await fetch(`https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`, {
+  const response = await fetch(`https://www.googleapis.com/drive/v3/files/${fileId}?alt=media&supportsAllDrives=true`, {
     headers: {
       'Authorization': `Bearer ${accessToken}`,
     },
@@ -97,14 +124,14 @@ async function downloadFile(accessToken: string, fileId: string) {
   if (!response.ok) {
     const error = await response.text();
     console.error('Failed to download file:', error);
-    throw new Error('Failed to download file');
+    throw new Error(`Failed to download file: ${error}`);
   }
 
   return await response.blob();
 }
 
 async function deleteFile(accessToken: string, fileId: string) {
-  const response = await fetch(`https://www.googleapis.com/drive/v3/files/${fileId}`, {
+  const response = await fetch(`https://www.googleapis.com/drive/v3/files/${fileId}?supportsAllDrives=true`, {
     method: 'DELETE',
     headers: {
       'Authorization': `Bearer ${accessToken}`,
@@ -114,40 +141,10 @@ async function deleteFile(accessToken: string, fileId: string) {
   if (!response.ok) {
     const error = await response.text();
     console.error('Failed to delete file:', error);
-    throw new Error('Failed to delete file');
+    throw new Error(`Failed to delete file: ${error}`);
   }
 
   return { success: true };
-}
-
-// 👇 REPLACE THE createFolder FUNCTION WITH THIS 👇
-async function createFolder(accessToken: string, folderName: string, parentFolderId?: string) {
-  const metadata = {
-    name: folderName,
-    mimeType: 'application/vnd.google-apps.folder',
-    ...(parentFolderId && { parents: [parentFolderId] }),
-  };
-
-  console.log(`Creating folder '${folderName}' in parent '${parentFolderId || 'root'}'. Shared Drive Support: ON`);
-
-  // 🔴 CRITICAL FIX: ?supportsAllDrives=true
-  const response = await fetch('https://www.googleapis.com/drive/v3/files?supportsAllDrives=true', {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${accessToken}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(metadata),
-  });
-
-  if (!response.ok) {
-    // 🔴 ERROR LOGGING FIX
-    const errorText = await response.text();
-    console.error('Google API Error Details:', errorText);
-    throw new Error(`Failed to create folder (DETAILS): ${errorText}`);
-  }
-
-  return await response.json();
 }
 
 async function uploadFileMultipart(accessToken: string, fileName: string, fileData: ArrayBuffer, mimeType: string, folderId?: string) {
@@ -170,7 +167,7 @@ async function uploadFileMultipart(accessToken: string, fileName: string, fileDa
     ...new TextEncoder().encode(closeDelimiter)
   ]);
 
-  const response = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart', {
+  const response = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&supportsAllDrives=true', {
     method: 'POST',
     headers: {
       'Authorization': `Bearer ${accessToken}`,
@@ -182,7 +179,7 @@ async function uploadFileMultipart(accessToken: string, fileName: string, fileDa
   if (!response.ok) {
     const error = await response.text();
     console.error('Failed to upload file:', error);
-    throw new Error('Failed to upload file');
+    throw new Error(`Failed to upload file: ${error}`);
   }
 
   return await response.json();
@@ -211,7 +208,6 @@ serve(async (req) => {
         );
         break;
       case 'uploadBinary':
-        // Handle binary file uploads (from File objects)
         result = await uploadFileMultipart(
           accessToken,
           params.fileName,
