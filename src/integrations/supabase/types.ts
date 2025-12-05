@@ -1172,6 +1172,13 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "fk_requirement_documents_uploaded_by"
+            columns: ["uploaded_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "requirement_documents_deal_id_fkey"
             columns: ["deal_id"]
             isOneToOne: false

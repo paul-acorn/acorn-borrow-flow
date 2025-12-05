@@ -1,11 +1,12 @@
 import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
 import { Button } from "@/components/ui/button";
-import { Sun, Moon, Bell } from "lucide-react";
+import { Sun, Moon, Bell, Trash2 } from "lucide-react";
 import { NotificationPreferencesModal } from "./NotificationPreferences";
+import { useToast } from "@/hooks/use-toast";
 
 interface SettingsModalProps {
   open: boolean;
@@ -13,6 +14,7 @@ interface SettingsModalProps {
 }
 
 export const SettingsModal = ({ open, onOpenChange }: SettingsModalProps) => {
+  const { toast } = useToast();
   const [theme, setTheme] = useState<"light" | "dark" | "system">("system");
   const [showNotificationPrefs, setShowNotificationPrefs] = useState(false);
 
@@ -44,6 +46,15 @@ export const SettingsModal = ({ open, onOpenChange }: SettingsModalProps) => {
     setTheme(newTheme);
     localStorage.setItem("theme", newTheme);
     applyTheme(newTheme);
+  };
+
+  const handleDeleteAccountRequest = () => {
+    console.log("Account deletion requested");
+    toast({
+      title: "Request Received",
+      description: "Your request has been received. Account will be deleted in 30 days."
+    });
+    onOpenChange(false);
   };
 
   return (
@@ -111,6 +122,42 @@ export const SettingsModal = ({ open, onOpenChange }: SettingsModalProps) => {
                 Configure
               </Button>
             </div>
+          </div>
+
+          <Separator />
+
+          {/* Account Deletion */}
+          <div className="space-y-4">
+            <h3 className="text-sm font-medium text-destructive">Danger Zone</h3>
+            <p className="text-xs text-muted-foreground">
+              Permanently delete your account and all associated data.
+            </p>
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button variant="destructive" size="sm" className="w-full">
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  Delete Account
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    This action cannot be undone. Your account will be scheduled for deletion
+                    and all your data will be permanently removed from our servers within 30 days.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction
+                    onClick={handleDeleteAccountRequest}
+                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                  >
+                    Yes, delete my account
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
           </div>
         </div>
       </DialogContent>

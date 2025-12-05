@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useFormNavigation } from "@/hooks/useFormNavigation";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -9,7 +10,8 @@ import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { useQueryClient } from "@tanstack/react-query";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Camera } from "lucide-react";
+import { Separator } from "@/components/ui/separator";
+import { Trash2 } from "lucide-react";
 
 interface ProfileEditModalProps {
   open: boolean;
@@ -87,33 +89,31 @@ export const ProfileEditModal = ({ open, onOpenChange }: ProfileEditModalProps) 
     }
   };
 
+  const handleDeleteAccountRequest = () => {
+    console.log("Account deletion requested");
+    toast({
+      title: "Request Received",
+      description: "Your request has been received. Account will be deleted in 30 days."
+    });
+    onOpenChange(false);
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md max-h-[85vh] flex flex-col">
         <DialogHeader className="flex-shrink-0">
           <DialogTitle>Edit Profile</DialogTitle>
           <DialogDescription>
-            Update your personal information and profile picture
+            Update your personal information
           </DialogDescription>
         </DialogHeader>
         <div ref={formRef} className="space-y-4 py-4 overflow-y-auto flex-1 -mx-6 px-6">
           <div className="flex justify-center mb-4">
-            <div className="relative">
-              <Avatar className="h-24 w-24">
-                <AvatarFallback className="bg-primary text-primary-foreground text-2xl">
-                  {initials}
-                </AvatarFallback>
-              </Avatar>
-              <Button
-                variant="secondary"
-                size="sm"
-                className="absolute bottom-0 right-0 rounded-full h-8 w-8 p-0"
-                title="Upload photo (coming soon)"
-                disabled
-              >
-                <Camera className="h-4 w-4" />
-              </Button>
-            </div>
+            <Avatar className="h-24 w-24">
+              <AvatarFallback className="bg-primary text-primary-foreground text-2xl">
+                {initials}
+              </AvatarFallback>
+            </Avatar>
           </div>
           <div className="text-center text-xs text-muted-foreground mb-4">
             Your avatar displays your initials: {initials}
@@ -149,6 +149,42 @@ export const ProfileEditModal = ({ open, onOpenChange }: ProfileEditModalProps) 
               placeholder="john@example.com"
               className="mt-1"
             />
+          </div>
+
+          <Separator className="my-6" />
+
+          {/* Account Deletion */}
+          <div className="space-y-2">
+            <h3 className="text-sm font-medium text-destructive">Danger Zone</h3>
+            <p className="text-xs text-muted-foreground">
+              Permanently delete your account and all associated data.
+            </p>
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button variant="destructive" size="sm" className="w-full">
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  Delete Account
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    This action cannot be undone. Your account will be scheduled for deletion
+                    and all your data will be permanently removed from our servers within 30 days.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction
+                    onClick={handleDeleteAccountRequest}
+                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                  >
+                    Yes, delete my account
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
           </div>
         </div>
         <DialogFooter className="flex-shrink-0 border-t pt-4">

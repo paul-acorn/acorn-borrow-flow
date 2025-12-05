@@ -288,12 +288,6 @@ export function AuthForm({ onBack, invitationToken, invitationData }: AuthFormPr
               </TabsList>
 
               <TabsContent value="login" className="space-y-4">
-                <div className="mb-4 p-3 bg-muted/50 rounded-lg border border-border">
-                  <p className="text-xs font-medium text-muted-foreground mb-2">Test Login Credentials:</p>
-                  <p className="text-xs text-foreground">Email: <span className="font-mono">demo@acornfinance.com</span></p>
-                  <p className="text-xs text-foreground">Password: <span className="font-mono">demo123</span></p>
-                </div>
-                
                 <form onSubmit={handleLogin} className="space-y-4">
                   <div className="space-y-2">
                     <Label htmlFor="email">Email Address</Label>
