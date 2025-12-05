@@ -13,10 +13,11 @@ import { UserProfileMenu } from "@/components/UserProfileMenu";
 import { PersonalDetailsView } from "@/components/client/PersonalDetailsView";
 import { ALIEView } from "@/components/client/ALIEView";
 import { CreditHistoryView } from "@/components/client/CreditHistoryView";
-import { MessageCircle, FileText, CheckCircle, Clock, TrendingUp, Calendar, History, User, DollarSign, AlertCircle } from "lucide-react";
+import { MessageCircle, FileText, CheckCircle, Clock, TrendingUp, Calendar, History, User, DollarSign, AlertCircle, LayoutDashboard, Menu } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface Deal {
   id: string;
@@ -38,13 +39,24 @@ const DEAL_STAGES = [
   { id: 'completed', label: 'Completed', icon: CheckCircle, description: 'Deal successfully completed' },
 ];
 
+// Bottom navigation items for mobile
+const BOTTOM_NAV_ITEMS = [
+  { id: 'personal', label: 'Personal', icon: User },
+  { id: 'alie', label: 'Money', icon: DollarSign },
+  { id: 'requirements', label: 'Docs', icon: FileText },
+  { id: 'more', label: 'More', icon: Menu },
+];
+
 export function ClientDashboard() {
   const { user } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const isMobile = useIsMobile();
   const [currentDealIndex, setCurrentDealIndex] = useState(0);
   const [showMessaging, setShowMessaging] = useState(false);
   const [carouselApi, setCarouselApi] = useState<any>(null);
+  const [activeTab, setActiveTab] = useState("personal");
+  const [showMoreMenu, setShowMoreMenu] = useState(false);
 
   // Fetch user's deals
   const { data: deals = [], isLoading } = useQuery({
@@ -111,6 +123,15 @@ export function ClientDashboard() {
       minimumFractionDigits: 0,
       maximumFractionDigits: 0,
     }).format(amount);
+  };
+
+  const handleBottomNavClick = (id: string) => {
+    if (id === 'more') {
+      setShowMoreMenu(!showMoreMenu);
+    } else {
+      setActiveTab(id);
+      setShowMoreMenu(false);
+    }
   };
 
   if (isLoading) {
@@ -261,7 +282,7 @@ export function ClientDashboard() {
   const currentStage = DEAL_STAGES[currentStageIndex];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-secondary/20 to-background">
+    <div className="min-h-screen bg-gradient-to-br from-background via-secondary/20 to-background pb-20 md:pb-0">
       {/* Header */}
       <header className="bg-card/50 backdrop-blur-sm border-b border-border sticky top-0 z-10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -392,34 +413,50 @@ export function ClientDashboard() {
 
         {/* Main Content Tabs */}
         <Card>
-          <Tabs defaultValue="personal" className="w-full">
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
             <CardHeader>
-              <TabsList className="w-full flex overflow-x-auto gap-2 justify-start">
+              {/* Desktop Tab List - Hidden on mobile */}
+              <TabsList className="hidden md:flex w-full overflow-x-auto gap-2 justify-start">
                 <TabsTrigger value="personal" className="flex items-center gap-2 flex-shrink-0">
                   <User className="h-4 w-4" />
-                  <span className="hidden sm:inline">Personal</span>
+                  <span>Personal</span>
                 </TabsTrigger>
                 <TabsTrigger value="alie" className="flex items-center gap-2 flex-shrink-0">
                   <DollarSign className="h-4 w-4" />
-                  <span className="hidden sm:inline">ALIE</span>
+                  <span>ALIE</span>
                 </TabsTrigger>
                 <TabsTrigger value="credit" className="flex items-center gap-2 flex-shrink-0">
                   <AlertCircle className="h-4 w-4" />
-                  <span className="hidden sm:inline">Credit</span>
+                  <span>Credit</span>
                 </TabsTrigger>
                 <TabsTrigger value="requirements" className="flex items-center gap-2 flex-shrink-0">
                   <FileText className="h-4 w-4" />
-                  <span className="hidden sm:inline">Documents</span>
+                  <span>Documents</span>
                 </TabsTrigger>
                 <TabsTrigger value="callbacks" className="flex items-center gap-2 flex-shrink-0">
                   <Calendar className="h-4 w-4" />
-                  <span className="hidden sm:inline">Callbacks</span>
+                  <span>Callbacks</span>
                 </TabsTrigger>
                 <TabsTrigger value="activity" className="flex items-center gap-2 flex-shrink-0">
                   <History className="h-4 w-4" />
-                  <span className="hidden sm:inline">Activity</span>
+                  <span>Activity</span>
                 </TabsTrigger>
               </TabsList>
+
+              {/* Mobile Tab Indicator */}
+              <div className="md:hidden flex items-center gap-2 text-lg font-medium capitalize">
+                {activeTab === 'personal' && <User className="h-5 w-5" />}
+                {activeTab === 'alie' && <DollarSign className="h-5 w-5" />}
+                {activeTab === 'credit' && <AlertCircle className="h-5 w-5" />}
+                {activeTab === 'requirements' && <FileText className="h-5 w-5" />}
+                {activeTab === 'callbacks' && <Calendar className="h-5 w-5" />}
+                {activeTab === 'activity' && <History className="h-5 w-5" />}
+                <span>
+                  {activeTab === 'alie' ? 'ALIE' : 
+                   activeTab === 'requirements' ? 'Documents' : 
+                   activeTab.charAt(0).toUpperCase() + activeTab.slice(1)}
+                </span>
+              </div>
             </CardHeader>
             <CardContent>
               <TabsContent value="personal" className="space-y-4">
@@ -463,6 +500,81 @@ export function ClientDashboard() {
           />
         )}
       </div>
+
+      {/* Mobile Bottom Navigation Bar */}
+      {isMobile && (
+        <>
+          {/* More Menu Overlay */}
+          {showMoreMenu && (
+            <div 
+              className="fixed inset-0 bg-black/50 z-40"
+              onClick={() => setShowMoreMenu(false)}
+            />
+          )}
+
+          {/* More Menu */}
+          {showMoreMenu && (
+            <div className="fixed bottom-20 left-4 right-4 bg-card border border-border rounded-2xl shadow-xl z-50 p-2">
+              <div className="grid grid-cols-3 gap-2">
+                <button
+                  onClick={() => { setActiveTab('credit'); setShowMoreMenu(false); }}
+                  className={`flex flex-col items-center gap-1 p-3 rounded-xl transition-all ${
+                    activeTab === 'credit' ? 'bg-primary/10 text-primary' : 'text-muted-foreground hover:bg-muted'
+                  }`}
+                >
+                  <AlertCircle className="h-5 w-5" />
+                  <span className="text-xs font-medium">Credit</span>
+                </button>
+                <button
+                  onClick={() => { setActiveTab('callbacks'); setShowMoreMenu(false); }}
+                  className={`flex flex-col items-center gap-1 p-3 rounded-xl transition-all ${
+                    activeTab === 'callbacks' ? 'bg-primary/10 text-primary' : 'text-muted-foreground hover:bg-muted'
+                  }`}
+                >
+                  <Calendar className="h-5 w-5" />
+                  <span className="text-xs font-medium">Callbacks</span>
+                </button>
+                <button
+                  onClick={() => { setActiveTab('activity'); setShowMoreMenu(false); }}
+                  className={`flex flex-col items-center gap-1 p-3 rounded-xl transition-all ${
+                    activeTab === 'activity' ? 'bg-primary/10 text-primary' : 'text-muted-foreground hover:bg-muted'
+                  }`}
+                >
+                  <History className="h-5 w-5" />
+                  <span className="text-xs font-medium">Activity</span>
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Bottom Navigation */}
+          <nav className="fixed bottom-0 left-0 right-0 bg-card border-t border-border z-50 safe-area-bottom">
+            <div className="flex items-center justify-around h-16 px-2">
+              {BOTTOM_NAV_ITEMS.map((item) => {
+                const Icon = item.icon;
+                const isActive = item.id === 'more' 
+                  ? showMoreMenu || ['credit', 'callbacks', 'activity'].includes(activeTab)
+                  : activeTab === item.id;
+
+                return (
+                  <button
+                    key={item.id}
+                    onClick={() => handleBottomNavClick(item.id)}
+                    className={`flex flex-col items-center gap-1 py-2 px-4 rounded-xl transition-all ${
+                      isActive 
+                        ? 'text-primary' 
+                        : 'text-muted-foreground'
+                    }`}
+                  >
+                    <Icon className={`h-5 w-5 ${isActive ? 'scale-110' : ''} transition-transform`} />
+                    <span className="text-[10px] font-medium">{item.label}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </nav>
+        </>
+      )}
     </div>
   );
 }
