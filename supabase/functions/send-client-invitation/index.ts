@@ -18,9 +18,29 @@ interface InvitationEmailRequest {
 }
 
 const handler = async (req: Request): Promise<Response> => {
-  if (req.method === "OPTIONS") {
-    return new Response(null, { headers: corsHeaders });
-  }
+  if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
+
+  try {
+    // 🔒 SECURITY CHECK START
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader) throw new Error('Missing Authorization Header');
+    
+    // Validate the user using the Anon Key (Standard Auth)
+    const supabaseClient = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
+      { global: { headers: { Authorization: authHeader } } }
+    );
+
+    const { data: { user }, error: authError } = await supabaseClient.auth.getUser();
+    if (authError || !user) throw new Error('Unauthorized');
+    
+    // Optional: Check if user is a broker/admin
+    // const { data: role } = await supabaseClient.rpc('has_role', { _user_id: user.id, _role: 'broker' });
+    // if (!role) throw new Error('Forbidden');
+    // 🔒 SECURITY CHECK END
+
+    const { email, firstName, ... } = await req.json();
 
   try {
     const {
