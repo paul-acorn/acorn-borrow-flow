@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.4"; // <--- Added this import
 import { Resend } from "npm:resend@2.0.0";
 
 const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
@@ -18,31 +19,35 @@ interface InvitationEmailRequest {
 }
 
 const handler = async (req: Request): Promise<Response> => {
-  if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
+  // Handle CORS preflight request
+  if (req.method === "OPTIONS") {
+    return new Response(null, { headers: corsHeaders });
+  }
 
   try {
-    // 🔒 SECURITY CHECK START
+    // ------------------------------------------------------------------------
+    // 🔒 SECURITY CHECK (The New Fix)
+    // ------------------------------------------------------------------------
     const authHeader = req.headers.get('Authorization');
-    if (!authHeader) throw new Error('Missing Authorization Header');
-    
-    // Validate the user using the Anon Key (Standard Auth)
+    if (!authHeader) {
+      throw new Error('Missing Authorization Header');
+    }
+
+    // Create a Supabase client with the user's token
     const supabaseClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_ANON_KEY') ?? '',
       { global: { headers: { Authorization: authHeader } } }
     );
 
+    // Verify the user is actually logged in
     const { data: { user }, error: authError } = await supabaseClient.auth.getUser();
-    if (authError || !user) throw new Error('Unauthorized');
-    
-    // Optional: Check if user is a broker/admin
-    // const { data: role } = await supabaseClient.rpc('has_role', { _user_id: user.id, _role: 'broker' });
-    // if (!role) throw new Error('Forbidden');
-    // 🔒 SECURITY CHECK END
+    if (authError || !user) {
+      throw new Error('Unauthorized: You must be logged in to send invitations.');
+    }
+    // ------------------------------------------------------------------------
 
-    const { email, firstName, ... } = await req.json();
-
-  try {
+    // Parse the request body (Only do this ONCE after security check passes)
     const {
       email,
       firstName,
@@ -51,10 +56,11 @@ const handler = async (req: Request): Promise<Response> => {
       brokerName,
     }: InvitationEmailRequest = await req.json();
 
-    // Build secure invitation URL - use SITE_URL if set, otherwise construct from SUPABASE_URL
-    const siteUrl = Deno.env.get('SITE_URL') || 
-      `https://${Deno.env.get('SUPABASE_URL')?.replace('https://', '').replace('.supabase.co', '')}.lovable.app`;
-    const invitationUrl = `${siteUrl}/invite/${secureToken}`;
+    // Build secure invitation URL
+    const supabaseUrl = Deno.env.get('SUPABASE_URL');
+    const projectRef = supabaseUrl?.match(/https:\/\/(.*?)\.supabase\.co/)?.[1] || '';
+    // Fallback to Lovable URL structure or your custom domain
+    const invitationUrl = `https://${projectRef}.lovable.app/invite/${secureToken}`;
 
     const emailResponse = await resend.emails.send({
       from: "Acorn Finance <onboarding@resend.dev>",
@@ -105,7 +111,7 @@ const handler = async (req: Request): Promise<Response> => {
     return new Response(
       JSON.stringify({ error: error.message }),
       {
-        status: 500,
+        status: 500, // You can return 401 if it's an auth error, but 500 is safe for now
         headers: { "Content-Type": "application/json", ...corsHeaders },
       }
     );
