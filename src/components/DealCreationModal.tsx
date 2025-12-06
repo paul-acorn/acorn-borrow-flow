@@ -197,6 +197,8 @@ export function DealCreationModal({ open, onOpenChange, onSubmit }: DealCreation
                   <Input
                     id="amount"
                     type="number"
+                    inputMode="decimal"
+                    pattern="[0-9]*"
                     placeholder="500000"
                     value={amount}
                     onChange={(e) => setAmount(e.target.value)}
