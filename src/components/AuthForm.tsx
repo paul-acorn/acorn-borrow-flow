@@ -294,6 +294,8 @@ export function AuthForm({ onBack, invitationToken, invitationData }: AuthFormPr
                     <Input 
                       id="email"
                       type="email"
+                      inputMode="email"
+                      autoCapitalize="none"
                       placeholder="your@email.com"
                       value={loginEmail}
                       onChange={(e) => setLoginEmail(e.target.value)}
@@ -376,6 +378,7 @@ export function AuthForm({ onBack, invitationToken, invitationData }: AuthFormPr
                         value={firstName}
                         onChange={(e) => setFirstName(e.target.value)}
                         required
+                        autoCapitalize="words"
                         className="h-11"
                       />
                     </div>
@@ -387,6 +390,7 @@ export function AuthForm({ onBack, invitationToken, invitationData }: AuthFormPr
                         value={lastName}
                         onChange={(e) => setLastName(e.target.value)}
                         required
+                        autoCapitalize="words"
                         className="h-11"
                       />
                     </div>
@@ -397,6 +401,8 @@ export function AuthForm({ onBack, invitationToken, invitationData }: AuthFormPr
                     <Input 
                       id="regEmail"
                       type="email"
+                      inputMode="email"
+                      autoCapitalize="none"
                       placeholder="your@email.com"
                       value={registerEmail}
                       onChange={(e) => setRegisterEmail(e.target.value)}

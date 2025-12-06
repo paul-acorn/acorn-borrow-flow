@@ -267,6 +267,7 @@ export function UnifiedInbox({ brokerFilter }: { brokerFilter?: string }) {
                             <Button
                               size="sm"
                               variant="outline"
+                              className="min-h-[44px]"
                               onClick={async () => {
                                 try {
                                   const { error } = await supabase.functions.invoke('make-call', {
@@ -291,7 +292,7 @@ export function UnifiedInbox({ brokerFilter }: { brokerFilter?: string }) {
                                 }
                               }}
                             >
-                              <Phone className="h-3 w-3 mr-1" />
+                              <Phone className="h-4 w-4 mr-1" />
                               Call Back
                             </Button>
                           )}
@@ -309,6 +310,7 @@ export function UnifiedInbox({ brokerFilter }: { brokerFilter?: string }) {
                                   <div className="flex gap-2">
                                     <Button
                                       size="sm"
+                                      className="min-h-[44px]"
                                       onClick={() => handleReply(comm)}
                                       disabled={sending}
                                     >
@@ -317,6 +319,7 @@ export function UnifiedInbox({ brokerFilter }: { brokerFilter?: string }) {
                                     <Button
                                       size="sm"
                                       variant="outline"
+                                      className="min-h-[44px]"
                                       onClick={() => {
                                         setReplyingTo(null);
                                         setReplyText("");
@@ -330,9 +333,10 @@ export function UnifiedInbox({ brokerFilter }: { brokerFilter?: string }) {
                                 <Button
                                   size="sm"
                                   variant="outline"
+                                  className="min-h-[44px]"
                                   onClick={() => setReplyingTo(comm.id)}
                                 >
-                                  <Reply className="h-3 w-3 mr-1" />
+                                  <Reply className="h-4 w-4 mr-1" />
                                   Reply
                                 </Button>
                               )}
