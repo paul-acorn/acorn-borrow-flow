@@ -261,6 +261,8 @@ export function ALIEEditModal({ open, onOpenChange }: ALIEEditModalProps) {
                     id="property_value"
                     name="property_value"
                     type="number"
+                    inputMode="decimal"
+                    pattern="[0-9]*"
                     min="0"
                     step="0.01"
                     placeholder="0.00"
@@ -272,6 +274,8 @@ export function ALIEEditModal({ open, onOpenChange }: ALIEEditModalProps) {
                     id="bank_accounts"
                     name="bank_accounts"
                     type="number"
+                    inputMode="decimal"
+                    pattern="[0-9]*"
                     min="0"
                     step="0.01"
                     placeholder="0.00"
@@ -283,6 +287,8 @@ export function ALIEEditModal({ open, onOpenChange }: ALIEEditModalProps) {
                     id="investments"
                     name="investments"
                     type="number"
+                    inputMode="decimal"
+                    pattern="[0-9]*"
                     min="0"
                     step="0.01"
                     placeholder="0.00"
@@ -294,6 +300,8 @@ export function ALIEEditModal({ open, onOpenChange }: ALIEEditModalProps) {
                     id="pension_value"
                     name="pension_value"
                     type="number"
+                    inputMode="decimal"
+                    pattern="[0-9]*"
                     min="0"
                     step="0.01"
                     placeholder="0.00"
@@ -305,6 +313,8 @@ export function ALIEEditModal({ open, onOpenChange }: ALIEEditModalProps) {
                     id="other_assets"
                     name="other_assets"
                     type="number"
+                    inputMode="decimal"
+                    pattern="[0-9]*"
                     min="0"
                     step="0.01"
                     placeholder="0.00"
@@ -369,6 +379,8 @@ export function ALIEEditModal({ open, onOpenChange }: ALIEEditModalProps) {
                         <Label>Annual Gross (£)</Label>
                         <Input
                           type="number"
+                          inputMode="decimal"
+                          pattern="[0-9]*"
                           value={stream.annualGross}
                           onChange={(e) => {
                             const updated = [...incomeStreams];
@@ -383,6 +395,8 @@ export function ALIEEditModal({ open, onOpenChange }: ALIEEditModalProps) {
                         <Label>Monthly Net (£)</Label>
                         <Input
                           type="number"
+                          inputMode="decimal"
+                          pattern="[0-9]*"
                           value={stream.monthlyNet}
                           onChange={(e) => {
                             const updated = [...incomeStreams];
@@ -473,6 +487,8 @@ export function ALIEEditModal({ open, onOpenChange }: ALIEEditModalProps) {
                       <Label>Balance (£)</Label>
                       <Input
                         type="number"
+                        inputMode="decimal"
+                        pattern="[0-9]*"
                         value={mortgage.balance}
                         onChange={(e) => {
                           const updated = [...mortgages];
@@ -485,6 +501,8 @@ export function ALIEEditModal({ open, onOpenChange }: ALIEEditModalProps) {
                       <Label>Monthly Payment (£)</Label>
                       <Input
                         type="number"
+                        inputMode="decimal"
+                        pattern="[0-9]*"
                         value={mortgage.monthlyPayment}
                         onChange={(e) => {
                           const updated = [...mortgages];
@@ -497,6 +515,9 @@ export function ALIEEditModal({ open, onOpenChange }: ALIEEditModalProps) {
                       <Label>Interest Rate (%)</Label>
                       <Input
                         type="number"
+                        inputMode="decimal"
+                        pattern="[0-9]*"
+                        step="0.01"
                         value={mortgage.interestRate}
                         onChange={(e) => {
                           const updated = [...mortgages];
@@ -552,6 +573,8 @@ export function ALIEEditModal({ open, onOpenChange }: ALIEEditModalProps) {
                       <Label>Balance (£)</Label>
                       <Input
                         type="number"
+                        inputMode="decimal"
+                        pattern="[0-9]*"
                         value={loan.balance}
                         onChange={(e) => {
                           const updated = [...personalLoans];
@@ -564,6 +587,8 @@ export function ALIEEditModal({ open, onOpenChange }: ALIEEditModalProps) {
                       <Label>Monthly Payment (£)</Label>
                       <Input
                         type="number"
+                        inputMode="decimal"
+                        pattern="[0-9]*"
                         value={loan.monthlyPayment}
                         onChange={(e) => {
                           const updated = [...personalLoans];
@@ -608,6 +633,8 @@ export function ALIEEditModal({ open, onOpenChange }: ALIEEditModalProps) {
                       <Label>Credit Limit (£)</Label>
                       <Input
                         type="number"
+                        inputMode="decimal"
+                        pattern="[0-9]*"
                         value={card.creditLimit}
                         onChange={(e) => {
                           const updated = [...creditCards];
@@ -620,6 +647,8 @@ export function ALIEEditModal({ open, onOpenChange }: ALIEEditModalProps) {
                       <Label>Balance (£)</Label>
                       <Input
                         type="number"
+                        inputMode="decimal"
+                        pattern="[0-9]*"
                         value={card.balance}
                         onChange={(e) => {
                           const updated = [...creditCards];
@@ -632,6 +661,8 @@ export function ALIEEditModal({ open, onOpenChange }: ALIEEditModalProps) {
                       <Label>Monthly Payment (£)</Label>
                       <Input
                         type="number"
+                        inputMode="decimal"
+                        pattern="[0-9]*"
                         value={card.monthlyPayment}
                         onChange={(e) => {
                           const updated = [...creditCards];
@@ -665,6 +696,8 @@ export function ALIEEditModal({ open, onOpenChange }: ALIEEditModalProps) {
                   <Input
                     id="mortgage"
                     type="number"
+                    inputMode="decimal"
+                    pattern="[0-9]*"
                     value={expenses.mortgage}
                     onChange={(e) => setExpenses({ ...expenses, mortgage: e.target.value })}
                     placeholder="0.00"
@@ -675,6 +708,8 @@ export function ALIEEditModal({ open, onOpenChange }: ALIEEditModalProps) {
                   <Input
                     id="utilities"
                     type="number"
+                    inputMode="decimal"
+                    pattern="[0-9]*"
                     value={expenses.utilities}
                     onChange={(e) => setExpenses({ ...expenses, utilities: e.target.value })}
                     placeholder="Gas, electric, water"
@@ -685,6 +720,8 @@ export function ALIEEditModal({ open, onOpenChange }: ALIEEditModalProps) {
                   <Input
                     id="councilTax"
                     type="number"
+                    inputMode="decimal"
+                    pattern="[0-9]*"
                     value={expenses.councilTax}
                     onChange={(e) => setExpenses({ ...expenses, councilTax: e.target.value })}
                     placeholder="0.00"
@@ -695,6 +732,8 @@ export function ALIEEditModal({ open, onOpenChange }: ALIEEditModalProps) {
                   <Input
                     id="groceries"
                     type="number"
+                    inputMode="decimal"
+                    pattern="[0-9]*"
                     value={expenses.groceries}
                     onChange={(e) => setExpenses({ ...expenses, groceries: e.target.value })}
                     placeholder="0.00"
@@ -705,6 +744,8 @@ export function ALIEEditModal({ open, onOpenChange }: ALIEEditModalProps) {
                   <Input
                     id="transport"
                     type="number"
+                    inputMode="decimal"
+                    pattern="[0-9]*"
                     value={expenses.transport}
                     onChange={(e) => setExpenses({ ...expenses, transport: e.target.value })}
                     placeholder="Fuel, public transport"
@@ -715,6 +756,8 @@ export function ALIEEditModal({ open, onOpenChange }: ALIEEditModalProps) {
                   <Input
                     id="childcare"
                     type="number"
+                    inputMode="decimal"
+                    pattern="[0-9]*"
                     value={expenses.childcare}
                     onChange={(e) => setExpenses({ ...expenses, childcare: e.target.value })}
                     placeholder="0.00"
@@ -725,6 +768,8 @@ export function ALIEEditModal({ open, onOpenChange }: ALIEEditModalProps) {
                   <Input
                     id="insurance"
                     type="number"
+                    inputMode="decimal"
+                    pattern="[0-9]*"
                     value={expenses.insurance}
                     onChange={(e) => setExpenses({ ...expenses, insurance: e.target.value })}
                     placeholder="Life, home, car"
@@ -735,6 +780,8 @@ export function ALIEEditModal({ open, onOpenChange }: ALIEEditModalProps) {
                   <Input
                     id="other"
                     type="number"
+                    inputMode="decimal"
+                    pattern="[0-9]*"
                     value={expenses.other}
                     onChange={(e) => setExpenses({ ...expenses, other: e.target.value })}
                     placeholder="0.00"

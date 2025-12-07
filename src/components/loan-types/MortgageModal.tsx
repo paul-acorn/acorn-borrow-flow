@@ -159,6 +159,8 @@ export function MortgageModal({ formData, onFormDataChange }: MortgageModalProps
               <Input
                 id="loanAmount"
                 type="number"
+                inputMode="decimal"
+                pattern="[0-9]*"
                 placeholder="400000"
                 value={formData.loanAmount || ''}
                 onChange={(e) => handleFieldChange('loanAmount', e.target.value)}
@@ -169,6 +171,8 @@ export function MortgageModal({ formData, onFormDataChange }: MortgageModalProps
               <Input
                 id="term"
                 type="number"
+                inputMode="numeric"
+                pattern="[0-9]*"
                 placeholder="25"
                 value={formData.term || ''}
                 onChange={(e) => handleFieldChange('term', e.target.value)}
@@ -182,6 +186,8 @@ export function MortgageModal({ formData, onFormDataChange }: MortgageModalProps
               <Input
                 id="purchasePrice"
                 type="number"
+                inputMode="decimal"
+                pattern="[0-9]*"
                 placeholder="500000"
                 value={formData.purchasePrice || ''}
                 onChange={(e) => handleFieldChange('purchasePrice', e.target.value)}
@@ -195,6 +201,8 @@ export function MortgageModal({ formData, onFormDataChange }: MortgageModalProps
               <Input
                 id="propertyValue"
                 type="number"
+                inputMode="decimal"
+                pattern="[0-9]*"
                 placeholder="550000"
                 value={formData.propertyValue || ''}
                 onChange={(e) => handleFieldChange('propertyValue', e.target.value)}
@@ -209,6 +217,8 @@ export function MortgageModal({ formData, onFormDataChange }: MortgageModalProps
                 <Input
                   id="existingMortgage"
                   type="number"
+                  inputMode="decimal"
+                  pattern="[0-9]*"
                   placeholder="300000"
                   value={formData.existingMortgage || ''}
                   onChange={(e) => handleFieldChange('existingMortgage', e.target.value)}
@@ -219,6 +229,8 @@ export function MortgageModal({ formData, onFormDataChange }: MortgageModalProps
                 <Input
                   id="additionalBorrowing"
                   type="number"
+                  inputMode="decimal"
+                  pattern="[0-9]*"
                   placeholder="50000"
                   value={formData.additionalBorrowing || ''}
                   onChange={(e) => handleFieldChange('additionalBorrowing', e.target.value)}
@@ -233,6 +245,8 @@ export function MortgageModal({ formData, onFormDataChange }: MortgageModalProps
               <Input
                 id="capitalRaiseAmount"
                 type="number"
+                inputMode="decimal"
+                pattern="[0-9]*"
                 placeholder="100000"
                 value={formData.capitalRaiseAmount || ''}
                 onChange={(e) => handleFieldChange('capitalRaiseAmount', e.target.value)}
@@ -340,6 +354,8 @@ export function MortgageModal({ formData, onFormDataChange }: MortgageModalProps
                 <Input
                   id="monthlyRent"
                   type="number"
+                  inputMode="decimal"
+                  pattern="[0-9]*"
                   placeholder="2000"
                   value={formData.monthlyRent || ''}
                   onChange={(e) => handleFieldChange('monthlyRent', e.target.value)}
@@ -350,6 +366,8 @@ export function MortgageModal({ formData, onFormDataChange }: MortgageModalProps
                 <Input
                   id="portfolioSize"
                   type="number"
+                  inputMode="numeric"
+                  pattern="[0-9]*"
                   placeholder="3"
                   value={formData.portfolioSize || ''}
                   onChange={(e) => handleFieldChange('portfolioSize', e.target.value)}
@@ -363,6 +381,8 @@ export function MortgageModal({ formData, onFormDataChange }: MortgageModalProps
                 <Input
                   id="rentalExperience"
                   type="number"
+                  inputMode="numeric"
+                  pattern="[0-9]*"
                   placeholder="5"
                   value={formData.rentalExperience || ''}
                   onChange={(e) => handleFieldChange('rentalExperience', e.target.value)}
@@ -373,6 +393,8 @@ export function MortgageModal({ formData, onFormDataChange }: MortgageModalProps
                 <Input
                   id="voidPeriods"
                   type="number"
+                  inputMode="decimal"
+                  pattern="[0-9]*"
                   placeholder="10"
                   value={formData.voidPeriods || ''}
                   onChange={(e) => handleFieldChange('voidPeriods', e.target.value)}

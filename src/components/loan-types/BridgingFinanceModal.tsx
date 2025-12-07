@@ -125,6 +125,8 @@ export function BridgingFinanceModal({ formData, onFormDataChange, onAutoRefinan
               <Input
                 id="loanAmount"
                 type="number"
+                inputMode="decimal"
+                pattern="[0-9]*"
                 placeholder="500000"
                 value={formData.loanAmount || ''}
                 onChange={(e) => handleFieldChange('loanAmount', e.target.value)}
@@ -135,6 +137,8 @@ export function BridgingFinanceModal({ formData, onFormDataChange, onAutoRefinan
               <Input
                 id="term"
                 type="number"
+                inputMode="numeric"
+                pattern="[0-9]*"
                 placeholder="12"
                 value={formData.term || ''}
                 onChange={(e) => handleFieldChange('term', e.target.value)}
@@ -148,6 +152,8 @@ export function BridgingFinanceModal({ formData, onFormDataChange, onAutoRefinan
               <Input
                 id="purchasePrice"
                 type="number"
+                inputMode="decimal"
+                pattern="[0-9]*"
                 placeholder="600000"
                 value={formData.purchasePrice || ''}
                 onChange={(e) => handleFieldChange('purchasePrice', e.target.value)}
@@ -161,6 +167,8 @@ export function BridgingFinanceModal({ formData, onFormDataChange, onAutoRefinan
               <Input
                 id="propertyValue"
                 type="number"
+                inputMode="decimal"
+                pattern="[0-9]*"
                 placeholder="700000"
                 value={formData.propertyValue || ''}
                 onChange={(e) => handleFieldChange('propertyValue', e.target.value)}
@@ -188,6 +196,8 @@ export function BridgingFinanceModal({ formData, onFormDataChange, onAutoRefinan
                 <Input
                   id="existingLoansCount"
                   type="number"
+                  inputMode="numeric"
+                  pattern="[0-9]*"
                   placeholder="1"
                   value={formData.existingLoansCount || ''}
                   onChange={(e) => handleFieldChange('existingLoansCount', e.target.value)}
@@ -202,6 +212,8 @@ export function BridgingFinanceModal({ formData, onFormDataChange, onAutoRefinan
                       <Input
                         id={`existingLoanBalance${i}`}
                         type="number"
+                        inputMode="decimal"
+                        pattern="[0-9]*"
                         placeholder="200000"
                         value={formData[`existingLoanBalance${i}`] || ''}
                         onChange={(e) => handleFieldChange(`existingLoanBalance${i}`, e.target.value)}
@@ -221,6 +233,8 @@ export function BridgingFinanceModal({ formData, onFormDataChange, onAutoRefinan
                       <Input
                         id={`existingLoanRate${i}`}
                         type="number"
+                        inputMode="decimal"
+                        pattern="[0-9]*"
                         step="0.01"
                         placeholder="5.5"
                         value={formData[`existingLoanRate${i}`] || ''}
@@ -245,6 +259,8 @@ export function BridgingFinanceModal({ formData, onFormDataChange, onAutoRefinan
               <Input
                 id="gdv"
                 type="number"
+                inputMode="decimal"
+                pattern="[0-9]*"
                 placeholder="800000"
                 value={formData.gdv || ''}
                 onChange={(e) => handleFieldChange('gdv', e.target.value)}
@@ -259,6 +275,8 @@ export function BridgingFinanceModal({ formData, onFormDataChange, onAutoRefinan
                 <Input
                   id="refurbCosts"
                   type="number"
+                  inputMode="decimal"
+                  pattern="[0-9]*"
                   placeholder="100000"
                   value={formData.refurbCosts || ''}
                   onChange={(e) => handleFieldChange('refurbCosts', e.target.value)}
@@ -306,6 +324,8 @@ export function BridgingFinanceModal({ formData, onFormDataChange, onAutoRefinan
               <Input
                 id="projectedRent"
                 type="number"
+                inputMode="decimal"
+                pattern="[0-9]*"
                 placeholder="2500"
                 value={formData.projectedRent || ''}
                 onChange={(e) => handleFieldChange('projectedRent', e.target.value)}
@@ -322,6 +342,8 @@ export function BridgingFinanceModal({ formData, onFormDataChange, onAutoRefinan
               <Input
                 id="projectedSalePrice"
                 type="number"
+                inputMode="decimal"
+                pattern="[0-9]*"
                 placeholder="750000"
                 value={formData.projectedSalePrice || ''}
                 onChange={(e) => handleFieldChange('projectedSalePrice', e.target.value)}
@@ -334,6 +356,8 @@ export function BridgingFinanceModal({ formData, onFormDataChange, onAutoRefinan
             <Input
               id="exitTimeline"
               type="number"
+              inputMode="numeric"
+              pattern="[0-9]*"
               placeholder="6"
               value={formData.exitTimeline || ''}
               onChange={(e) => handleFieldChange('exitTimeline', e.target.value)}
