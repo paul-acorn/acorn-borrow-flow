@@ -383,6 +383,7 @@ export const ClientManagement = () => {
                   <Input
                     id="phone"
                     type="tel"
+                    inputMode="tel"
                     placeholder="+44 7XXX XXXXXX"
                     value={newClientPhone}
                     onChange={(e) => setNewClientPhone(e.target.value)}

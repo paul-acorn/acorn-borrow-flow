@@ -127,6 +127,7 @@ export const ProfileEditModal = ({ open, onOpenChange }: ProfileEditModalProps) 
               placeholder="John"
               className="mt-1"
               autoFocus
+              autoCapitalize="words"
             />
           </div>
           <div className="space-y-2">
@@ -137,6 +138,7 @@ export const ProfileEditModal = ({ open, onOpenChange }: ProfileEditModalProps) 
               onChange={(e) => setLastName(e.target.value)}
               placeholder="Doe"
               className="mt-1"
+              autoCapitalize="words"
             />
           </div>
           <div className="space-y-2">
@@ -144,6 +146,8 @@ export const ProfileEditModal = ({ open, onOpenChange }: ProfileEditModalProps) 
             <Input
               id="email"
               type="email"
+              inputMode="email"
+              autoCapitalize="none"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="john@example.com"

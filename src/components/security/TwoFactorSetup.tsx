@@ -238,6 +238,7 @@ export const TwoFactorSetup = ({ open, onOpenChange, userId, userEmail }: TwoFac
                 <Input
                   id="phone"
                   type="tel"
+                  inputMode="tel"
                   placeholder="+44 7XXX XXXXXX"
                   value={smsPhone}
                   onChange={(e) => setSmsPhone(e.target.value)}
