@@ -25,6 +25,7 @@ export const ProfileEditModal = ({ open, onOpenChange }: ProfileEditModalProps) 
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
+  const [phoneNumber, setPhoneNumber] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const formRef = useRef<HTMLDivElement>(null);
   
@@ -47,6 +48,7 @@ export const ProfileEditModal = ({ open, onOpenChange }: ProfileEditModalProps) 
             setFirstName(profile.first_name || "");
             setLastName(profile.last_name || "");
             setEmail(profile.email || "");
+            setPhoneNumber(profile.phone_number || "");
             
             // Set initials from first and last name
             const userInitials = `${profile.first_name?.[0] || ""}${profile.last_name?.[0] || ""}`.toUpperCase();
@@ -67,6 +69,7 @@ export const ProfileEditModal = ({ open, onOpenChange }: ProfileEditModalProps) 
           first_name: firstName,
           last_name: lastName,
           email: email,
+          phone_number: phoneNumber,
         })
         .eq("id", user.id);
 
@@ -151,6 +154,18 @@ export const ProfileEditModal = ({ open, onOpenChange }: ProfileEditModalProps) 
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="john@example.com"
+              className="mt-1"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="phoneNumber">Phone Number</Label>
+            <Input
+              id="phoneNumber"
+              type="tel"
+              inputMode="tel"
+              value={phoneNumber}
+              onChange={(e) => setPhoneNumber(e.target.value)}
+              placeholder="+44 7XXX XXXXXX"
               className="mt-1"
             />
           </div>
