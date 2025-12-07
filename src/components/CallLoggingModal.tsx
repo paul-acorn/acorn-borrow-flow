@@ -126,6 +126,7 @@ export function CallLoggingModal({ open, onOpenChange, dealId, phoneNumber }: Ca
               <Input
                 id="phone_number"
                 type="tel"
+                inputMode="tel"
                 value={formData.phone_number}
                 onChange={(e) => setFormData({ ...formData, phone_number: e.target.value })}
                 required
