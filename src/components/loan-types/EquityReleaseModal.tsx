@@ -254,6 +254,8 @@ function StepBorrowing({ formData, updateField }: any) {
           <Input
             id="amountNeeded"
             type="number"
+            inputMode="decimal"
+            pattern="[0-9]*"
             min={10000}
             value={formData.amountNeeded || ""}
             onChange={(e) => updateField("amountNeeded", e.target.value)}
@@ -299,6 +301,8 @@ function StepBorrowing({ formData, updateField }: any) {
               <Input
                 id="existingMortgageAmount"
                 type="number"
+                inputMode="decimal"
+                pattern="[0-9]*"
                 value={formData.existingMortgageAmount || ""}
                 onChange={(e) => updateField("existingMortgageAmount", e.target.value)}
                 className="pl-8 text-lg h-14"

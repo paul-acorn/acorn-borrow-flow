@@ -143,6 +143,8 @@ export function BusinessLoanModal({ formData, onFormDataChange }: BusinessLoanMo
               <Input
                 id="tradingYears"
                 type="number"
+                inputMode="numeric"
+                pattern="[0-9]*"
                 placeholder="5"
                 value={formData.tradingYears || ''}
                 onChange={(e) => handleFieldChange('tradingYears', e.target.value)}
@@ -167,6 +169,8 @@ export function BusinessLoanModal({ formData, onFormDataChange }: BusinessLoanMo
               <Input
                 id="loanAmount"
                 type="number"
+                inputMode="decimal"
+                pattern="[0-9]*"
                 placeholder="100000"
                 value={formData.loanAmount || ''}
                 onChange={(e) => handleFieldChange('loanAmount', e.target.value)}
@@ -177,6 +181,8 @@ export function BusinessLoanModal({ formData, onFormDataChange }: BusinessLoanMo
               <Input
                 id="term"
                 type="number"
+                inputMode="numeric"
+                pattern="[0-9]*"
                 placeholder="5"
                 value={formData.term || ''}
                 onChange={(e) => handleFieldChange('term', e.target.value)}
@@ -190,6 +196,8 @@ export function BusinessLoanModal({ formData, onFormDataChange }: BusinessLoanMo
               <Input
                 id="turnoverYear1"
                 type="number"
+                inputMode="decimal"
+                pattern="[0-9]*"
                 placeholder="500000"
                 value={formData.turnoverYear1 || ''}
                 onChange={(e) => handleFieldChange('turnoverYear1', e.target.value)}
@@ -200,6 +208,8 @@ export function BusinessLoanModal({ formData, onFormDataChange }: BusinessLoanMo
               <Input
                 id="turnoverYear2"
                 type="number"
+                inputMode="decimal"
+                pattern="[0-9]*"
                 placeholder="450000"
                 value={formData.turnoverYear2 || ''}
                 onChange={(e) => handleFieldChange('turnoverYear2', e.target.value)}
@@ -210,6 +220,8 @@ export function BusinessLoanModal({ formData, onFormDataChange }: BusinessLoanMo
               <Input
                 id="turnoverYear3"
                 type="number"
+                inputMode="decimal"
+                pattern="[0-9]*"
                 placeholder="400000"
                 value={formData.turnoverYear3 || ''}
                 onChange={(e) => handleFieldChange('turnoverYear3', e.target.value)}
@@ -223,6 +235,8 @@ export function BusinessLoanModal({ formData, onFormDataChange }: BusinessLoanMo
               <Input
                 id="profitYear1"
                 type="number"
+                inputMode="decimal"
+                pattern="[0-9]*"
                 placeholder="75000"
                 value={formData.profitYear1 || ''}
                 onChange={(e) => handleFieldChange('profitYear1', e.target.value)}
@@ -233,6 +247,8 @@ export function BusinessLoanModal({ formData, onFormDataChange }: BusinessLoanMo
               <Input
                 id="profitYear2"
                 type="number"
+                inputMode="decimal"
+                pattern="[0-9]*"
                 placeholder="70000"
                 value={formData.profitYear2 || ''}
                 onChange={(e) => handleFieldChange('profitYear2', e.target.value)}
@@ -243,6 +259,8 @@ export function BusinessLoanModal({ formData, onFormDataChange }: BusinessLoanMo
               <Input
                 id="profitYear3"
                 type="number"
+                inputMode="decimal"
+                pattern="[0-9]*"
                 placeholder="65000"
                 value={formData.profitYear3 || ''}
                 onChange={(e) => handleFieldChange('profitYear3', e.target.value)}
@@ -255,6 +273,8 @@ export function BusinessLoanModal({ formData, onFormDataChange }: BusinessLoanMo
             <Input
               id="cashFlow"
               type="number"
+              inputMode="decimal"
+              pattern="[0-9]*"
               placeholder="15000"
               value={formData.cashFlow || ''}
               onChange={(e) => handleFieldChange('cashFlow', e.target.value)}

@@ -110,6 +110,8 @@ export function DevelopmentFinanceModal({ formData, onFormDataChange, onAutoRefi
               <Input
                 id="numberOfUnits"
                 type="number"
+                inputMode="numeric"
+                pattern="[0-9]*"
                 placeholder="4"
                 value={formData.numberOfUnits || ''}
                 onChange={(e) => handleFieldChange('numberOfUnits', e.target.value)}
@@ -129,6 +131,8 @@ export function DevelopmentFinanceModal({ formData, onFormDataChange, onAutoRefi
               <Input
                 id="constructionTimeline"
                 type="number"
+                inputMode="numeric"
+                pattern="[0-9]*"
                 placeholder="18"
                 value={formData.constructionTimeline || ''}
                 onChange={(e) => handleFieldChange('constructionTimeline', e.target.value)}
@@ -164,6 +168,8 @@ export function DevelopmentFinanceModal({ formData, onFormDataChange, onAutoRefi
               <Input
                 id="loanAmount"
                 type="number"
+                inputMode="decimal"
+                pattern="[0-9]*"
                 placeholder="800000"
                 value={formData.loanAmount || ''}
                 onChange={(e) => handleFieldChange('loanAmount', e.target.value)}
@@ -174,6 +180,8 @@ export function DevelopmentFinanceModal({ formData, onFormDataChange, onAutoRefi
               <Input
                 id="term"
                 type="number"
+                inputMode="numeric"
+                pattern="[0-9]*"
                 placeholder="24"
                 value={formData.term || ''}
                 onChange={(e) => handleFieldChange('term', e.target.value)}
@@ -187,6 +195,8 @@ export function DevelopmentFinanceModal({ formData, onFormDataChange, onAutoRefi
               <Input
                 id="totalProjectCost"
                 type="number"
+                inputMode="decimal"
+                pattern="[0-9]*"
                 placeholder="1200000"
                 value={formData.totalProjectCost || ''}
                 onChange={(e) => handleFieldChange('totalProjectCost', e.target.value)}
@@ -197,6 +207,8 @@ export function DevelopmentFinanceModal({ formData, onFormDataChange, onAutoRefi
               <Input
                 id="gdv"
                 type="number"
+                inputMode="decimal"
+                pattern="[0-9]*"
                 placeholder="1500000"
                 value={formData.gdv || ''}
                 onChange={(e) => handleFieldChange('gdv', e.target.value)}
@@ -210,6 +222,8 @@ export function DevelopmentFinanceModal({ formData, onFormDataChange, onAutoRefi
               <Input
                 id="landCost"
                 type="number"
+                inputMode="decimal"
+                pattern="[0-9]*"
                 placeholder="400000"
                 value={formData.landCost || ''}
                 onChange={(e) => handleFieldChange('landCost', e.target.value)}
@@ -220,6 +234,8 @@ export function DevelopmentFinanceModal({ formData, onFormDataChange, onAutoRefi
               <Input
                 id="buildCosts"
                 type="number"
+                inputMode="decimal"
+                pattern="[0-9]*"
                 placeholder="600000"
                 value={formData.buildCosts || ''}
                 onChange={(e) => handleFieldChange('buildCosts', e.target.value)}
@@ -261,6 +277,8 @@ export function DevelopmentFinanceModal({ formData, onFormDataChange, onAutoRefi
               <Input
                 id="preSoldUnits"
                 type="number"
+                inputMode="numeric"
+                pattern="[0-9]*"
                 placeholder="0"
                 value={formData.preSoldUnits || ''}
                 onChange={(e) => handleFieldChange('preSoldUnits', e.target.value)}
@@ -271,6 +289,8 @@ export function DevelopmentFinanceModal({ formData, onFormDataChange, onAutoRefi
               <Input
                 id="averageSalePrice"
                 type="number"
+                inputMode="decimal"
+                pattern="[0-9]*"
                 placeholder="375000"
                 value={formData.averageSalePrice || ''}
                 onChange={(e) => handleFieldChange('averageSalePrice', e.target.value)}
@@ -295,6 +315,8 @@ export function DevelopmentFinanceModal({ formData, onFormDataChange, onAutoRefi
               <Input
                 id="expectedRentalYield"
                 type="number"
+                inputMode="decimal"
+                pattern="[0-9]*"
                 step="0.1"
                 placeholder="6.5"
                 value={formData.expectedRentalYield || ''}
