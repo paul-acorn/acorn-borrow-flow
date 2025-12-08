@@ -67,10 +67,13 @@ const STATUS_LABELS: Record<string, string> = {
 };
 
 export function DealSummaryModal({ deal, profile, open, onOpenChange, onViewFullDetails }: DealSummaryModalProps) {
-  const { user } = useAuth();
+  const { user, hasRole } = useAuth();
   const [note, setNote] = useState("");
   const [isAddingNote, setIsAddingNote] = useState(false);
   const updateStatusMutation = useDealStatusChange();
+  
+  // Check if user can change status (brokers, admins, super_admins - not clients)
+  const canChangeStatus = hasRole('broker') || hasRole('admin') || hasRole('super_admin') || hasRole('team_member');
   
   // Fetch recent activity logs
   const { data: activityLogs } = useQuery({
@@ -288,17 +291,19 @@ export function DealSummaryModal({ deal, profile, open, onOpenChange, onViewFull
 
           {/* Quick Actions */}
           <div className="space-y-3">
-            <h4 className="text-sm font-medium">Quick Actions</h4>
+            <h4 className="text-sm font-medium">{canChangeStatus ? "Quick Actions" : "Deal Status"}</h4>
             
             {/* Status Change */}
             <div className="space-y-2">
-              <label className="text-xs text-muted-foreground">Change Status</label>
+              <label className="text-xs text-muted-foreground">
+                {canChangeStatus ? "Change Status" : "Current Status"}
+              </label>
               <Select
                 value={deal.status}
                 onValueChange={handleStatusChange}
-                disabled={updateStatusMutation.isPending}
+                disabled={!canChangeStatus || updateStatusMutation.isPending}
               >
-                <SelectTrigger>
+                <SelectTrigger className={!canChangeStatus ? "cursor-default opacity-70" : ""}>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -314,38 +319,40 @@ export function DealSummaryModal({ deal, profile, open, onOpenChange, onViewFull
               </Select>
             </div>
 
-            {/* Add Note/Call */}
-            <div className="space-y-2">
-              <label className="text-xs text-muted-foreground">Add Note or Log Call</label>
-              <Textarea
-                placeholder="Enter note or call details..."
-                value={note}
-                onChange={(e) => setNote(e.target.value)}
-                className="min-h-[80px]"
-              />
-              <div className="flex gap-2">
-                <Button
-                  onClick={handleAddNote}
-                  disabled={isAddingNote || !note.trim()}
-                  variant="outline"
-                  size="sm"
-                  className="flex-1"
-                >
-                  <MessageSquare className="h-3 w-3 mr-1" />
-                  Add Note
-                </Button>
-                <Button
-                  onClick={handleLogCall}
-                  disabled={isAddingNote || !note.trim()}
-                  variant="outline"
-                  size="sm"
-                  className="flex-1"
-                >
-                  <Phone className="h-3 w-3 mr-1" />
-                  Log Call
-                </Button>
+            {/* Add Note/Call - Only show for staff */}
+            {canChangeStatus && (
+              <div className="space-y-2">
+                <label className="text-xs text-muted-foreground">Add Note or Log Call</label>
+                <Textarea
+                  placeholder="Enter note or call details..."
+                  value={note}
+                  onChange={(e) => setNote(e.target.value)}
+                  className="min-h-[80px]"
+                />
+                <div className="flex gap-2">
+                  <Button
+                    onClick={handleAddNote}
+                    disabled={isAddingNote || !note.trim()}
+                    variant="outline"
+                    size="sm"
+                    className="flex-1"
+                  >
+                    <MessageSquare className="h-3 w-3 mr-1" />
+                    Add Note
+                  </Button>
+                  <Button
+                    onClick={handleLogCall}
+                    disabled={isAddingNote || !note.trim()}
+                    variant="outline"
+                    size="sm"
+                    className="flex-1"
+                  >
+                    <Phone className="h-3 w-3 mr-1" />
+                    Log Call
+                  </Button>
+                </div>
               </div>
-            </div>
+            )}
           </div>
 
           <Separator />
