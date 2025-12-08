@@ -12,9 +12,9 @@ import { SuperAdminDashboard } from "@/components/SuperAdminDashboard";
 import { BrokerDashboard } from "@/components/BrokerDashboard";
 import { AuthProvider, useAuth } from "@/hooks/useAuth";
 import Index from "@/pages/Index";
+import DealDetails from "./pages/DealDetails";
 import Invite from "@/pages/Invite";
 import OAuthCallback from "@/pages/OAuthCallback";
-import DealDetails from "./pages/DealDetails";
 
 const queryClient = new QueryClient();
 
@@ -73,9 +73,8 @@ const AppContent = () => {
       <Route path="/auth" element={user ? <Navigate to="/" replace /> : <AuthForm onBack={() => window.history.back()} />} />
       <Route path="/invite/:token" element={<Invite />} />
       <Route path="/oauth-callback" element={<OAuthCallback />} />
+      <Route path="/deal/:dealId" element={<DealDetails />} />
       <Route path="*" element={<Navigate to="/" replace />} />
-      <Route path="/deal/:dealId" element={<DealDetails />} />
-      <Route path="/deal/:dealId" element={<DealDetails />} />
     </Routes>
   );
 };
