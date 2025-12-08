@@ -332,6 +332,16 @@ export const BrokerDealsView = () => {
                               {formatCurrency(deal.amount)}
                             </div>
                           </div>
+                          <Button
+    size="sm"
+    onClick={(e) => {
+      e.stopPropagation(); // Prevents the card from expanding/collapsing
+      navigate(`/deal/${deal.id}`);
+    }}
+    className="z-10 bg-primary text-primary-foreground hover:bg-primary/90"
+  >
+    Manage Deal
+  </Button>
                           {expandedDeals.has(deal.id) ? (
                             <ChevronUp className="h-5 w-5 text-muted-foreground flex-shrink-0" />
                           ) : (
@@ -371,16 +381,7 @@ export const BrokerDealsView = () => {
                             </Badge>
                           </div>
                           <div>
-                            <Button
-    size="sm"
-    onClick={(e) => {
-      e.stopPropagation(); // Prevents the card from expanding/collapsing
-      navigate(`/deal/${deal.id}`);
-    }}
-    className="z-10 bg-primary text-primary-foreground hover:bg-primary/90"
-  >
-    Manage Deal
-  </Button>
+                          
                             <p className="text-xs text-muted-foreground">Created</p>
                             <p className="text-sm font-medium">
                               {new Date(deal.created_at).toLocaleDateString()}
