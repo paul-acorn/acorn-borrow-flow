@@ -73,6 +73,7 @@ const AppContent = () => {
       <Route path="/invite/:token" element={<Invite />} />
       <Route path="/oauth-callback" element={<OAuthCallback />} />
       <Route path="*" element={<Navigate to="/" replace />} />
+      <Route path="/deal/:dealId" element={<DealDetails />} />
     </Routes>
   );
 };
