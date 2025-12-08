@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { 
@@ -25,6 +26,7 @@ import { UserProfileMenu } from "@/components/UserProfileMenu";
 import { ScheduledCallbacksView } from "@/components/ScheduledCallbacksView";
 
 export const BrokerDashboard = () => {
+  const navigate = useNavigate();
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState("deals");
   const [isDealCreationOpen, setIsDealCreationOpen] = useState(false);
