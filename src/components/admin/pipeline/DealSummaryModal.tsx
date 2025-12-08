@@ -5,6 +5,7 @@ import { Separator } from "@/components/ui/separator";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Calendar, DollarSign, User, FileText, ExternalLink, MessageSquare, Phone, Clock, Upload, ArrowRight } from "lucide-react";
 import { format, formatDistanceToNow } from "date-fns";
 import { useState } from "react";
@@ -13,6 +14,7 @@ import { useDealStatusChange } from "@/hooks/useDealStatusChange";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
+import { DealTimeline } from "@/components/DealTimeline";
 import type { Database } from "@/integrations/supabase/types";
 
 type DealStatus = Database["public"]["Enums"]["deal_status"];
@@ -70,6 +72,7 @@ export function DealSummaryModal({ deal, profile, open, onOpenChange, onViewFull
   const { user, hasRole } = useAuth();
   const [note, setNote] = useState("");
   const [isAddingNote, setIsAddingNote] = useState(false);
+  const [activeTab, setActiveTab] = useState("overview");
   const updateStatusMutation = useDealStatusChange();
   
   // Check if user can change status (brokers, admins, super_admins - not clients)
@@ -198,13 +201,20 @@ export function DealSummaryModal({ deal, profile, open, onOpenChange, onViewFull
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[600px] max-h-[90vh]">
+      <DialogContent className="sm:max-w-[700px] max-h-[90vh]">
         <DialogHeader>
           <DialogTitle>Deal Summary</DialogTitle>
         </DialogHeader>
 
-        <ScrollArea className="max-h-[calc(90vh-120px)] pr-4">
-          <div className="space-y-4">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="overview">Overview</TabsTrigger>
+            <TabsTrigger value="activity">Activity Feed</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="overview" className="mt-4">
+            <ScrollArea className="max-h-[calc(90vh-200px)] pr-4">
+              <div className="space-y-4">
           {/* Deal Name and Status */}
           <div className="space-y-2">
             <h3 className="text-lg font-semibold">{deal.name}</h3>
@@ -367,8 +377,16 @@ export function DealSummaryModal({ deal, profile, open, onOpenChange, onViewFull
             View Full Details
             <ExternalLink className="h-4 w-4 ml-2" />
           </Button>
-          </div>
-        </ScrollArea>
+              </div>
+            </ScrollArea>
+          </TabsContent>
+
+          <TabsContent value="activity" className="mt-4">
+            <div className="h-[500px]">
+              <DealTimeline dealId={deal.id} maxHeight="450px" />
+            </div>
+          </TabsContent>
+        </Tabs>
       </DialogContent>
     </Dialog>
   );
