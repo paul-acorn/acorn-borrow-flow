@@ -14,6 +14,7 @@ import { AuthProvider, useAuth } from "@/hooks/useAuth";
 import Index from "@/pages/Index";
 import Invite from "@/pages/Invite";
 import OAuthCallback from "@/pages/OAuthCallback";
+import DealDetails from "./pages/DealDetails";
 
 const queryClient = new QueryClient();
 
@@ -73,6 +74,7 @@ const AppContent = () => {
       <Route path="/invite/:token" element={<Invite />} />
       <Route path="/oauth-callback" element={<OAuthCallback />} />
       <Route path="*" element={<Navigate to="/" replace />} />
+      <Route path="/deal/:dealId" element={<DealDetails />} />
       <Route path="/deal/:dealId" element={<DealDetails />} />
     </Routes>
   );
