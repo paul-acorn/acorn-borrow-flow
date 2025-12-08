@@ -1143,6 +1143,10 @@ export type Database = {
           id: string
           mime_type: string
           requirement_id: string
+          review_notes: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: string
           uploaded_at: string
           uploaded_by: string
         }
@@ -1155,6 +1159,10 @@ export type Database = {
           id?: string
           mime_type: string
           requirement_id: string
+          review_notes?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
           uploaded_at?: string
           uploaded_by: string
         }
@@ -1167,6 +1175,10 @@ export type Database = {
           id?: string
           mime_type?: string
           requirement_id?: string
+          review_notes?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
           uploaded_at?: string
           uploaded_by?: string
         }
