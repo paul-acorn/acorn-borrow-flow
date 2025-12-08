@@ -15,7 +15,15 @@ import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { Plus, Calendar, AlertCircle, CheckCircle, Clock, Upload, FileText, X, Download } from "lucide-react";
+import { Plus, Calendar, AlertCircle, CheckCircle, Clock, Upload, FileText, X, Download, CheckCircle2, XCircle } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { z } from "zod";
 
 interface Requirement {
@@ -38,6 +46,10 @@ interface RequirementDocument {
   mime_type: string;
   uploaded_by: string;
   uploaded_at: string;
+  status?: string;
+  review_notes?: string;
+  reviewed_by?: string;
+  reviewed_at?: string;
 }
 
 // File validation schema
@@ -75,8 +87,17 @@ export function RequirementsManager({ dealId, canManage = false }: RequirementsM
     priority: "medium",
     due_date: "",
   });
+  const [rejectionDialog, setRejectionDialog] = useState<{ open: boolean; documentId: string | null }>({
+    open: false,
+    documentId: null,
+  });
+  const [rejectionReason, setRejectionReason] = useState("");
+  const [isUpdatingDocument, setIsUpdatingDocument] = useState(false);
   const { toast } = useToast();
-  const { user } = useAuth();
+  const { user, hasRole } = useAuth();
+  
+  // Check if user can review documents (brokers, admins, super_admins)
+  const canReviewDocuments = hasRole('broker') || hasRole('admin') || hasRole('super_admin');
 
   useEffect(() => {
     if (!dealId) return;
@@ -515,6 +536,106 @@ export function RequirementsManager({ dealId, canManage = false }: RequirementsM
     }
   };
 
+  const handleApproveDocument = async (documentId: string) => {
+    if (!user) return;
+    setIsUpdatingDocument(true);
+
+    try {
+      const { error } = await supabase
+        .from('requirement_documents' as any)
+        .update({
+          status: 'approved',
+          reviewed_by: user.id,
+          reviewed_at: new Date().toISOString(),
+        })
+        .eq('id', documentId);
+
+      if (error) throw error;
+
+      // Log activity
+      await supabase.from("deal_activity_logs").insert({
+        deal_id: dealId,
+        user_id: user.id,
+        action: "document_approved",
+        details: { document_id: documentId },
+      });
+
+      toast({
+        title: "Document Approved",
+        description: "The document has been marked as approved.",
+      });
+
+      fetchDocuments();
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to approve document",
+        variant: "destructive",
+      });
+    } finally {
+      setIsUpdatingDocument(false);
+    }
+  };
+
+  const handleRejectDocument = async () => {
+    if (!user || !rejectionDialog.documentId) return;
+    setIsUpdatingDocument(true);
+
+    try {
+      const { error } = await supabase
+        .from('requirement_documents' as any)
+        .update({
+          status: 'rejected',
+          review_notes: rejectionReason,
+          reviewed_by: user.id,
+          reviewed_at: new Date().toISOString(),
+        })
+        .eq('id', rejectionDialog.documentId);
+
+      if (error) throw error;
+
+      // Log activity
+      await supabase.from("deal_activity_logs").insert({
+        deal_id: dealId,
+        user_id: user.id,
+        action: "document_rejected",
+        details: { 
+          document_id: rejectionDialog.documentId,
+          reason: rejectionReason 
+        },
+      });
+
+      toast({
+        title: "Document Rejected",
+        description: "The document has been marked as rejected.",
+        variant: "destructive",
+      });
+
+      setRejectionDialog({ open: false, documentId: null });
+      setRejectionReason("");
+      fetchDocuments();
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to reject document",
+        variant: "destructive",
+      });
+    } finally {
+      setIsUpdatingDocument(false);
+    }
+  };
+
+  const getDocumentStatusBadge = (status?: string) => {
+    switch (status) {
+      case 'approved':
+        return <Badge variant="outline" className="bg-green-500/10 text-green-600 border-green-500/30">Approved</Badge>;
+      case 'rejected':
+        return <Badge variant="outline" className="bg-destructive/10 text-destructive border-destructive/30">Rejected</Badge>;
+      default:
+        return <Badge variant="outline" className="bg-yellow-500/10 text-yellow-600 border-yellow-500/30">Pending</Badge>;
+    }
+  };
+
   const formatFileSize = (bytes: number) => {
     if (bytes === 0) return '0 Bytes';
     const k = 1024;
@@ -693,16 +814,26 @@ export function RequirementsManager({ dealId, canManage = false }: RequirementsM
                               minute: '2-digit'
                             });
 
+                            const docStatus = docWithProfile.status || 'pending';
+                            const docRowClass = docStatus === 'approved' 
+                              ? 'bg-green-500/10 border border-green-500/30' 
+                              : docStatus === 'rejected' 
+                                ? 'bg-destructive/10 border border-destructive/30' 
+                                : 'bg-muted';
+
                             return (
                               <div
                                 key={doc.id}
-                                className="p-3 bg-muted rounded-lg space-y-2"
+                                className={`p-3 rounded-lg space-y-2 ${docRowClass}`}
                               >
                                 <div className="flex items-start justify-between gap-2">
                                   <div className="flex items-start gap-2 flex-1 min-w-0">
                                     <FileText className="w-4 h-4 flex-shrink-0 mt-0.5" />
                                     <div className="flex-1 min-w-0">
-                                      <p className="text-sm font-medium truncate">{doc.file_name}</p>
+                                      <div className="flex items-center gap-2 flex-wrap">
+                                        <p className="text-sm font-medium truncate">{doc.file_name}</p>
+                                        {getDocumentStatusBadge(docStatus)}
+                                      </div>
                                       <div className="flex items-center gap-2 text-xs text-muted-foreground mt-1">
                                         <span>{formatFileSize(doc.file_size)}</span>
                                         <span>•</span>
@@ -711,9 +842,39 @@ export function RequirementsManager({ dealId, canManage = false }: RequirementsM
                                       <p className="text-xs text-muted-foreground mt-1">
                                         Uploaded by {uploaderName}
                                       </p>
+                                      {docStatus === 'rejected' && docWithProfile.review_notes && (
+                                        <p className="text-xs text-destructive mt-1">
+                                          Reason: {docWithProfile.review_notes}
+                                        </p>
+                                      )}
                                     </div>
                                   </div>
                                   <div className="flex items-center gap-1 flex-shrink-0">
+                                    {/* Approval/Rejection buttons for brokers */}
+                                    {canReviewDocuments && docStatus === 'pending' && (
+                                      <>
+                                        <Button
+                                          variant="ghost"
+                                          size="sm"
+                                          className="h-8 w-8 p-0 text-green-600 hover:text-green-700 hover:bg-green-100"
+                                          onClick={() => handleApproveDocument(doc.id)}
+                                          disabled={isUpdatingDocument}
+                                          title="Approve Document"
+                                        >
+                                          <CheckCircle2 className="w-4 h-4" />
+                                        </Button>
+                                        <Button
+                                          variant="ghost"
+                                          size="sm"
+                                          className="h-8 w-8 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
+                                          onClick={() => setRejectionDialog({ open: true, documentId: doc.id })}
+                                          disabled={isUpdatingDocument}
+                                          title="Reject Document"
+                                        >
+                                          <XCircle className="w-4 h-4" />
+                                        </Button>
+                                      </>
+                                    )}
                                     <Button
                                       variant="ghost"
                                       size="sm"
@@ -818,6 +979,52 @@ export function RequirementsManager({ dealId, canManage = false }: RequirementsM
           ))
         )}
       </div>
+
+      {/* Rejection Reason Dialog */}
+      <Dialog open={rejectionDialog.open} onOpenChange={(open) => {
+        if (!open) {
+          setRejectionDialog({ open: false, documentId: null });
+          setRejectionReason("");
+        }
+      }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Reject Document</DialogTitle>
+            <DialogDescription>
+              Please provide a reason for rejecting this document. This will be visible to the client.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            <Label htmlFor="rejection-reason">Rejection Reason *</Label>
+            <Textarea
+              id="rejection-reason"
+              value={rejectionReason}
+              onChange={(e) => setRejectionReason(e.target.value)}
+              placeholder="e.g., Document is blurry and unreadable, please re-upload a clearer version."
+              className="mt-2"
+              rows={3}
+            />
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setRejectionDialog({ open: false, documentId: null });
+                setRejectionReason("");
+              }}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleRejectDocument}
+              disabled={!rejectionReason.trim() || isUpdatingDocument}
+            >
+              {isUpdatingDocument ? "Rejecting..." : "Reject Document"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
