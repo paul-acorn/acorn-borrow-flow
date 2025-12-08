@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -110,7 +111,8 @@ interface DealWithClient {
 export const BrokerDealsView = () => {
   const { user } = useAuth();
   const [expandedDeals, setExpandedDeals] = useState<Set<string>>(new Set());
-
+  const navigate = useNavigate();
+  
   // Fetch deals for broker's clients
   const { data: deals, isLoading } = useQuery({
     queryKey: ["broker-deals", user?.id],
