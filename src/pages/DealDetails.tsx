@@ -16,7 +16,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import DealDocumentAudit from "@/components/deals/DealDocumentAudit";
-import { DealTimeline } from "@/components/DealTimeline";
+import DealTimeline from "@/components/deals/DealTimeline";
 import type { Database } from "@/integrations/supabase/types";
 
 type DealStatus = Database["public"]["Enums"]["deal_status"];
