@@ -4,9 +4,9 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
-import { Loader2, ArrowLeft, Check, ChevronsUpDown } from "lucide-react";
+import { Loader2, ArrowLeft } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import {
   Select,
@@ -15,28 +15,32 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import DealDocumentAudit from "@/components/deals/DealDocumentAudit";
+import { DealTimeline } from "@/components/DealTimeline";
+import type { Database } from "@/integrations/supabase/types";
 
-// --- STATUS OPTIONS ---
-const DEAL_STATUSES = [
-  { value: "draft", label: "Draft" },
-  { value: "submitted", label: "Submitted" },
-  { value: "under_review", label: "Under Review" },
-  { value: "lender_processing", label: "Lender Processing" },
-  { value: "conditional_offer", label: "Conditional Offer" },
-  { value: "approved", label: "Approved" },
+type DealStatus = Database["public"]["Enums"]["deal_status"];
+
+// --- STATUS OPTIONS (matching deal_status enum) ---
+const DEAL_STATUSES: { value: DealStatus; label: string }[] = [
+  { value: "new_case", label: "New Case" },
+  { value: "awaiting_dip", label: "Awaiting DIP" },
+  { value: "dip_approved", label: "DIP Approved" },
+  { value: "reports_instructed", label: "Reports Instructed" },
+  { value: "final_underwriting", label: "Final Underwriting" },
+  { value: "offered", label: "Offered" },
+  { value: "with_solicitors", label: "With Solicitors" },
   { value: "completed", label: "Completed" },
-  { value: "declined", label: "Declined" },
-  { value: "withdrawn", label: "Withdrawn" },
 ];
 
 // --- SUB-COMPONENT: Status Controller ---
-const DealStatusController = ({ dealId, currentStatus }: { dealId: string, currentStatus: string }) => {
+const DealStatusController = ({ dealId, currentStatus }: { dealId: string; currentStatus: DealStatus }) => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const [status, setStatus] = useState(currentStatus);
+  const [status, setStatus] = useState<DealStatus>(currentStatus);
 
   const updateStatus = useMutation({
-    mutationFn: async (newStatus: string) => {
+    mutationFn: async (newStatus: DealStatus) => {
       const { error } = await supabase
         .from("deals")
         .update({ status: newStatus })
@@ -66,7 +70,7 @@ const DealStatusController = ({ dealId, currentStatus }: { dealId: string, curre
     <div className="flex flex-col gap-2">
       <Select 
         value={status} 
-        onValueChange={(val) => updateStatus.mutate(val)}
+        onValueChange={(val) => updateStatus.mutate(val as DealStatus)}
         disabled={updateStatus.isPending}
       >
         <SelectTrigger className="w-full">
@@ -221,19 +225,11 @@ const DealDetails = () => {
         </TabsContent>
 
         <TabsContent value="documents" className="mt-6">
-          <Card>
-            <CardContent className="p-8 text-center text-muted-foreground">
-              Document Audit Component (Coming Next)
-            </CardContent>
-          </Card>
+          <DealDocumentAudit dealId={dealId!} />
         </TabsContent>
 
         <TabsContent value="activity" className="mt-6">
-           <Card>
-            <CardContent className="p-8 text-center text-muted-foreground">
-              Timeline Component (Coming Next)
-            </CardContent>
-          </Card>
+          <DealTimeline dealId={dealId!} />
         </TabsContent>
       </Tabs>
     </div>
