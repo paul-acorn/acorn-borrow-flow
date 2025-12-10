@@ -1553,6 +1553,10 @@ export type Database = {
         }
         Returns: boolean
       }
+      update_deal_status: {
+        Args: { p_deal_id: string; p_new_status: string }
+        Returns: undefined
+      }
       validate_invitation_token: {
         Args: { _token: string }
         Returns: {

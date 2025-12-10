@@ -41,11 +41,10 @@ const DealStatusController = ({ dealId, currentStatus }: { dealId: string; curre
 
   const updateStatus = useMutation({
     mutationFn: async (newStatus: DealStatus) => {
-// NEW (Working) Code:
-const { error } = await supabase.rpc('update_deal_status', { 
-  p_deal_id: dealId, 
-  p_new_status: newStatus 
-});
+      const { error } = await supabase
+        .from("deals")
+        .update({ status: newStatus, updated_at: new Date().toISOString() })
+        .eq("id", dealId);
 
       if (error) throw error;
       return newStatus;
