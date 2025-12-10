@@ -15,7 +15,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import DealDocumentAudit from "@/components/deals/DealDocumentAudit";
+import { RequirementsManager } from "@/components/RequirementsManager";
 import DealTimeline from "@/components/deals/DealTimeline";
 import type { Database } from "@/integrations/supabase/types";
 
@@ -225,7 +225,7 @@ const DealDetails = () => {
         </TabsContent>
 
         <TabsContent value="documents" className="mt-6">
-          <DealDocumentAudit dealId={dealId!} />
+          <RequirementsManager dealId={dealId!} canManage={true} />
         </TabsContent>
 
         <TabsContent value="activity" className="mt-6">

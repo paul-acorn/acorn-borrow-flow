@@ -15,7 +15,16 @@ import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { Plus, Calendar, AlertCircle, CheckCircle, Clock, Upload, FileText, X, Download, CheckCircle2, XCircle } from "lucide-react";
+import { Plus, Calendar, AlertCircle, CheckCircle, Clock, Upload, FileText, X, Download, CheckCircle2, XCircle, Package, Loader2 } from "lucide-react";
+
+// Standard document requirements pack
+const STANDARD_REQUIREMENTS = [
+  { title: "Proof of ID", description: "Valid passport or driving licence", category: "Identity", priority: "high" },
+  { title: "Proof of Address", description: "Utility bill or bank statement dated within the last 3 months", category: "Identity", priority: "high" },
+  { title: "Latest 3 Months Payslips", description: "Most recent 3 consecutive monthly payslips", category: "Income", priority: "high" },
+  { title: "Latest 3 Months Bank Statements", description: "Main current account statements for the last 3 months", category: "Income", priority: "high" },
+  { title: "Source of Deposit", description: "Evidence of where your deposit funds are coming from", category: "Deposit", priority: "medium" },
+];
 import {
   Dialog,
   DialogContent,
@@ -35,6 +44,7 @@ interface Requirement {
   due_date: string | null;
   created_at: string;
   updated_at: string;
+  category?: string;
 }
 
 interface RequirementDocument {
@@ -93,6 +103,7 @@ export function RequirementsManager({ dealId, canManage = false }: RequirementsM
   });
   const [rejectionReason, setRejectionReason] = useState("");
   const [isUpdatingDocument, setIsUpdatingDocument] = useState(false);
+  const [isLoadingStandardPack, setIsLoadingStandardPack] = useState(false);
   const { toast } = useToast();
   const { user, hasRole } = useAuth();
   
@@ -298,6 +309,71 @@ export function RequirementsManager({ dealId, canManage = false }: RequirementsM
       title: "Success",
       description: "Requirement priority updated",
     });
+  };
+
+  const handleLoadStandardRequirements = async () => {
+    if (!user) return;
+    setIsLoadingStandardPack(true);
+
+    try {
+      // Get existing requirement titles to avoid duplicates
+      const existingTitles = requirements.map(r => r.title.toLowerCase());
+      
+      // Filter out requirements that already exist
+      const newRequirements = STANDARD_REQUIREMENTS.filter(
+        req => !existingTitles.includes(req.title.toLowerCase())
+      );
+
+      if (newRequirements.length === 0) {
+        toast({
+          title: "Already Loaded",
+          description: "All standard requirements have already been added to this deal.",
+        });
+        setIsLoadingStandardPack(false);
+        return;
+      }
+
+      // Insert new requirements
+      const { error } = await supabase.from("requirements").insert(
+        newRequirements.map(req => ({
+          deal_id: dealId,
+          title: req.title,
+          description: req.description,
+          category: req.category,
+          priority: req.priority,
+          status: "pending",
+        }))
+      );
+
+      if (error) throw error;
+
+      // Log activity
+      await supabase.from("deal_activity_logs").insert({
+        deal_id: dealId,
+        user_id: user.id,
+        action: "standard_requirements_loaded",
+        details: {
+          count: newRequirements.length,
+          requirements: newRequirements.map(r => r.title),
+        },
+      });
+
+      toast({
+        title: "Standard Pack Loaded",
+        description: `Added ${newRequirements.length} document requirements.`,
+      });
+
+      fetchRequirements();
+    } catch (error: any) {
+      console.error("Load standard requirements error:", error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to load standard requirements",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoadingStandardPack(false);
+    }
   };
 
   const handleFileUpload = async (requirementId: string, file: File) => {
@@ -672,19 +748,70 @@ export function RequirementsManager({ dealId, canManage = false }: RequirementsM
     return <div className="text-center py-4 text-muted-foreground">Loading requirements...</div>;
   }
 
+  // Group requirements by category
+  const groupedRequirements = requirements.reduce((acc, req) => {
+    const category = req.category || 'General';
+    if (!acc[category]) acc[category] = [];
+    acc[category].push(req);
+    return acc;
+  }, {} as Record<string, Requirement[]>);
+
+  // Check if any documents are uploaded for a requirement
+  const hasUploadedDocument = (requirementId: string) => {
+    return documents[requirementId] && documents[requirementId].length > 0;
+  };
+
+  // Get overall status for a requirement based on its documents
+  const getRequirementStatus = (req: Requirement) => {
+    const docs = documents[req.id] || [];
+    if (docs.length === 0) return 'awaiting_upload';
+    if (docs.some(d => d.status === 'approved')) return 'approved';
+    if (docs.some(d => d.status === 'rejected')) return 'needs_attention';
+    return 'pending_review';
+  };
+
+  const getRequirementStatusBadge = (status: string) => {
+    switch (status) {
+      case 'approved':
+        return <Badge className="bg-green-500/10 text-green-600 border-green-500/30">Approved</Badge>;
+      case 'needs_attention':
+        return <Badge className="bg-destructive/10 text-destructive border-destructive/30">Needs Attention</Badge>;
+      case 'pending_review':
+        return <Badge className="bg-blue-500/10 text-blue-600 border-blue-500/30">Uploaded</Badge>;
+      default:
+        return <Badge className="bg-muted text-muted-foreground">Requested</Badge>;
+    }
+  };
+
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold text-foreground">Additional Requirements</h3>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <h3 className="text-lg font-semibold text-foreground">Document Requirements</h3>
         {canManage && (
-          <Button
-            onClick={() => setShowAddForm(!showAddForm)}
-            size="sm"
-            className="gap-2"
-          >
-            <Plus className="w-4 h-4" />
-            Add Requirement
-          </Button>
+          <div className="flex flex-wrap gap-2">
+            <Button
+              onClick={handleLoadStandardRequirements}
+              size="sm"
+              variant="outline"
+              className="gap-2"
+              disabled={isLoadingStandardPack}
+            >
+              {isLoadingStandardPack ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <Package className="w-4 h-4" />
+              )}
+              Load Standard Pack
+            </Button>
+            <Button
+              onClick={() => setShowAddForm(!showAddForm)}
+              size="sm"
+              className="gap-2"
+            >
+              <Plus className="w-4 h-4" />
+              Request Custom
+            </Button>
+          </div>
         )}
       </div>
 

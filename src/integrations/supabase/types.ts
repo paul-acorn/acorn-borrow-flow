@@ -1208,6 +1208,7 @@ export type Database = {
       }
       requirements: {
         Row: {
+          category: string | null
           created_at: string
           deal_id: string
           description: string | null
@@ -1219,6 +1220,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          category?: string | null
           created_at?: string
           deal_id: string
           description?: string | null
@@ -1230,6 +1232,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          category?: string | null
           created_at?: string
           deal_id?: string
           description?: string | null
