@@ -22,6 +22,7 @@ import {
   Loader2,
   AlertCircle,
   Clock,
+  ExternalLink,
 } from "lucide-react";
 
 interface RequirementDocument {
@@ -172,6 +173,18 @@ const DealDocumentAudit = ({ dealId }: DealDocumentAuditProps) => {
     return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
   };
 
+  const handleViewDocument = async (filePath: string) => {
+    const { data } = await supabase.storage
+      .from("requirement-documents")
+      .createSignedUrl(filePath, 3600); // 1 hour expiry
+    
+    if (data?.signedUrl) {
+      window.open(data.signedUrl, "_blank");
+    } else {
+      toast({ variant: "destructive", title: "Error", description: "Could not open document." });
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="flex justify-center p-8">
@@ -237,29 +250,43 @@ const DealDocumentAudit = ({ dealId }: DealDocumentAuditProps) => {
                 )}
               </div>
 
-              {/* Action Buttons (Broker only, pending status only) */}
-              {canReview && doc.status === "pending" && (
-                <div className="flex items-center gap-2 shrink-0">
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    className="h-8 w-8 p-0 text-green-600 hover:bg-green-500/10 hover:text-green-700"
-                    onClick={() => handleApprove(doc.id)}
-                    disabled={approveMutation.isPending}
-                  >
-                    <CheckCircle2 className="h-5 w-5" />
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    className="h-8 w-8 p-0 text-destructive hover:bg-destructive/10"
-                    onClick={() => handleRejectClick(doc.id)}
-                    disabled={rejectMutation.isPending}
-                  >
-                    <XCircle className="h-5 w-5" />
-                  </Button>
-                </div>
-              )}
+              {/* Action Buttons */}
+              <div className="flex items-center gap-2 shrink-0">
+                {/* View Button - always visible */}
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="h-8 gap-1"
+                  onClick={() => handleViewDocument(doc.file_path)}
+                >
+                  <ExternalLink className="h-3.5 w-3.5" />
+                  View
+                </Button>
+                
+                {/* Approve/Reject - Broker only, pending status only */}
+                {canReview && doc.status === "pending" && (
+                  <>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="h-8 w-8 p-0 text-green-600 hover:bg-green-500/10 hover:text-green-700"
+                      onClick={() => handleApprove(doc.id)}
+                      disabled={approveMutation.isPending}
+                    >
+                      <CheckCircle2 className="h-5 w-5" />
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="h-8 w-8 p-0 text-destructive hover:bg-destructive/10"
+                      onClick={() => handleRejectClick(doc.id)}
+                      disabled={rejectMutation.isPending}
+                    >
+                      <XCircle className="h-5 w-5" />
+                    </Button>
+                  </>
+                )}
+              </div>
             </div>
           </CardContent>
         </Card>
