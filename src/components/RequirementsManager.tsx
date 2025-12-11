@@ -15,7 +15,7 @@ import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { Plus, Calendar, AlertCircle, CheckCircle, Clock, Upload, FileText, X, Download, CheckCircle2, XCircle, Package, Loader2 } from "lucide-react";
+import { Plus, Calendar, AlertCircle, CheckCircle, Clock, Upload, FileText, X, Download, CheckCircle2, XCircle, Package, Loader2, Eye } from "lucide-react";
 
 // Standard document requirements pack
 const STANDARD_REQUIREMENTS = [
@@ -977,7 +977,20 @@ export function RequirementsManager({ dealId, canManage = false }: RequirementsM
                                     </div>
                                   </div>
                                   <div className="flex items-center gap-1 flex-shrink-0">
-                                    {/* Approval/Rejection buttons for brokers */}
+                                    {/* View button - opens in new tab */}
+                                    {docWithProfile.google_drive_file_id && (
+                                      <Button
+                                        variant="outline"
+                                        size="sm"
+                                        className="h-8 px-2 gap-1"
+                                        onClick={() => window.open(`https://drive.google.com/file/d/${docWithProfile.google_drive_file_id}/view`, '_blank')}
+                                        title="View Document"
+                                      >
+                                        <Eye className="w-4 h-4" />
+                                        <span className="hidden sm:inline text-xs">View</span>
+                                      </Button>
+                                    )}
+                                    {/* Approval/Rejection buttons for brokers, admins, super_admins */}
                                     {canReviewDocuments && docStatus === 'pending' && (
                                       <>
                                         <Button
@@ -1011,7 +1024,7 @@ export function RequirementsManager({ dealId, canManage = false }: RequirementsM
                                     >
                                       <Download className="w-4 h-4" />
                                     </Button>
-                                    {(user?.id === doc.uploaded_by || canManage) && (
+                                    {(user?.id === doc.uploaded_by || canManage || canReviewDocuments) && (
                                       <Button
                                         variant="ghost"
                                         size="sm"
