@@ -15,7 +15,7 @@ import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { Plus, Calendar, AlertCircle, CheckCircle, Clock, Upload, FileText, X, Download, CheckCircle2, XCircle, Package, Loader2, Eye } from "lucide-react";
+import { Plus, Calendar, AlertCircle, CheckCircle, Clock, Upload, FileText, X, Download, CheckCircle2, XCircle, Package, Loader2, Eye, Ban, Check } from "lucide-react";
 
 // Standard document requirements pack
 const STANDARD_REQUIREMENTS = [
@@ -723,9 +723,12 @@ export function RequirementsManager({ dealId, canManage = false }: RequirementsM
   const getStatusIcon = (status: string) => {
     switch (status) {
       case "completed":
+      case "manually_complete":
         return <CheckCircle className="w-4 h-4 text-green-600" />;
       case "in_progress":
         return <Clock className="w-4 h-4 text-blue-600" />;
+      case "not_required":
+        return <Ban className="w-4 h-4 text-muted-foreground" />;
       default:
         return <AlertCircle className="w-4 h-4 text-yellow-600" />;
     }
@@ -763,6 +766,10 @@ export function RequirementsManager({ dealId, canManage = false }: RequirementsM
 
   // Get overall status for a requirement based on its documents
   const getRequirementStatus = (req: Requirement) => {
+    // Check for special statuses first
+    if (req.status === 'not_required') return 'not_required';
+    if (req.status === 'manually_complete') return 'manually_complete';
+    
     const docs = documents[req.id] || [];
     if (docs.length === 0) return 'awaiting_upload';
     if (docs.some(d => d.status === 'approved')) return 'approved';
@@ -774,6 +781,10 @@ export function RequirementsManager({ dealId, canManage = false }: RequirementsM
     switch (status) {
       case 'approved':
         return <Badge className="bg-green-500/10 text-green-600 border-green-500/30">Approved</Badge>;
+      case 'manually_complete':
+        return <Badge className="bg-green-500/10 text-green-600 border-green-500/30">Complete (Manual)</Badge>;
+      case 'not_required':
+        return <Badge className="bg-muted text-muted-foreground border-muted">Not Required</Badge>;
       case 'needs_attention':
         return <Badge className="bg-destructive/10 text-destructive border-destructive/30">Needs Attention</Badge>;
       case 'pending_review':
@@ -897,14 +908,19 @@ export function RequirementsManager({ dealId, canManage = false }: RequirementsM
             </CardContent>
           </Card>
         ) : (
-          requirements.map((req) => (
-            <Card key={req.id}>
+          requirements.map((req) => {
+            const reqStatus = getRequirementStatus(req);
+            const isNotRequired = reqStatus === 'not_required';
+            
+            return (
+            <Card key={req.id} className={isNotRequired ? 'opacity-50' : ''}>
               <CardContent className="py-4">
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex-1 space-y-2">
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 flex-wrap">
                       {getStatusIcon(req.status)}
-                      <h4 className="font-medium text-foreground">{req.title}</h4>
+                      <h4 className={`font-medium text-foreground ${isNotRequired ? 'line-through' : ''}`}>{req.title}</h4>
+                      {getRequirementStatusBadge(reqStatus)}
                       <Badge variant={getPriorityColor(req.priority)} className="ml-2">
                         {req.priority}
                       </Badge>
@@ -1084,19 +1100,45 @@ export function RequirementsManager({ dealId, canManage = false }: RequirementsM
 
                   {canManage && (
                     <div className="flex flex-col gap-2">
-                      <Select
-                        value={req.status}
-                        onValueChange={(value) => handleUpdateStatus(req.id, value)}
-                      >
-                        <SelectTrigger className="w-[140px]">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="pending">Pending</SelectItem>
-                          <SelectItem value="in_progress">In Progress</SelectItem>
-                          <SelectItem value="completed">Completed</SelectItem>
-                        </SelectContent>
-                      </Select>
+                      {/* Quick action buttons */}
+                      <div className="flex gap-1">
+                        {req.status !== 'manually_complete' && req.status !== 'not_required' && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="h-8 px-2 gap-1 text-green-600 border-green-500/30 hover:bg-green-500/10"
+                            onClick={() => handleUpdateStatus(req.id, 'manually_complete')}
+                            title="Mark as Complete (verified offline)"
+                          >
+                            <Check className="w-4 h-4" />
+                            <span className="hidden sm:inline text-xs">Complete</span>
+                          </Button>
+                        )}
+                        {req.status !== 'not_required' && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="h-8 px-2 gap-1 text-muted-foreground border-muted hover:bg-muted"
+                            onClick={() => handleUpdateStatus(req.id, 'not_required')}
+                            title="Mark as Not Required"
+                          >
+                            <Ban className="w-4 h-4" />
+                            <span className="hidden sm:inline text-xs">N/A</span>
+                          </Button>
+                        )}
+                        {(req.status === 'manually_complete' || req.status === 'not_required') && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="h-8 px-2 gap-1"
+                            onClick={() => handleUpdateStatus(req.id, 'pending')}
+                            title="Reset to Pending"
+                          >
+                            <AlertCircle className="w-4 h-4" />
+                            <span className="hidden sm:inline text-xs">Reset</span>
+                          </Button>
+                        )}
+                      </div>
 
                       <Select
                         value={req.priority}
@@ -1116,7 +1158,7 @@ export function RequirementsManager({ dealId, canManage = false }: RequirementsM
                 </div>
               </CardContent>
             </Card>
-          ))
+          );})
         )}
       </div>
 
