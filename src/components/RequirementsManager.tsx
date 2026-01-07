@@ -788,7 +788,7 @@ export function RequirementsManager({ dealId, canManage = false }: RequirementsM
       case 'needs_attention':
         return <Badge className="bg-destructive/10 text-destructive border-destructive/30">Needs Attention</Badge>;
       case 'pending_review':
-        return <Badge className="bg-blue-500/10 text-blue-600 border-blue-500/30">Uploaded</Badge>;
+        return <Badge className="bg-blue-500/10 text-blue-600 border-blue-500/30">Awaiting Review</Badge>;
       default:
         return <Badge className="bg-muted text-muted-foreground">Requested</Badge>;
     }
@@ -1098,7 +1098,8 @@ export function RequirementsManager({ dealId, canManage = false }: RequirementsM
                     </div>
                   </div>
 
-                  {canManage && (
+                  {/* Quick action buttons for brokers, admins, super_admins, or those with canManage */}
+                  {(canManage || canReviewDocuments) && (
                     <div className="flex flex-col gap-2">
                       {/* Quick action buttons */}
                       <div className="flex gap-1">
@@ -1140,19 +1141,21 @@ export function RequirementsManager({ dealId, canManage = false }: RequirementsM
                         )}
                       </div>
 
-                      <Select
+                      {canManage && (
+                        <Select
                         value={req.priority}
                         onValueChange={(value) => handleUpdatePriority(req.id, value)}
                       >
                         <SelectTrigger className="w-[140px]">
                           <SelectValue />
                         </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="low">Low Priority</SelectItem>
-                          <SelectItem value="medium">Medium Priority</SelectItem>
-                          <SelectItem value="high">High Priority</SelectItem>
-                        </SelectContent>
-                      </Select>
+                          <SelectContent>
+                            <SelectItem value="low">Low Priority</SelectItem>
+                            <SelectItem value="medium">Medium Priority</SelectItem>
+                            <SelectItem value="high">High Priority</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      )}
                     </div>
                   )}
                 </div>
