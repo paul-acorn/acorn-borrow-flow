@@ -3,8 +3,9 @@ import { useParams, useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { useDealExport } from "@/hooks/useDealExport";
 import { Button } from "@/components/ui/button";
-import { Loader2, ArrowLeft } from "lucide-react";
+import { Loader2, ArrowLeft, MoreVertical, FileText, FileSpreadsheet } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
@@ -15,6 +16,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  DropdownMenuSeparator,
+  DropdownMenuLabel,
+} from "@/components/ui/dropdown-menu";
 import { RequirementsManager } from "@/components/RequirementsManager";
 import DealTimeline from "@/components/deals/DealTimeline";
 import type { Database } from "@/integrations/supabase/types";
@@ -152,6 +161,7 @@ const DealDetails = () => {
   const { dealId } = useParams();
   const { user } = useAuth();
   const navigate = useNavigate();
+  const { exportToPDF, exportToCSV } = useDealExport();
 
   // 1. Fetch Deal Data
   const { data: deal, isLoading, error } = useQuery({
@@ -188,22 +198,74 @@ const DealDetails = () => {
     }
   }, [deal, user, navigate]);
 
+  const handleExportPDF = () => {
+    if (deal) {
+      exportToPDF({
+        id: deal.id,
+        name: deal.name,
+        type: deal.type,
+        status: deal.status,
+        amount: deal.amount,
+        created_at: deal.created_at,
+        profiles: deal.profiles,
+      });
+    }
+  };
+
+  const handleExportCSV = () => {
+    if (deal) {
+      exportToCSV({
+        id: deal.id,
+        name: deal.name,
+        type: deal.type,
+        status: deal.status,
+        amount: deal.amount,
+        created_at: deal.created_at,
+        profiles: deal.profiles,
+      });
+    }
+  };
+
   if (isLoading) return <div className="flex justify-center p-8 h-screen items-center"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
   if (error || !deal) return <div className="p-8 text-center text-destructive">Error loading deal details.</div>;
 
   return (
     <div className="container mx-auto p-4 md:p-8 space-y-6 max-w-5xl">
       {/* Header */}
-      <div className="flex items-center gap-4">
-        <Button variant="outline" size="icon" onClick={() => navigate(-1)}>
-          <ArrowLeft className="h-4 w-4" />
-        </Button>
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">{deal.name || "Untitled Deal"}</h1>
-          <p className="text-muted-foreground">
-            Client: {deal.profiles?.first_name} {deal.profiles?.last_name}
-          </p>
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-4">
+          <Button variant="outline" size="icon" onClick={() => navigate(-1)}>
+            <ArrowLeft className="h-4 w-4" />
+          </Button>
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight">{deal.name || "Untitled Deal"}</h1>
+            <p className="text-muted-foreground">
+              Client: {deal.profiles?.first_name} {deal.profiles?.last_name}
+            </p>
+          </div>
         </div>
+
+        {/* Actions Dropdown */}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="outline" className="gap-2">
+              <MoreVertical className="h-4 w-4" />
+              Actions
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-48">
+            <DropdownMenuLabel>Export Options</DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onClick={handleExportPDF} className="cursor-pointer">
+              <FileText className="h-4 w-4 mr-2" />
+              Export to PDF
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={handleExportCSV} className="cursor-pointer">
+              <FileSpreadsheet className="h-4 w-4 mr-2" />
+              Export to CSV
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
 
       {/* Main Content Tabs */}

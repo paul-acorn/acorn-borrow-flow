@@ -1556,6 +1556,14 @@ export type Database = {
         }
         Returns: boolean
       }
+      is_broker_for_deal: {
+        Args: { _deal_id: string; _user_id: string }
+        Returns: boolean
+      }
+      is_deal_owner: {
+        Args: { _deal_id: string; _user_id: string }
+        Returns: boolean
+      }
       update_deal_status: {
         Args: { p_deal_id: string; p_new_status: string }
         Returns: undefined
