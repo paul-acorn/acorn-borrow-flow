@@ -57,6 +57,10 @@ const loanTypeIcons = {
 };
 
 export function Dashboard({ hideBackgroundDetails = false }: { hideBackgroundDetails?: boolean }) {
+  const { toast } = useToast();
+  const { user, signOut } = useAuth();
+  const queryClient = useQueryClient();
+  
   const [showBackgroundModal, setShowBackgroundModal] = useState(false);
   const [backgroundInitialStep, setBackgroundInitialStep] = useState<string | undefined>(undefined);
   const [showDealModal, setShowDealModal] = useState(false);
@@ -74,16 +78,50 @@ export function Dashboard({ hideBackgroundDetails = false }: { hideBackgroundDet
     credit: false,
     documents: false,
   });
-  const { toast } = useToast();
-  const { user, signOut } = useAuth();
-  const queryClient = useQueryClient();
   const previousDealsRef = useRef<Deal[]>([]);
   const [notifications, setNotifications] = useState<DealNotification[]>(() => {
     const saved = localStorage.getItem('deal-notifications');
     return saved ? JSON.parse(saved) : [];
   });
 
-  // Fetch deals from database
+  // Fetch background completion status from database
+  const { data: backgroundStatus, refetch: refetchBackgroundStatus } = useQuery({
+    queryKey: ['background-status', user?.id],
+    queryFn: async () => {
+      if (!user) return null;
+      
+      // Check each table for data
+      const [personal, addresses, assets, credit] = await Promise.all([
+        supabase.from('client_personal_details').select('id').eq('user_id', user.id).maybeSingle(),
+        supabase.from('client_addresses').select('id').eq('user_id', user.id).limit(1),
+        supabase.from('client_financial_assets').select('id').eq('user_id', user.id).maybeSingle(),
+        supabase.from('client_credit_history').select('id').eq('user_id', user.id).maybeSingle(),
+      ]);
+      
+      return {
+        personal: !!personal.data,
+        address: (addresses.data?.length ?? 0) > 0,
+        financial: !!assets.data,
+        credit: !!credit.data,
+        documents: false, // Documents are handled separately
+      };
+    },
+    enabled: !!user,
+  });
+
+  // Sync background status when it loads
+  useEffect(() => {
+    if (backgroundStatus) {
+      setBackgroundSteps(prev => ({
+        ...prev,
+        personal: backgroundStatus.personal || prev.personal,
+        address: backgroundStatus.address || prev.address,
+        financial: backgroundStatus.financial || prev.financial,
+        credit: backgroundStatus.credit || prev.credit,
+      }));
+    }
+  }, [backgroundStatus]);
+
   const { data: deals = [], isLoading: isLoadingDeals } = useQuery({
     queryKey: ['deals', user?.id],
     queryFn: async () => {
@@ -615,6 +653,7 @@ export function Dashboard({ hideBackgroundDetails = false }: { hideBackgroundDet
         steps={backgroundSteps}
         onStepComplete={(step) => {
           setBackgroundSteps(prev => ({ ...prev, [step]: true }));
+          refetchBackgroundStatus();
         }}
         initialStep={backgroundInitialStep}
       />
